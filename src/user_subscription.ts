@@ -6,6 +6,7 @@ import {
 import GlobalUserStore from './global_user_store';
 import CurrentUser from './current_user';
 import ChatManagerDelegate from './chat_manager_delegate';
+import PayloadDeserializer from './payload_deserializer';
 
 
 export type ElementsHeaders = {
@@ -48,9 +49,8 @@ export default class UserSubscription {
   }
 
   handleEvent(event: SubscriptionEvent) {
-    // console.log(this);
-
     const { body, eventId, headers } = event;
+    const { data } = body;
     const eventName = body.event_name;
 
     console.log('Handling event: ', event)
@@ -59,7 +59,7 @@ export default class UserSubscription {
 
     switch (eventName) {
       case 'initial_state':
-        this.parseInitialStatePayload(eventName, body, this.userStore);
+        this.parseInitialStatePayload(eventName, data, this.userStore);
       case 'added_to_room':
         // parseAddedToRoomPayload(eventName, data: apiEventData)
       case 'removed_from_room':
@@ -91,6 +91,13 @@ export default class UserSubscription {
     const roomsPayload = data.rooms;
     const userPayload = data.current_user;
 
+    const currentUser = PayloadDeserializer.createCurrentUserFromPayload(
+      userPayload,
+      this.instance,
+      this.userStore
+     );
+
+    console.log(currentUser);
 
 
   //   let receivedCurrentUser: PCCurrentUser

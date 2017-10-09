@@ -19,6 +19,18 @@ export interface UserSubscriptionOptions {
   connectCompletionHandler: (currentUser?: CurrentUser, error?: any) => void;
 }
 
+// enum APIEventName {
+//   initialState = "initial_state",
+//   addedToRoom = "added_to_room",
+//   removedFromRoom = "removed_from_room",
+//   roomUpdated = "room_updated",
+//   roomDeleted = "room_deleted",
+//   userJoined = "user_joined",
+//   userLeft = "user_left",
+//   typingStart = "typing_start",
+//   typingStop = "typing_stop",
+// }
+
 export default class UserSubscription {
   private instance: Instance;
 
@@ -36,56 +48,35 @@ export default class UserSubscription {
   }
 
   handleEvent(event: SubscriptionEvent) {
-    console.log("Handling event: ", event);
+    // console.log(this);
 
-    // guard let json = data as? [String: Any] else {
-    //     self.instance.logger.log("Failed to cast JSON object to Dictionary: \(data)", logLevel: .debug)
-    //     return
-    // }
+    const { body, eventId, headers } = event;
+    const eventName = body.event_name;
 
-    // guard let eventNameString = json["event_name"] as? String else {
-    //     self.instance.logger.log("Event name missing for API event: \(json)", logLevel: .debug)
-    //     return
-    // }
-
-    // // TODO: Decide if we even need this in the client
-    // //        guard let timestamp = json["timestamp"] as? String else {
-    // //            return
-    // //        }
-    // guard let eventName = PCAPIEventName(rawValue: eventNameString) else {
-    //     self.instance.logger.log("Unsupported API event name received: \(eventNameString)", logLevel: .debug)
-    //     return
-    // }
-
-    // guard let apiEventData = json["data"] as? [String: Any] else {
-    //     self.instance.logger.log("Data missing for API event: \(json)", logLevel: .debug)
-    //     return
-    // }
-
-    // let userId = json["user_id"] as? String
+    console.log('Handling event: ', event)
 
     // self.instance.logger.log("Received event name: \(eventNameString), and data: \(apiEventData)", logLevel: .verbose)
 
-    // switch eventName {
-    // case .initial_state:
-    //     parseInitialStatePayload(eventName, data: apiEventData, userStore: self.userStore)
-    // case .added_to_room:
-    //     parseAddedToRoomPayload(eventName, data: apiEventData)
-    // case .removed_from_room:
-    //     parseRemovedFromRoomPayload(eventName, data: apiEventData)
-    // case .room_updated:
-    //     parseRoomUpdatedPayload(eventName, data: apiEventData)
-    // case .room_deleted:
-    //     parseRoomDeletedPayload(eventName, data: apiEventData)
-    // case .user_joined:
-    //     parseUserJoinedPayload(eventName, data: apiEventData)
-    // case .user_left:
-    //     parseUserLeftPayload(eventName, data: apiEventData)
-    // case .typing_start:
-    //     parseTypingStartPayload(eventName, data: apiEventData, userId: userId!)
-    // case .typing_stop:
-    //     parseTypingStopPayload(eventName, data: apiEventData, userId: userId!)
-    // }
+    switch (eventName) {
+      case 'initial_state':
+        this.parseInitialStatePayload(eventName, body, this.userStore);
+      case 'added_to_room':
+        // parseAddedToRoomPayload(eventName, data: apiEventData)
+      case 'removed_from_room':
+        // parseRemovedFromRoomPayload(eventName, data: apiEventData)
+      case 'room_updated':
+        // parseRoomUpdatedPayload(eventName, data: apiEventData)
+      case 'room_deleted':
+        // parseRoomDeletedPayload(eventName, data: apiEventData)
+      case 'user_joined':
+        // parseUserJoinedPayload(eventName, data: apiEventData)
+      case 'user_left':
+        // parseUserLeftPayload(eventName, data: apiEventData)
+      case 'typing_start':
+        // parseTypingStartPayload(eventName, data: apiEventData, userId: userId!)
+      case 'typing_stop':
+        // parseTypingStopPayload(eventName, data: apiEventData, userId: userId!)
+    }
   }
 
   // fileprivate func callConnectCompletionHandlers(currentUser: PCCurrentUser?, error: Error?) {
@@ -94,30 +85,13 @@ export default class UserSubscription {
   //   }
   // }
 
-  // fileprivate func parseInitialStatePayload(_ eventName: PCAPIEventName, data: [String: Any], userStore: PCGlobalUserStore) {
-  //   guard let roomsPayload = data["rooms"] as? [[String: Any]] else {
-  //       callConnectCompletionHandlers(
-  //           currentUser: nil,
-  //           error: PCAPIEventError.keyNotPresentInEventPayload(
-  //               key: "rooms",
-  //               apiEventName: eventName,
-  //               payload: data
-  //           )
-  //       )
-  //       return
-  //   }
+  parseInitialStatePayload(eventName: string, data: any, userStore: GlobalUserStore) {
+    console.log(eventName, data, userStore);
 
-  //   guard let userPayload = data["current_user"] as? [String: Any] else {
-  //       callConnectCompletionHandlers(
-  //           currentUser: nil,
-  //           error: PCAPIEventError.keyNotPresentInEventPayload(
-  //               key: "user",
-  //               apiEventName: eventName,
-  //               payload: data
-  //           )
-  //       )
-  //       return
-  //   }
+    const roomsPayload = data.rooms;
+    const userPayload = data.current_user;
+
+
 
   //   let receivedCurrentUser: PCCurrentUser
 
@@ -194,7 +168,7 @@ export default class UserSubscription {
   //           }
   //       }
   //   }
-  // }
+  }
 
   // fileprivate func fetchInitialUserInformationForUserIds(_ userIds: Set<String>, currentUser: PCCurrentUser) {
   //     self.userStore.initialFetchOfUsersWithIds(userIds) { _, err in

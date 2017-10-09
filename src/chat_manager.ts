@@ -54,7 +54,7 @@ export default class ChatManager {
       path: '/users',
       tokenProvider: this.tokenProvider,
       listeners: {
-        onEvent: this.userSubscription.handleEvent,
+        onEvent: this.userSubscription.handleEvent.bind(this.userSubscription),
       }
     })
   }

@@ -3,10 +3,11 @@ import {
   SubscriptionEvent,
 } from 'pusher-platform';
 
-import GlobalUserStore from './global_user_store';
-import CurrentUser from './current_user';
 import ChatManagerDelegate from './chat_manager_delegate';
+import CurrentUser from './current_user';
+import GlobalUserStore from './global_user_store';
 import PayloadDeserializer from './payload_deserializer';
+import Room from './room';
 
 
 export type ElementsHeaders = {
@@ -79,11 +80,11 @@ export default class UserSubscription {
     }
   }
 
-  // fileprivate func callConnectCompletionHandlers(currentUser: PCCurrentUser?, error: Error?) {
-  //   for connectCompletionHandler in self.connectCompletionHandlers {
-  //     connectCompletionHandler(currentUser, error)
-  //   }
-  // }
+  callConnectCompletionHandlers(currentUser?: CurrentUser, error?: Error) {
+    this.connectCompletionHandlers.forEach(completionHandler => {
+       completionHandler(currentUser, error);
+    })
+  }
 
   parseInitialStatePayload(eventName: string, data: any, userStore: GlobalUserStore) {
     console.log(eventName, data, userStore);
@@ -91,165 +92,148 @@ export default class UserSubscription {
     const roomsPayload = data.rooms;
     const userPayload = data.current_user;
 
-    const currentUser = PayloadDeserializer.createCurrentUserFromPayload(
+    const receivedCurrentUser = PayloadDeserializer.createCurrentUserFromPayload(
       userPayload,
       this.instance,
       this.userStore
      );
 
-    console.log(currentUser);
+    const wasExistingCurrentUser = this.currentUser !== undefined;
 
+    // If the currentUser property is already set then the assumption is that there was
+    // already a user subscription and so instead of setting the property to a new
+    // CurrentUser, we update the existing one to have the most up-to-date state
+    if (this.currentUser) {
+      this.currentUser.updateWithPropertiesOf(receivedCurrentUser)
+    } else {
+      this.currentUser = receivedCurrentUser;
+    }
 
-  //   let receivedCurrentUser: PCCurrentUser
+    console.log(receivedCurrentUser);
 
-  //   do {
-  //       receivedCurrentUser = try PCPayloadDeserializer.createCurrentUserFromPayload(userPayload, instance: self.instance, userStore: userStore)
-  //   } catch let err {
-  //       callConnectCompletionHandlers(
-  //           currentUser: nil,
-  //           error: err
-  //       )
-  //       return
-  //   }
+    const receivedRoomsConstructor = roomsPayload.constructor;
 
-  //   let wasExistingCurrentUser = self.currentUser != nil
+    if (receivedRoomsConstructor !== Array) {
+      throw TypeError("`rooms` key of initial_state payload was of type `${receivedRoomsConstructor}`, expected `Array`")
+    }
 
-  //   // If the currentUser property is already set then the assumption is that there was
-  //   // already a user subscription and so instead of setting the property to a new
-  //   // PCCurrentUser, we update the existing one to have the most up-to-date state
-  //   if let currentUser = self.currentUser {
-  //       currentUser.updateWithPropertiesOf(receivedCurrentUser)
-  //   } else {
-  //       self.currentUser = receivedCurrentUser
-  //   }
+    if (roomsPayload.length === 0) {
+      // TODO: Finish setup e.g. presence sub and call completion handlers
+    }
 
-  //   // If a presenceSubscription already exists then we want to create a new one
-  //   // to ensure that the most up-to-date state is received, so we first close the
-  //   // existing subscription, if it was still open
-  //   if let presSub = self.currentUser?.presenceSubscription {
-  //       presSub.end()
-  //       self.currentUser!.presenceSubscription = nil
-  //   }
+    var combinedRoomUserIds = new Set<string>([]);
+    var roomsFromConnection: Room[] = [];
 
-  //   guard roomsPayload.count > 0 else {
-  //       self.callConnectCompletionHandlers(currentUser: self.currentUser, error: nil)
-  //       self.currentUser!.setupPresenceSubscription(delegate: self.delegate)
-  //       return
-  //   }
+    roomsPayload.forEach(roomPayload => {
+      const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
 
-  //   let roomsAddedToRoomStoreProgressCounter = PCProgressCounter(
-  //       totalCount: roomsPayload.count,
-  //       labelSuffix: "roomstore-room-append"
-  //   )
+      room.userIds.forEach(userId => {
+        combinedRoomUserIds.add(userId);
+      });
+      roomsFromConnection.push(room);
 
-  //   var combinedRoomUserIds = Set<String>()
-  //   var roomsFromConnection = [PCRoom]()
+      this.currentUser.roomStore.addOrMerge(room)
+    })
 
-  //   roomsPayload.forEach { roomPayload in
-  //       do {
-  //           let room = try PCPayloadDeserializer.createRoomFromPayload(roomPayload)
+    this.callConnectCompletionHandlers(this.currentUser);
+    this.fetchInitialUserInformationForUserIds(combinedRoomUserIds, this.currentUser);
 
-  //           combinedRoomUserIds.formUnion(room.userIds)
-  //           roomsFromConnection.append(room)
-
-  //           self.currentUser!.roomStore.addOrMerge(room) { _ in
-  //               if roomsAddedToRoomStoreProgressCounter.incrementSuccessAndCheckIfFinished() {
-  //                   self.callConnectCompletionHandlers(currentUser: self.currentUser, error: nil)
-  //                   self.fetchInitialUserInformationForUserIds(combinedRoomUserIds, currentUser: self.currentUser!)
-  //                   if wasExistingCurrentUser {
-  //                       self.reconcileExistingRoomStoreWithRoomsReceivedOnConnection(roomsFromConnection: roomsFromConnection)
-  //                   }
-  //               }
-  //           }
-  //       } catch let err {
-  //           self.instance.logger.log(
-  //               "Incomplete room payload in initial_state event: \(roomPayload). Error: \(err.localizedDescription)",
-  //               logLevel: .debug
-  //           )
-  //           if roomsAddedToRoomStoreProgressCounter.incrementFailedAndCheckIfFinished() {
-  //               self.callConnectCompletionHandlers(currentUser: self.currentUser, error: nil)
-  //               self.fetchInitialUserInformationForUserIds(combinedRoomUserIds, currentUser: self.currentUser!)
-  //               if wasExistingCurrentUser {
-  //                   self.reconcileExistingRoomStoreWithRoomsReceivedOnConnection(roomsFromConnection: roomsFromConnection)
-  //               }
-  //           }
-  //       }
-  //   }
+    if (wasExistingCurrentUser) {
+      this.reconcileExistingRoomStoreWithRoomsReceivedOnConnection(roomsFromConnection)
+    }
   }
 
-  // fileprivate func fetchInitialUserInformationForUserIds(_ userIds: Set<String>, currentUser: PCCurrentUser) {
-  //     self.userStore.initialFetchOfUsersWithIds(userIds) { _, err in
-  //         guard err == nil else {
-  //             self.instance.logger.log(
-  //                 "Unable to fetch user information after successful connection: \(err!.localizedDescription)",
-  //                 logLevel: .debug
-  //             )
-  //             return
-  //         }
+  fetchInitialUserInformationForUserIds(userIds: Set<string>, currentUser: CurrentUser) {
+    console.log("fetchInitialUserInformationForUserIds", userIds);
 
-  //         let combinedRoomUsersProgressCounter = PCProgressCounter(totalCount: currentUser.roomStore.rooms.count, labelSuffix: "room-users-combined")
+    this.userStore.initialFetchOfUsersWithIds(
+      userIds,
+      (users) => {
+        console.log("Hello", users);
+      },
+      (error) => {
+        console.log("Error");
+        // this.instance.logger.log(
+        //   `Unable to fetch user information after successful connection: ${error}`,
+        //   logLevel: .debug
+        // )
+        return
+      }
+    )
 
-  //         // TODO: This could be a lot more efficient
-  //         currentUser.roomStore.rooms.forEach { room in
-  //             let roomUsersProgressCounter = PCProgressCounter(totalCount: room.userIds.count, labelSuffix: "room-users")
+    //   self.userStore.initialFetchOfUsersWithIds(userIds) { _, err in
+    //       guard err == nil else {
+    //           self.instance.logger.log(
+    //               "Unable to fetch user information after successful connection: \(err!.localizedDescription)",
+    //               logLevel: .debug
+    //           )
+    //           return
+    //       }
 
-  //             room.userIds.forEach { userId in
-  //                 self.userStore.user(id: userId) { [weak self] user, err in
-  //                     guard let strongSelf = self else {
-  //                         print("self is nil when user store returns user after initial fetch of users")
-  //                         return
-  //                     }
+    //       let combinedRoomUsersProgressCounter = PCProgressCounter(totalCount: currentUser.roomStore.rooms.count, labelSuffix: "room-users-combined")
 
-  //                     guard let user = user, err == nil else {
-  //                         strongSelf.instance.logger.log(
-  //                             "Unable to add user with id \(userId) to room \(room.name): \(err!.localizedDescription)",
-  //                             logLevel: .debug
-  //                         )
-  //                         if roomUsersProgressCounter.incrementFailedAndCheckIfFinished() {
-  //                             room.subscription?.delegate?.usersUpdated()
-  //                             strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
+    //       // TODO: This could be a lot more efficient
+    //       currentUser.roomStore.rooms.forEach { room in
+    //           let roomUsersProgressCounter = PCProgressCounter(totalCount: room.userIds.count, labelSuffix: "room-users")
 
-  //                             if combinedRoomUsersProgressCounter.incrementFailedAndCheckIfFinished() {
-  //                                 currentUser.setupPresenceSubscription(delegate: strongSelf.delegate)
-  //                             }
-  //                         }
+    //           room.userIds.forEach { userId in
+    //               self.userStore.user(id: userId) { [weak self] user, err in
+    //                   guard let strongSelf = self else {
+    //                       print("self is nil when user store returns user after initial fetch of users")
+    //                       return
+    //                   }
 
-  //                         return
-  //                     }
+    //                   guard let user = user, err == nil else {
+    //                       strongSelf.instance.logger.log(
+    //                           "Unable to add user with id \(userId) to room \(room.name): \(err!.localizedDescription)",
+    //                           logLevel: .debug
+    //                       )
+    //                       if roomUsersProgressCounter.incrementFailedAndCheckIfFinished() {
+    //                           room.subscription?.delegate?.usersUpdated()
+    //                           strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
 
-  //                     room.userStore.addOrMerge(user)
+    //                           if combinedRoomUsersProgressCounter.incrementFailedAndCheckIfFinished() {
+    //                               currentUser.setupPresenceSubscription(delegate: strongSelf.delegate)
+    //                           }
+    //                       }
 
-  //                     if roomUsersProgressCounter.incrementSuccessAndCheckIfFinished() {
-  //                         room.subscription?.delegate?.usersUpdated()
-  //                         strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
+    //                       return
+    //                   }
 
-  //                         if combinedRoomUsersProgressCounter.incrementSuccessAndCheckIfFinished() {
-  //                             currentUser.setupPresenceSubscription(delegate: strongSelf.delegate)
-  //                         }
-  //                     }
-  //                 }
-  //             }
-  //         }
-  //     }
-  // }
+    //                   room.userStore.addOrMerge(user)
 
-  // fileprivate func reconcileExistingRoomStoreWithRoomsReceivedOnConnection(roomsFromConnection: [PCRoom]) {
-  //     guard let currentUser = self.currentUser else {
-  //         self.instance.logger.log("currentUser property not set on PCUserSubscription", logLevel: .error)
-  //         self.delegate.error(error: PCError.currentUserIsNil)
-  //         return
-  //     }
+    //                   if roomUsersProgressCounter.incrementSuccessAndCheckIfFinished() {
+    //                       room.subscription?.delegate?.usersUpdated()
+    //                       strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
 
-  //     let roomStoreRooms = Set<PCRoom>(currentUser.roomStore.rooms.underlyingArray)
-  //     let mostRecentConnectionRooms = Set<PCRoom>(roomsFromConnection)
-  //     let noLongerAMemberOfRooms = roomStoreRooms.subtracting(mostRecentConnectionRooms)
+    //                       if combinedRoomUsersProgressCounter.incrementSuccessAndCheckIfFinished() {
+    //                           currentUser.setupPresenceSubscription(delegate: strongSelf.delegate)
+    //                       }
+    //                   }
+    //               }
+    //           }
+    //       }
+    //   }
+  }
 
-  //     noLongerAMemberOfRooms.forEach { room in
+  reconcileExistingRoomStoreWithRoomsReceivedOnConnection(roomsFromConnection: Room[]) {
+    console.log("reconcileExistingRoomStoreWithRoomsReceivedOnConnection", roomsFromConnection);
+      // guard let currentUser = self.currentUser else {
+      //     self.instance.logger.log("currentUser property not set on PCUserSubscription", logLevel: .error)
+      //     self.delegate.error(error: PCError.currentUserIsNil)
+      //     return
+      // }
 
-  //         // TODO: Not sure if this is the best way of communicating that while the subscription
-  //         // was closed there was an event that meant that the current user is no longer a
-  //         // member of a given room
-  //         self.delegate.removedFromRoom(room: room)
-  //     }
-  // }
+      // let roomStoreRooms = Set<PCRoom>(currentUser.roomStore.rooms.underlyingArray)
+      // let mostRecentConnectionRooms = Set<PCRoom>(roomsFromConnection)
+      // let noLongerAMemberOfRooms = roomStoreRooms.subtracting(mostRecentConnectionRooms)
+
+      // noLongerAMemberOfRooms.forEach { room in
+
+      //     // TODO: Not sure if this is the best way of communicating that while the subscription
+      //     // was closed there was an event that meant that the current user is no longer a
+      //     // member of a given room
+      //     self.delegate.removedFromRoom(room: room)
+      // }
+  }
 }

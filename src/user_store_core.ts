@@ -16,4 +16,8 @@ export default class UserStoreCore {
     // TODO: Implement properly
     return undefined;
   }
+
+  find(id: string): User | undefined {
+    const user = Array.from(this.users.values()).find(el => { el.id === id });
+  }
 }

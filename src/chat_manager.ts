@@ -33,6 +33,7 @@ export default class ChatManager {
       instanceId: options.instanceId,
       serviceName: 'chatkit',
       serviceVersion: 'v1',
+      tokenProvider: options.tokenProvider,
       // TODO: logger,
     });
 
@@ -52,7 +53,6 @@ export default class ChatManager {
 
     this.instance.subscribeNonResuming({
       path: '/users',
-      tokenProvider: this.tokenProvider,
       listeners: {
         onEvent: this.userSubscription.handleEvent.bind(this.userSubscription),
       }

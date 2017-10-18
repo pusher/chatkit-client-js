@@ -105,14 +105,15 @@ export default class GlobalUserStore {
 
   // This will do the de-duping of userIds
 
-  fetchUsersWithIds(userIds: Set<string>, onSuccess: (users: User[]) => void, onError: (error: Error) => void) {
-    if (userIds.size === 0) {
+  fetchUsersWithIds(userIds: string[], onSuccess: (users: User[]) => void, onError: (error: Error) => void) {
+    if (userIds.length === 0) {
+      // TODO: Log something
       // this.instance.logger.log("Requested to fetch users for a list of user ids which was empty", logLevel: .debug);
       onSuccess([]);
       return
     }
 
-    const userIdsString = Array.from(userIds.values()).join(',');
+    const userIdsString = userIds.join(',');
     const qs = queryString({ user_ids: userIdsString });
 
     this.instance.request({
@@ -135,7 +136,8 @@ export default class GlobalUserStore {
     })
   }
 
-  initialFetchOfUsersWithIds(userIds: Set<string>, onSuccess: (users: User[]) => void, onError: (error: Error) => void) {
+  initialFetchOfUsersWithIds(userIds: string[], onSuccess: (users: User[]) => void, onError: (error: Error) => void) {
+    console.log("initialFetchOfUserIds", userIds);
     this.fetchUsersWithIds(userIds, onSuccess, onError);
   }
 }

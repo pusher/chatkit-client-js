@@ -66,10 +66,10 @@ export default class PayloadDeserializer {
       }
     });
 
-    let memberUserIdsSet: Set<string>;
+    let memberUserIds: Array<string>;
 
     if (roomPayload.member_user_ids) {
-      memberUserIdsSet = new Set<string>(roomPayload.member_user_ids);
+      memberUserIds = roomPayload.member_user_ids;
     }
 
     return new Room({
@@ -80,7 +80,7 @@ export default class PayloadDeserializer {
       createdAt: roomPayload.created_at,
       updatedAt: roomPayload.updated_at,
       deletedAt: roomPayload.deleted_at,
-      userIds: memberUserIdsSet,
+      userIds: memberUserIds,
     });
   }
 

@@ -19,6 +19,10 @@ export default class RoomStore {
     this.instance = options.instance;
   }
 
+  room(id: number, onSuccess: (room: Room) => void, onError: (error: Error) => void) {
+    this.findOrGetRoom(id, onSuccess, onError);
+  }
+
   addOrMerge(room: Room): Room {
     const existingRoom = this.rooms.find(el => el.id === room.id);
 
@@ -43,7 +47,7 @@ export default class RoomStore {
   }
 
   findOrGetRoom(id: number, onSuccess: (room: Room) => void, onError: (error: Error) => void) {
-    const room = this.rooms.find(el => { el.id === id });
+    const room = this.rooms.find(el => el.id === id);
     if (room) {
       onSuccess(room);
     } else {

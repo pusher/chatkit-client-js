@@ -8,6 +8,7 @@ import CurrentUser from './current_user';
 import GlobalUserStore from './global_user_store';
 import PayloadDeserializer from './payload_deserializer';
 import Room from './room';
+import User from './user';
 
 
 export type ElementsHeaders = {
@@ -20,18 +21,6 @@ export interface UserSubscriptionOptions {
   delegate?: ChatManagerDelegate;
   connectCompletionHandler: (currentUser?: CurrentUser, error?: any) => void;
 }
-
-// enum APIEventName {
-//   initialState = "initial_state",
-//   addedToRoom = "added_to_room",
-//   removedFromRoom = "removed_from_room",
-//   roomUpdated = "room_updated",
-//   roomDeleted = "room_deleted",
-//   userJoined = "user_joined",
-//   userLeft = "user_left",
-//   typingStart = "typing_start",
-//   typingStop = "typing_stop",
-// }
 
 export default class UserSubscription {
   private instance: Instance;
@@ -61,22 +50,31 @@ export default class UserSubscription {
     switch (eventName) {
       case 'initial_state':
         this.parseInitialStatePayload(eventName, data, this.userStore);
+        break;
       case 'added_to_room':
-        // parseAddedToRoomPayload(eventName, data: apiEventData)
+        this.parseAddedToRoomPayload(eventName, data);
+        break;
       case 'removed_from_room':
-        // parseRemovedFromRoomPayload(eventName, data: apiEventData)
+        this.parseRemovedFromRoomPayload(eventName, data);
+        break;
       case 'room_updated':
-        // parseRoomUpdatedPayload(eventName, data: apiEventData)
+        this.parseRoomUpdatedPayload(eventName, data);
+        break;
       case 'room_deleted':
-        // parseRoomDeletedPayload(eventName, data: apiEventData)
+        this.parseRoomDeletedPayload(eventName, data);
+        break;
       case 'user_joined':
-        // parseUserJoinedPayload(eventName, data: apiEventData)
+        this.parseUserJoinedPayload(eventName, data);
+        break;
       case 'user_left':
-        // parseUserLeftPayload(eventName, data: apiEventData)
+        this.parseUserLeftPayload(eventName, data);
+        break;
       case 'typing_start':
-        // parseTypingStartPayload(eventName, data: apiEventData, userId: userId!)
+        this.parseTypingStartPayload(eventName, data, data.user_id);
+        break;
       case 'typing_stop':
-        // parseTypingStopPayload(eventName, data: apiEventData, userId: userId!)
+        this.parseTypingStopPayload(eventName, data, data.user_id);
+        break;
     }
   }
 
@@ -139,19 +137,65 @@ export default class UserSubscription {
     this.fetchInitialUserInformationForUserIds(combinedRoomUserIds, this.currentUser);
 
     if (wasExistingCurrentUser) {
-      this.reconcileExistingRoomStoreWithRoomsReceivedOnConnection(roomsFromConnection)
+      this.reconcileExistingRoomStoreWithRoomsReceivedOnConnection(roomsFromConnection);
     }
   }
 
   fetchInitialUserInformationForUserIds(userIds: Set<string>, currentUser: CurrentUser) {
     console.log("fetchInitialUserInformationForUserIds", userIds);
+    const userIdsArray: string[] = Array.from(userIds.values());
 
     this.userStore.initialFetchOfUsersWithIds(
-      userIds,
+      userIdsArray,
       (users) => {
-        console.log("Hello", users);
+        const combinedRoomUsersPromises = new Array<Promise<any>>();
+
+        this.currentUser.roomStore.rooms.forEach(room => {
+          const roomPromise = new Promise<any>((roomResolve, roomReject) => {
+            const roomUsersPromises = new Array<Promise<any>>();
+
+            room.userIds.forEach(userId => {
+              const userPromise = new Promise<any>((userResolve, userReject) => {
+                this.userStore.user(
+                  userId,
+                  (user) => {
+                    // TODO: Do some logging
+
+                    room.userStore.addOrMerge(user);
+                    userResolve();
+                  },
+                  (error) => {
+                    // TODO: Do some logging
+                    userReject();
+                  }
+                )
+              });
+              roomUsersPromises.push(userPromise);
+            });
+
+            // TODO: When all room user promises done:
+
+            this.allPromisesSettled(roomUsersPromises).then(() => {
+              console.log("All promises settled for fetching room users");
+              // room.subscription?.delegate?.usersUpdated();
+              // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
+              roomResolve();
+            })
+          });
+
+          combinedRoomUsersPromises.push(roomPromise);
+        });
+
+        // TODO: When all promises done:
+
+        this.allPromisesSettled(combinedRoomUsersPromises).then(() => {
+          console.log("All promises settled for fetching ALLLLLLLL room users");
+          // this.currentUser.setupPresenceSubscription(delegate: strongSelf.delegate);
+          // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
+        })
       },
       (error) => {
+        // TODO: Error handling and logging
         console.log("Error");
         // this.instance.logger.log(
         //   `Unable to fetch user information after successful connection: ${error}`,
@@ -160,80 +204,398 @@ export default class UserSubscription {
         return
       }
     )
-
-    //   self.userStore.initialFetchOfUsersWithIds(userIds) { _, err in
-    //       guard err == nil else {
-    //           self.instance.logger.log(
-    //               "Unable to fetch user information after successful connection: \(err!.localizedDescription)",
-    //               logLevel: .debug
-    //           )
-    //           return
-    //       }
-
-    //       let combinedRoomUsersProgressCounter = PCProgressCounter(totalCount: currentUser.roomStore.rooms.count, labelSuffix: "room-users-combined")
-
-    //       // TODO: This could be a lot more efficient
-    //       currentUser.roomStore.rooms.forEach { room in
-    //           let roomUsersProgressCounter = PCProgressCounter(totalCount: room.userIds.count, labelSuffix: "room-users")
-
-    //           room.userIds.forEach { userId in
-    //               self.userStore.user(id: userId) { [weak self] user, err in
-    //                   guard let strongSelf = self else {
-    //                       print("self is nil when user store returns user after initial fetch of users")
-    //                       return
-    //                   }
-
-    //                   guard let user = user, err == nil else {
-    //                       strongSelf.instance.logger.log(
-    //                           "Unable to add user with id \(userId) to room \(room.name): \(err!.localizedDescription)",
-    //                           logLevel: .debug
-    //                       )
-    //                       if roomUsersProgressCounter.incrementFailedAndCheckIfFinished() {
-    //                           room.subscription?.delegate?.usersUpdated()
-    //                           strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
-
-    //                           if combinedRoomUsersProgressCounter.incrementFailedAndCheckIfFinished() {
-    //                               currentUser.setupPresenceSubscription(delegate: strongSelf.delegate)
-    //                           }
-    //                       }
-
-    //                       return
-    //                   }
-
-    //                   room.userStore.addOrMerge(user)
-
-    //                   if roomUsersProgressCounter.incrementSuccessAndCheckIfFinished() {
-    //                       room.subscription?.delegate?.usersUpdated()
-    //                       strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
-
-    //                       if combinedRoomUsersProgressCounter.incrementSuccessAndCheckIfFinished() {
-    //                           currentUser.setupPresenceSubscription(delegate: strongSelf.delegate)
-    //                       }
-    //                   }
-    //               }
-    //           }
-    //       }
-    //   }
   }
 
   reconcileExistingRoomStoreWithRoomsReceivedOnConnection(roomsFromConnection: Room[]) {
     console.log("reconcileExistingRoomStoreWithRoomsReceivedOnConnection", roomsFromConnection);
-      // guard let currentUser = self.currentUser else {
-      //     self.instance.logger.log("currentUser property not set on PCUserSubscription", logLevel: .error)
-      //     self.delegate.error(error: PCError.currentUserIsNil)
-      //     return
-      // }
+    if (!this.currentUser) {
+      // TODO: Some logging, maybe error
+      return;
+    }
 
-      // let roomStoreRooms = Set<PCRoom>(currentUser.roomStore.rooms.underlyingArray)
-      // let mostRecentConnectionRooms = Set<PCRoom>(roomsFromConnection)
-      // let noLongerAMemberOfRooms = roomStoreRooms.subtracting(mostRecentConnectionRooms)
+    const roomStoreRooms = this.currentUser.roomStore.rooms;
+    const mostRecentConnectionRoomsSet = new Set<Room>(roomsFromConnection);
 
-      // noLongerAMemberOfRooms.forEach { room in
+    const noLongerAMemberOfRooms = roomStoreRooms.filter(room => !mostRecentConnectionRoomsSet.has(room));
 
-      //     // TODO: Not sure if this is the best way of communicating that while the subscription
-      //     // was closed there was an event that meant that the current user is no longer a
-      //     // member of a given room
-      //     self.delegate.removedFromRoom(room: room)
-      // }
+    noLongerAMemberOfRooms.forEach(room => {
+      // TODO: Not sure if this is the best way of communicating that while the subscription
+      // was closed there was an event that meant that the current user is no longer a
+      // member of a given room
+
+      // TODO: Finish implementation
+      // self.delegate.removedFromRoom(room: room)
+    });
+  }
+
+  allPromisesSettled = (promises) => {
+    return Promise.all(promises.map(p => Promise.resolve(p).then(v => ({
+      state: 'fulfilled',
+      value: v,
+    }), r => ({
+      state: 'rejected',
+      reason: r,
+    }))));
+  }
+
+  parseAddedToRoomPayload(eventName: string, data: any) {
+    // TODO: Delegate stuff
+
+    const roomPayload = data.room;
+
+    if (roomPayload === undefined || (typeof roomPayload) !== 'object') {
+      console.log("Room payload undefined or not an object", roomPayload);
+      //         self.delegate.error(
+      //             error: PCAPIEventError.keyNotPresentInEventPayload(
+      //                 key: "room_id",
+      //                 apiEventName: eventName,
+      //                 payload: data
+      //             )
+      //         )
+      return;
+    }
+
+    const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
+    const roomAdded = this.currentUser.roomStore.addOrMerge(room);
+
+    // self.delegate.addedToRoom(room: room)
+    // self.instance.logger.log("Added to room: \(room.name)", logLevel: .verbose)
+
+    roomAdded.userIds.forEach
+
+    const roomUsersPromises = new Array<Promise<any>>();
+
+    roomAdded.userIds.forEach(userId => {
+      const userPromise = new Promise<any>((resolve, reject) => {
+        this.userStore.user(
+          userId,
+          (user) => {
+            // TODO: Do some logging
+
+            room.userStore.addOrMerge(user);
+            resolve();
+          },
+          (error) => {
+            // TODO: Do some logging
+            reject();
+          }
+        )
+      });
+      roomUsersPromises.push(userPromise);
+    });
+
+    // TODO: When all room user promises done:
+
+    this.allPromisesSettled(roomUsersPromises).then(() => {
+      console.log("All promises settled for fetching room users after addedToRoom");
+      // room.subscription?.delegate?.usersUpdated();
+      // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
+    })
+  }
+
+  parseRemovedFromRoomPayload(eventName: string, data: any) {
+    // TODO: Delegate stuff
+
+    const roomId = data.room_id;
+
+    if (roomId === undefined || (typeof roomId) !== 'number') {
+      //         self.delegate.error(
+      //             error: PCAPIEventError.keyNotPresentInEventPayload(
+      //                 key: "room_id",
+      //                 apiEventName: eventName,
+      //                 payload: data
+      //             )
+      //         )
+      return;
+    }
+
+    const roomRemoved = this.currentUser.roomStore.remove(roomId);
+
+    if (roomRemoved) {
+      // self.delegate.removedFromRoom(room: roomRemovedFrom)
+      // self.instance.logger.log("Removed from room: \(roomRemovedFrom.name)", logLevel: .verbose)
+    } else {
+      // self.instance.logger.log("Received \(eventName.rawValue) API event but room \(roomId) not found in local store of joined rooms", logLevel: .debug)
+      return
+    }
+  }
+
+  parseRoomUpdatedPayload(eventName: string, data: any) {
+    const roomPayload = data.room;
+
+    if (roomPayload === undefined || (typeof roomPayload) !== 'object') {
+      console.log("Room payload undefined or not an object", roomPayload);
+      //         self.delegate.error(
+      //             error: PCAPIEventError.keyNotPresentInEventPayload(
+      //                 key: "room_id",
+      //                 apiEventName: eventName,
+      //                 payload: data
+      //             )
+      //         )
+      return;
+    }
+
+    const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
+
+    this.currentUser.roomStore.room(
+      room.id,
+      (roomToUpdate) => {
+        console.log("New room stuff is ", room, "and roomToUpdate is: ", roomToUpdate);
+        roomToUpdate.updateWithPropertiesOfRoom(room);
+
+        console.log("roomToUpdate is now", roomToUpdate);
+
+        // self.delegate.roomUpdated(room: roomToUpdate)
+        // self.instance.logger.log("Room updated: \(room.name)", logLevel: .verbose)
+      },
+      (error) => {
+        // TODO: logging
+      }
+    )
+  }
+
+  parseRoomDeletedPayload(eventName: string, data: any) {
+    const roomId = data.room_id;
+
+    if (roomId === undefined || (typeof roomId) !== 'number') {
+      //         self.delegate.error(
+      //             error: PCAPIEventError.keyNotPresentInEventPayload(
+      //                 key: "room_id",
+      //                 apiEventName: eventName,
+      //                 payload: data
+      //             )
+      //         )
+      return;
+    }
+
+    const deletedRoom = this.currentUser.roomStore.remove(roomId);
+
+    if (deletedRoom) {
+      // self.delegate.roomDeleted(room: deletedRoom)
+      // self.instance.logger.log("Room deleted: \(deletedRoom.name)", logLevel: .verbose)
+    } else {
+      // self.instance.logger.log("Room \(roomId) was deleted but was not found in local store of joined rooms", logLevel: .debug)
+      return;
+    }
+  }
+
+  parseUserJoinedPayload(eventName: string, data: any) {
+    const roomId = data.room_id;
+
+    if (roomId === undefined || (typeof roomId) !== 'number') {
+      //         self.delegate.error(
+      //             error: PCAPIEventError.keyNotPresentInEventPayload(
+      //                 key: "room_id",
+      //                 apiEventName: eventName,
+      //                 payload: data
+      //             )
+      //         )
+      return;
+    }
+
+    const userId = data.user_id;
+
+    if (userId === undefined || (typeof userId) !== 'string') {
+      //         self.delegate.error(
+      //             error: PCAPIEventError.keyNotPresentInEventPayload(
+      //                 key: "room_id",
+      //                 apiEventName: eventName,
+      //                 payload: data
+      //             )
+      //         )
+      return;
+    }
+
+    this.currentUser.roomStore.room(
+      roomId,
+      (room) => {
+        this.currentUser.userStore.user(
+          userId,
+          (user) => {
+            const addedOrMergedUser = room.userStore.addOrMerge(user);
+            if (room.userIds.indexOf(addedOrMergedUser.id) === -1) {
+              room.userIds.push(addedOrMergedUser.id);
+              console.log("addedOrMergedUser.id", addedOrMergedUser.id, "joined ", room.name);
+            }
+
+      //         strongSelf.delegate.userJoinedRoom(room: room, user: addedOrMergedUser)
+      //         room.subscription?.delegate?.userJoined(user: addedOrMergedUser)
+      //         strongSelf.instance.logger.log("User \(user.displayName) joined room: \(room.name)", logLevel: .verbose)
+          },
+          (error) => {
+            // strongSelf.instance.logger.log(
+            //   "User with id \(userId) joined room with id \(roomId) but no information about the user could be retrieved. Error was: \(err!.localizedDescription)",
+            //   logLevel: .error
+            // )
+            // strongSelf.delegate.error(error: err!)
+            return;
+          }
+        )
+
+
+      },
+      (error) => {
+        // TODO: logging
+
+        // self.instance.logger.log(
+        //   "User with id \(userId) joined room with id \(roomId) but no information about the room could be retrieved. Error was: \(err!.localizedDescription)",
+        //   logLevel: .error
+        // )
+        // self.delegate.error(error: err!)
+        return;
+      }
+    )
+  }
+
+  parseUserLeftPayload(eventName: string, data: any) {
+    const roomId = data.room_id;
+
+    if (roomId === undefined || (typeof roomId) !== 'number') {
+      //         self.delegate.error(
+      //             error: PCAPIEventError.keyNotPresentInEventPayload(
+      //                 key: "room_id",
+      //                 apiEventName: eventName,
+      //                 payload: data
+      //             )
+      //         )
+      return;
+    }
+
+    const userId = data.user_id;
+
+    if (userId === undefined || (typeof userId) !== 'string') {
+      //         self.delegate.error(
+      //             error: PCAPIEventError.keyNotPresentInEventPayload(
+      //                 key: "room_id",
+      //                 apiEventName: eventName,
+      //                 payload: data
+      //             )
+      //         )
+      return;
+    }
+
+    this.currentUser.roomStore.room(
+      roomId,
+      (room) => {
+        this.currentUser.userStore.user(
+          userId,
+          (user) => {
+            const roomUserIdIndex = room.userIds.indexOf(user.id);
+
+            if (roomUserIdIndex > -1) {
+              room.userIds.splice(roomUserIdIndex, 1);
+              console.log("user", user.id, "left ", room.name);
+            }
+
+            room.userStore.remove(user.id);
+
+            // strongSelf.delegate.userLeftRoom(room: room, user: user)
+            // room.subscription?.delegate?.userLeft(user: user)
+            // strongSelf.instance.logger.log("User \(user.displayName) left room: \(room.name)", logLevel: .verbose)
+          },
+          (error) => {
+            // strongSelf.instance.logger.log(
+            //   "User with id \(userId) left room with id \(roomId) but no information about the user could be retrieved. Error was: \(err!.localizedDescription)",
+            //   logLevel: .error
+            // )
+            // strongSelf.delegate.error(error: err!)
+            return;
+          }
+        )
+
+
+      },
+      (error) => {
+        // TODO: logging
+
+        // self.instance.logger.log(
+        //   "User with id \(userId) joined room with id \(roomId) but no information about the room could be retrieved. Error was: \(err!.localizedDescription)",
+        //   logLevel: .error
+        // )
+        // self.delegate.error(error: err!)
+        return;
+      }
+    )
+  }
+
+  parseTypingStartPayload(eventName: string, data: any, userId: string) {
+    const roomId = data.room_id;
+
+    if (roomId === undefined || (typeof roomId) !== 'number') {
+      //         self.delegate.error(
+      //             error: PCAPIEventError.keyNotPresentInEventPayload(
+      //                 key: "room_id",
+      //                 apiEventName: eventName,
+      //                 payload: data
+      //             )
+      //         )
+      return;
+    }
+
+    this.currentUser.roomStore.room(
+      roomId,
+      (room) => {
+        this.currentUser.userStore.user(
+          userId,
+          (user) => {
+            console.log("User ", user.id, " started typing in room ", room.name);
+            // strongSelf.delegate.userStartedTyping(room: room, user: user)
+            // room.subscription?.delegate?.userStartedTyping(user: user)
+            // strongSelf.instance.logger.log("\(user.displayName) started typing in room \(room.name)", logLevel: .verbose)
+          },
+          (error) => {
+            // strongSelf.instance.logger.log(err!.localizedDescription, logLevel: .error)
+            // strongSelf.delegate.error(error: err!)
+            return;
+          }
+        )
+      },
+      (error) => {
+        // self.instance.logger.log(err!.localizedDescription, logLevel: .error)
+        // self.delegate.error(error: err!)
+        return;
+      }
+    );
+  }
+
+  parseTypingStopPayload(eventName: string, data: any, userId: string) {
+    const roomId = data.room_id;
+
+    if (roomId === undefined || (typeof roomId) !== 'number') {
+      //         self.delegate.error(
+      //             error: PCAPIEventError.keyNotPresentInEventPayload(
+      //                 key: "room_id",
+      //                 apiEventName: eventName,
+      //                 payload: data
+      //             )
+      //         )
+      return;
+    }
+
+    this.currentUser.roomStore.room(
+      roomId,
+      (room) => {
+        this.currentUser.userStore.user(
+          userId,
+          (user) => {
+            console.log("User ", user.id, " stopped typing in room ", room.name);
+
+            // strongSelf.delegate.userStoppedTyping(room: room, user: user)
+            // room.subscription?.delegate?.userStoppedTyping(user: user)
+            // strongSelf.instance.logger.log("\(user.displayName) stopped typing in room \(room.name)", logLevel: .verbose)
+          },
+          (error) => {
+            // strongSelf.instance.logger.log(err!.localizedDescription, logLevel: .error)
+            // strongSelf.delegate.error(error: err!)
+            return;
+          }
+        )
+      },
+      (error) => {
+        // self.instance.logger.log(err!.localizedDescription, logLevel: .error)
+        // self.delegate.error(error: err!)
+        return;
+      }
+    );
   }
 }

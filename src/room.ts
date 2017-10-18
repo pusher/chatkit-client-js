@@ -8,7 +8,7 @@ export interface RoomOptions {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
-  userIds?: Set<string>;
+  userIds?: Array<string>;
 }
 
 export default class Room {
@@ -20,7 +20,7 @@ export default class Room {
   updatedAt: string;
   deletedAt: string;
 
-  userIds: Set<string>;
+  userIds: Array<string>;
 
   userStore: RoomUserStore;
 

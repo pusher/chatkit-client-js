@@ -1,7 +1,17 @@
-enum PresenceState {
-  online,
-  offline,
-  unknown,
-}
+export default class PresenceState {
+  stringValue: string;
 
-export default PresenceState;
+  constructor(state: string) {
+    switch (state) {
+      case 'online':
+        this.stringValue = state;
+        break;
+      case 'offline':
+        this.stringValue = state;
+        break;
+      default:
+        this.stringValue = 'unknown';
+        break;
+    }
+  }
+}

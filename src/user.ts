@@ -27,11 +27,11 @@ export default class User {
     this.name = options.name;
     this.avatarURL = options.avatarURL;
     this.customData = options.customData;
-    this.presenceState = PresenceState.unknown;
+    this.presenceState = new PresenceState('unknown');
   }
 
   updateWithPropertiesOfUser(user: User) {
-    if (user.presenceState != PresenceState.unknown) {
+    if (user.presenceState.stringValue !== 'unknown') {
       this.presenceState = user.presenceState;
       this.lastSeenAt = user.lastSeenAt;
     }
@@ -40,7 +40,7 @@ export default class User {
   }
 
   updatePresenceInfoIfAppropriate(newInfoPayload: PresencePayload) {
-    if (newInfoPayload.state != PresenceState.unknown) {
+    if (newInfoPayload.state.stringValue !== 'unknown') {
       this.presenceState = newInfoPayload.state;
       this.lastSeenAt = newInfoPayload.lastSeenAt;
     }

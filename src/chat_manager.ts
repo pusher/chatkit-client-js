@@ -34,6 +34,7 @@ export default class ChatManager {
       serviceName: 'chatkit',
       serviceVersion: 'v1',
       tokenProvider: options.tokenProvider,
+      client: options.baseClient,
       // TODO: logger,
     });
 

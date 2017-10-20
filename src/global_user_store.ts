@@ -2,10 +2,12 @@ import {
   Instance
 } from 'pusher-platform';
 
+import PayloadDeserializer from './payload_deserializer';
+import PresencePayload from './presence_payload';
 import User from './user';
 import UserStoreCore from './user_store_core';
-import PayloadDeserializer from './payload_deserializer';
-import { queryString } from './utils';
+
+import { queryString, allPromisesSettled } from './utils';
 
 
 export interface GlobalUserStoreOptions {
@@ -60,50 +62,45 @@ export default class GlobalUserStore {
     })
   }
 
-  // func handleInitialPresencePayloadsAfterRoomJoin(_ payloads: [PCPresencePayload], completionHandler: @escaping () -> Void) {
-  //     let roomJoinedPresenceProgressCounter = PCProgressCounter(totalCount: payloads.count, labelSuffix: "room-joined-presence-payload")
-  //     self.handleInitialPresencePayloads(payloads, progressCounter: roomJoinedPresenceProgressCounter, completionHandler: completionHandler)
+  handleInitialPresencePayloadsAfterRoomJoin(payloads: PresencePayload[], onComplete: () => void) {
+    this.handleInitialPresencePayloads(payloads, onComplete);
+  }
+
+  // handleInitialPresencePayloads(payloads: PCPresencePayload[], onComplete: () => void) {
+  //   this.handleInitialPresencePayloads(payloads, onComplete);
   // }
 
-  // func handleInitialPresencePayloads(_ payloads: [PCPresencePayload], completionHandler: @escaping () -> Void) {
-  //     let initialPresenceProgressCounter = PCProgressCounter(totalCount: payloads.count, labelSuffix: "initial-presence-payload")
-  //     self.handleInitialPresencePayloads(payloads, progressCounter: initialPresenceProgressCounter, completionHandler: completionHandler)
-  // }
+  handleInitialPresencePayloads(payloads: PresencePayload[], onComplete: () => void) {
+    const presencePayloadPromises = new Array<Promise<any>>();
 
-  // private func handleInitialPresencePayloads(_ payloads: [PCPresencePayload], progressCounter: PCProgressCounter, completionHandler: @escaping () -> Void) {
-  //     let presenceProgressCounter = progressCounter
+    payloads.forEach(payload => {
+      const presencePromise = new Promise<any>((resolve, reject) => {
+        this.user(
+          payload.userId,
+          (user) => {
+            user.updatePresenceInfoIfAppropriate(payload);
+            resolve();
+          },
+          (error) => {
+            // TODO: Logging
+            reject();
+          }
+        )
+      })
 
-  //     payloads.forEach { payload in
-  //         self.user(id: payload.userId) { [weak self] user, err in
-  //             guard let strongSelf = self else {
-  //                 print("self is nil when user store returns user when handling intitial presence payload event")
-  //                 return
-  //             }
+      presencePayloadPromises.push(presencePromise);
+    })
 
-  //             guard let user = user, err == nil else {
-  //                 strongSelf.instance.logger.log(err!.localizedDescription, logLevel: .error)
-  //                 if presenceProgressCounter.incrementFailedAndCheckIfFinished() {
-  //                     completionHandler()
-  //                 }
-
-  //                 return
-  //             }
-
-  //             user.updatePresenceInfoIfAppropriate(newInfoPayload: payload)
-
-  //             if presenceProgressCounter.incrementSuccessAndCheckIfFinished() {
-  //                 completionHandler()
-  //             }
-  //         }
-  //     }
-  // }
+    allPromisesSettled(presencePayloadPromises).then(() => {
+      console.log("All promises settled for handling presence payloads");
+      onComplete();
+    })
+  }
 
   // TODO: Need a version of this that first checks the userStore for any of the userIds
   // provided and then only makes a request to fetch the user information for the userIds
   // that aren't known about. This would be used in the creatRoom callback and the
   // addedToRoom parsing function
-
-  // This will do the de-duping of userIds
 
   fetchUsersWithIds(userIds: string[], onSuccess: (users: User[]) => void, onError: (error: Error) => void) {
     if (userIds.length === 0) {
@@ -122,6 +119,7 @@ export default class GlobalUserStore {
     }).then(res => {
       const usersPayload = JSON.parse(res);
 
+      // TODO: Make it more like flatMap, or handle errors being thrown?
       const users = usersPayload.map(userPayload => {
         const user = PayloadDeserializer.createUserFromPayload(userPayload);
         const addedOrUpdatedUser = this.userStoreCore.addOrMerge(user);

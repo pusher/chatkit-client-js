@@ -2,13 +2,14 @@ import {
   Instance,
 } from 'pusher-platform';
 
-import GlobalUserStore from './global_user_store';
-import BasicUser from './basic_user';
 import BasicMessage from './basic_message';
-import PresencePayload from './presence_payload';
+import BasicUser from './basic_user';
 import CurrentUser from './current_user';
-import User from './user';
+import GlobalUserStore from './global_user_store';
+import PresencePayload from './presence_payload';
+import PresenceState from './presence_state';
 import Room from './room';
+import User from './user';
 
 
 export default class PayloadDeserializer {
@@ -84,13 +85,68 @@ export default class PayloadDeserializer {
     });
   }
 
-  // static createBasicMessageFromPayload(messagePayload: any): BasicMessage {
+  // This returns a PCBasicMessage mainly to signal that it needs to be enriched with
+  // information about its associated sender and the room it belongs to
+  static createBasicMessageFromPayload(messagePayload: any): BasicMessage {
+    const requiredFieldsWithTypes = {
+      id: 'number',
+      user_id: 'string',
+      room_id: 'number',
+      text: 'string',
+      created_at: 'string',
+      updated_at: 'string',
+    };
 
-  // }
+    Object.keys(requiredFieldsWithTypes).forEach(key => {
+      if (messagePayload[key] === undefined) {
+        throw new Error(`Payload missing key: ${key}`);
+      }
 
-  // static createPresencePayloadFromPayload(payload: any): PresencePayload {
+      const receivedType = typeof messagePayload[key];
+      const expectedType = requiredFieldsWithTypes[key];
 
-  // }
+      if (receivedType !== expectedType) {
+        throw new Error(`Value for key: ${key} in payload was ${receivedType}, expected ${expectedType}`);
+      }
+    });
+
+    return {
+      id: messagePayload.id,
+      senderId: messagePayload.user_id,
+      roomId: messagePayload.id,
+      text: messagePayload.text,
+      createdAt: messagePayload.created_at,
+      updatedAt: messagePayload.updated_at,
+    }
+  }
+
+  static createPresencePayloadFromPayload(payload: any): PresencePayload {
+    const requiredFieldsWithTypes = {
+      user_id: 'string',
+      state: 'string',
+    };
+
+    Object.keys(requiredFieldsWithTypes).forEach(key => {
+      if (payload[key] === undefined) {
+        throw new Error(`Payload missing key: ${key}`);
+      }
+
+      const receivedType = typeof payload[key];
+      const expectedType = requiredFieldsWithTypes[key];
+
+      if (receivedType !== expectedType) {
+        throw new Error(`Value for key: ${key} in payload was ${receivedType}, expected ${expectedType}`);
+      }
+    });
+
+    const state = new PresenceState(payload.state);
+
+    return {
+      userId: payload.user_id,
+      state: state,
+      lastSeenAt: payload.last_seen_at,
+    }
+  }
 
   static createBasicUserFromPayload(payload: any): BasicUser {
     const requiredFieldsWithTypes = {

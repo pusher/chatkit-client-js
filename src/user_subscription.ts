@@ -10,10 +10,8 @@ import PayloadDeserializer from './payload_deserializer';
 import Room from './room';
 import User from './user';
 
+import { allPromisesSettled } from './utils';
 
-export type ElementsHeaders = {
-  [key: string]: string;
-}
 
 export interface UserSubscriptionOptions {
   instance: Instance;
@@ -117,6 +115,7 @@ export default class UserSubscription {
 
     if (roomsPayload.length === 0) {
       // TODO: Finish setup e.g. presence sub and call completion handlers
+      this.currentUser.setupPresenceSubscription(this.delegate);
     }
 
     var combinedRoomUserIds = new Set<string>([]);
@@ -175,7 +174,7 @@ export default class UserSubscription {
 
             // TODO: When all room user promises done:
 
-            this.allPromisesSettled(roomUsersPromises).then(() => {
+            allPromisesSettled(roomUsersPromises).then(() => {
               console.log("All promises settled for fetching room users");
               // room.subscription?.delegate?.usersUpdated();
               // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
@@ -188,9 +187,10 @@ export default class UserSubscription {
 
         // TODO: When all promises done:
 
-        this.allPromisesSettled(combinedRoomUsersPromises).then(() => {
+        allPromisesSettled(combinedRoomUsersPromises).then(() => {
           console.log("All promises settled for fetching ALLLLLLLL room users");
-          // this.currentUser.setupPresenceSubscription(delegate: strongSelf.delegate);
+
+          this.currentUser.setupPresenceSubscription(this.delegate);
           // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
         })
       },
@@ -226,16 +226,6 @@ export default class UserSubscription {
       // TODO: Finish implementation
       // self.delegate.removedFromRoom(room: room)
     });
-  }
-
-  allPromisesSettled = (promises) => {
-    return Promise.all(promises.map(p => Promise.resolve(p).then(v => ({
-      state: 'fulfilled',
-      value: v,
-    }), r => ({
-      state: 'rejected',
-      reason: r,
-    }))));
   }
 
   parseAddedToRoomPayload(eventName: string, data: any) {
@@ -286,7 +276,7 @@ export default class UserSubscription {
 
     // TODO: When all room user promises done:
 
-    this.allPromisesSettled(roomUsersPromises).then(() => {
+    allPromisesSettled(roomUsersPromises).then(() => {
       console.log("All promises settled for fetching room users after addedToRoom");
       // room.subscription?.delegate?.usersUpdated();
       // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)

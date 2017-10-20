@@ -6,8 +6,9 @@ import ChatManagerDelegate from './chat_manager_delegate';
 import GlobalUserStore from './global_user_store';
 import PayloadDeserializer from './payload_deserializer';
 import PresenceSubscription from './presence_subscription';
-import RoomStore from './room_store';
 import Room from './room';
+import RoomStore from './room_store';
+import RoomDelegate from './room_delegate';
 
 import { allPromisesSettled } from './utils';
 
@@ -336,5 +337,83 @@ export default class CurrentUser {
       onError(err);
       console.log("Error", err)
     })
+  }
+
+  startedTypingIn(roomId: number, onSuccess: () => void, onError: (error: any) => void) {
+    const eventPayload = {
+      name: 'typing_start',
+      user_id: this.id,
+    };
+    this.typingStateChange(eventPayload, roomId, onSuccess, onError);
+  }
+
+  stoppedTypingIn(roomId: number, onSuccess: () => void, onError: (error: any) => void) {
+    const eventPayload = {
+      name: 'typing_stop',
+      user_id: this.id,
+    };
+    this.typingStateChange(eventPayload, roomId, onSuccess, onError);
+  }
+
+  addMessage(text: string, room: Room, onSuccess: (messageId: number) => void, onError: (error: any) => void) {
+    const messageObject = {
+      text: text,
+      user_id: this.id,
+    }
+
+    this.instance.request({
+      method: 'POST',
+      path: `/rooms/${room.id}/messages`,
+      body: messageObject,
+    }).then(res => {
+      const messageIdPayload = JSON.parse(res);
+      const messageId = messageIdPayload.message_id;
+      // TODO: Error handling
+      onSuccess(messageId);
+    }).catch(err => {
+      // TODO: Proper error handling and logging
+      onError(err);
+      console.log("Error", err)
+    })
+  }
+
+  // TODO: Do I need to add a Last-Event-ID option here?
+  subscribeToRoom(room: Room, roomDelegate: RoomDelegate, messageLimit = 20) {
+    // const roomSubscription = new RoomSubscription(
+    //   delegate: roomDelegate,
+    //   resumableSubscription: resumableSub,
+    //   logger: self.instance.logger,
+    //   basicMessageEnricher: PCBasicMessageEnricher(userStore: self.userStore, room: room, logger: self.instance.logger)
+    // )
+
+    this.instance.subscribeNonResuming({
+      path: `/rooms/${room.id}`,
+      listeners: {
+        onEvent: this.presenceSubscription.handleEvent.bind(this.presenceSubscription),
+      }
+    })
+
+
+    // TODO: What happens if you provide both a message_limit and a Last-Event-ID?
+    // let subscribeRequest = PPRequestOptions(
+    //     method: HTTPMethod.SUBSCRIBE.rawValue,
+    //     path: path,
+    //     queryItems: [
+    //         URLQueryItem(name: "user_id", value: self.id),
+    //         URLQueryItem(name: "message_limit", value: String(messageLimit)),
+    //     ]
+    // )
+
+
+    //   self.instance.subscribeWithResume(
+    //       with: &resumableSub,
+    //       using: subscribeRequest,
+    //       onEvent: room.subscription?.handleEvent
+
+    //       // TODO: This will probably be replaced by the state change delegate function, with an associated type, maybe
+    //       //            onError: { error in
+    //       //                roomDelegate.receivedError(error)
+    //       //            }
+    //   )
   }
 }

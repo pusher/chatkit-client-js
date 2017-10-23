@@ -470,8 +470,16 @@ export default class CurrentUser {
           })
 
           allPromisesSettled(enrichmentPromises).then(() => {
-            // room.subscription?.delegate?.usersUpdated();
+            if (room.subscription === undefined) {
+              console.log(`Room ${room.name} has no subscription object set`);
+            } else {
+              if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
+                room.subscription.delegate.usersUpdated();
+              }
+            }
+
             // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
+
             onSuccess(messages.sort((msgOne, msgTwo) => msgOne.id - msgTwo.id));
           })
         },

@@ -87,7 +87,13 @@ export default class PresenceSubscription {
         this.roomStore.rooms.forEach(room => {
           // TODO: Delegate stuff
 
-          // room.subscription?.delegate?.usersUpdated()
+          if (room.subscription === undefined) {
+            console.log(`Room ${room.name} has no subscription object set`);
+          } else {
+            if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
+              room.subscription.delegate.usersUpdated();
+            }
+          }
           // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
         })
       }
@@ -104,12 +110,17 @@ export default class PresenceSubscription {
 
         switch (presencePayload.state.stringValue) {
           case 'online':
-            // TODO: Delegate stuff
-            // strongSelf.delegate?.userCameOnline(user: user)
+            if (this.delegate.userCameOnline) {
+              this.delegate.userCameOnline(user);
+            }
+
             // strongSelf.instance.logger.log("\(user.displayName) came online", logLevel: .verbose)
             break;
           case 'offline':
-            // strongSelf.delegate?.userWentOffline(user: user)
+            if (this.delegate.userWentOffline) {
+              this.delegate.userWentOffline(user);
+            }
+
             // strongSelf.instance.logger.log("\(user.displayName) came offline", logLevel: .verbose)
             break;
           case 'unknown':
@@ -118,19 +129,32 @@ export default class PresenceSubscription {
             break;
         }
 
-      //         // TODO: Could check if any room is active to speed this up? Or keep a better
-      //         // map of user_ids to rooms
-      //         strongSelf.roomStore.rooms.forEach { room in
-      //             guard room.users.contains(user) else {
-      //                 return
-      //             }
+        // TODO: Could check if any room is active to speed this up? Or keep a better
+        // map of user_ids to rooms
 
-      //             switch presencePayload.state {
-      //             case .online: room.subscription?.delegate?.userCameOnlineInRoom(user: user)
-      //             case .offline: room.subscription?.delegate?.userWentOfflineInRoom(user: user)
-      //             default: return
-      //             }
-      //         }
+        this.roomStore.rooms.forEach(room => {
+          if (room.subscription === undefined) {
+            console.log(`Room ${room.name} has no subscription object set`);
+            return;
+          }
+
+          if (room.userIds.indexOf(user.id) > -1) {
+            switch (presencePayload.state.stringValue) {
+              case 'online':
+                if (room.subscription.delegate && room.subscription.delegate.userCameOnlineInRoom) {
+                  room.subscription.delegate.userCameOnlineInRoom(user);
+                }
+                break;
+              case 'offline':
+                if (room.subscription.delegate && room.subscription.delegate.userWentOfflineInRoom) {
+                  room.subscription.delegate.userWentOfflineInRoom(user);
+                }
+                break;
+              default:
+                break;
+            }
+          }
+        })
       },
       (error) => {
         // TODO: Some logging
@@ -175,9 +199,14 @@ export default class PresenceSubscription {
       userStates,
       () => {
         this.roomStore.rooms.forEach(room => {
-          // TODO: Delegate stuff
+          if (room.subscription === undefined) {
+            console.log(`Room ${room.name} has no subscription object set`);
+          } else {
+            if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
+              room.subscription.delegate.usersUpdated();
+            }
+          }
 
-          // room.subscription?.delegate?.usersUpdated()
           // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
         })
       }

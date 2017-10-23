@@ -42,7 +42,10 @@ export default class RoomSubscription {
     this.basicMessageEnricher.enrich(
       basicMessage,
       (message) => {
-        // strongSelf.delegate?.newMessage(message: message)
+        if (this.delegate && this.delegate.newMessage) {
+          this.delegate.newMessage(message);
+        }
+
         // strongSelf.logger.log("Room received new message: \(message.text)", logLevel: .verbose)
       },
       (error) => {

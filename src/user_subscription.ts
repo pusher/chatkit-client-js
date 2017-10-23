@@ -170,7 +170,14 @@ export default class UserSubscription {
             // TODO: When all room user promises done:
 
             allPromisesSettled(roomUsersPromises).then(() => {
-              // room.subscription?.delegate?.usersUpdated();
+              if (room.subscription === undefined) {
+                console.log(`Room ${room.name} has no subscription object set`);
+              } else {
+                if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
+                  room.subscription.delegate.usersUpdated();
+                }
+              }
+
               // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
               roomResolve();
             })
@@ -214,14 +221,13 @@ export default class UserSubscription {
       // was closed there was an event that meant that the current user is no longer a
       // member of a given room
 
-      // TODO: Finish implementation
-      // self.delegate.removedFromRoom(room: room)
+      if (this.delegate && this.delegate.removedFromRoom) {
+        this.delegate.removedFromRoom(room);
+      }
     });
   }
 
   parseAddedToRoomPayload(eventName: string, data: any) {
-    // TODO: Delegate stuff
-
     const roomPayload = data.room;
 
     if (roomPayload === undefined || (typeof roomPayload) !== 'object') {
@@ -239,7 +245,10 @@ export default class UserSubscription {
     const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
     const roomAdded = this.currentUser.roomStore.addOrMerge(room);
 
-    // self.delegate.addedToRoom(room: room)
+    if (this.delegate && this.delegate.addedToRoom) {
+      this.delegate.addedToRoom(room);
+    }
+
     // self.instance.logger.log("Added to room: \(room.name)", logLevel: .verbose)
 
     roomAdded.userIds.forEach
@@ -268,7 +277,13 @@ export default class UserSubscription {
     // TODO: When all room user promises done:
 
     allPromisesSettled(roomUsersPromises).then(() => {
-      // room.subscription?.delegate?.usersUpdated();
+      if (room.subscription === undefined) {
+        console.log(`Room ${room.name} has no subscription object set`);
+      } else {
+        if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
+          room.subscription.delegate.usersUpdated();
+        }
+      }
       // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
     })
   }
@@ -292,11 +307,13 @@ export default class UserSubscription {
     const roomRemoved = this.currentUser.roomStore.remove(roomId);
 
     if (roomRemoved) {
-      // self.delegate.removedFromRoom(room: roomRemovedFrom)
+      if (this.delegate.removedFromRoom) {
+        this.delegate.removedFromRoom(roomRemoved);
+      }
       // self.instance.logger.log("Removed from room: \(roomRemovedFrom.name)", logLevel: .verbose)
     } else {
       // self.instance.logger.log("Received \(eventName.rawValue) API event but room \(roomId) not found in local store of joined rooms", logLevel: .debug)
-      return
+      return;
     }
   }
 
@@ -322,7 +339,9 @@ export default class UserSubscription {
       (roomToUpdate) => {
         roomToUpdate.updateWithPropertiesOfRoom(room);
 
-        // self.delegate.roomUpdated(room: roomToUpdate)
+        if (this.delegate.roomUpdated) {
+          this.delegate.roomUpdated(roomToUpdate);
+        }
         // self.instance.logger.log("Room updated: \(room.name)", logLevel: .verbose)
       },
       (error) => {
@@ -348,7 +367,9 @@ export default class UserSubscription {
     const deletedRoom = this.currentUser.roomStore.remove(roomId);
 
     if (deletedRoom) {
-      // self.delegate.roomDeleted(room: deletedRoom)
+      if (this.delegate.roomDeleted) {
+        this.delegate.roomDeleted(deletedRoom);
+      }
       // self.instance.logger.log("Room deleted: \(deletedRoom.name)", logLevel: .verbose)
     } else {
       // self.instance.logger.log("Room \(roomId) was deleted but was not found in local store of joined rooms", logLevel: .debug)
@@ -394,9 +415,19 @@ export default class UserSubscription {
               room.userIds.push(addedOrMergedUser.id);
             }
 
-      //         strongSelf.delegate.userJoinedRoom(room: room, user: addedOrMergedUser)
-      //         room.subscription?.delegate?.userJoined(user: addedOrMergedUser)
-      //         strongSelf.instance.logger.log("User \(user.displayName) joined room: \(room.name)", logLevel: .verbose)
+            if (this.delegate.userJoinedRoom) {
+              this.delegate.userJoinedRoom(room, addedOrMergedUser);
+            }
+
+            if (room.subscription === undefined) {
+              console.log(`Room ${room.name} has no subscription object set`);
+            } else {
+              if (room.subscription.delegate && room.subscription.delegate.userJoined) {
+                room.subscription.delegate.userJoined(addedOrMergedUser);
+              }
+            }
+
+            // this.instance.logger.log("User \(user.displayName) joined room: \(room.name)", logLevel: .verbose)
           },
           (error) => {
             // strongSelf.instance.logger.log(
@@ -464,8 +495,18 @@ export default class UserSubscription {
 
             room.userStore.remove(user.id);
 
-            // strongSelf.delegate.userLeftRoom(room: room, user: user)
-            // room.subscription?.delegate?.userLeft(user: user)
+            if (this.delegate.userLeftRoom) {
+              this.delegate.userLeftRoom(room, user);
+            }
+
+            if (room.subscription === undefined) {
+              console.log(`Room ${room.name} has no subscription object set`);
+            } else {
+              if (room.subscription.delegate && room.subscription.delegate.userLeft) {
+                room.subscription.delegate.userLeft(user);
+              }
+            }
+
             // strongSelf.instance.logger.log("User \(user.displayName) left room: \(room.name)", logLevel: .verbose)
           },
           (error) => {
@@ -513,8 +554,18 @@ export default class UserSubscription {
         this.currentUser.userStore.user(
           userId,
           (user) => {
-            // strongSelf.delegate.userStartedTyping(room: room, user: user)
-            // room.subscription?.delegate?.userStartedTyping(user: user)
+            if (this.delegate.userStartedTyping) {
+              this.delegate.userStartedTyping(room, user);
+            }
+
+            if (room.subscription === undefined) {
+              console.log(`Room ${room.name} has no subscription object set`);
+            } else {
+              if (room.subscription.delegate && room.subscription.delegate.userStartedTyping) {
+                room.subscription.delegate.userStartedTyping(user);
+              }
+            }
+
             // strongSelf.instance.logger.log("\(user.displayName) started typing in room \(room.name)", logLevel: .verbose)
           },
           (error) => {
@@ -552,9 +603,18 @@ export default class UserSubscription {
         this.currentUser.userStore.user(
           userId,
           (user) => {
+            if (this.delegate.userStoppedTyping) {
+              this.delegate.userStoppedTyping(room, user);
+            }
 
-            // strongSelf.delegate.userStoppedTyping(room: room, user: user)
-            // room.subscription?.delegate?.userStoppedTyping(user: user)
+            if (room.subscription === undefined) {
+              console.log(`Room ${room.name} has no subscription object set`);
+            } else {
+              if (room.subscription.delegate && room.subscription.delegate.userStoppedTyping) {
+                room.subscription.delegate.userStoppedTyping(user);
+              }
+            }
+
             // strongSelf.instance.logger.log("\(user.displayName) stopped typing in room \(room.name)", logLevel: .verbose)
           },
           (error) => {

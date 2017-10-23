@@ -14,6 +14,11 @@
       });
 
       chatManager.connect({
+        delegate: {
+          userStartedTyping: (room, user) => {
+            console.log(`User ${user.id} started typing in room ${room.name}`);
+          },
+        },
         onSuccess: (currentUser) => {
           console.log("Successful connection", currentUser);
 

@@ -5,9 +5,10 @@ import {
   BaseClient,
 } from 'pusher-platform';
 
+import ChatManagerDelegate from './chat_manager_delegate';
+import CurrentUser from './current_user';
 import GlobalUserStore from './global_user_store';
 import UserSubscription from './user_subscription';
-import CurrentUser from './current_user';
 
 export interface ChatManagerOptions {
   instanceId: string;
@@ -43,6 +44,7 @@ export default class ChatManager {
 
   connect(options: ConnectOptions) {
     this.userSubscription = new UserSubscription({
+      delegate: options.delegate,
       instance: this.instance,
       userStore: this.userStore,
       connectCompletionHandler: (currentUser, error) => {
@@ -64,6 +66,7 @@ export default class ChatManager {
 }
 
 export interface ConnectOptions {
+  delegate?: ChatManagerDelegate;
   onSuccess: (currentUser: CurrentUser) => void;
   onError: (error: any) => void;
 }

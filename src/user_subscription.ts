@@ -41,8 +41,6 @@ export default class UserSubscription {
     const { data } = body;
     const eventName = body.event_name;
 
-    console.log('Handling event: ', event)
-
     // self.instance.logger.log("Received event name: \(eventNameString), and data: \(apiEventData)", logLevel: .verbose)
 
     switch (eventName) {

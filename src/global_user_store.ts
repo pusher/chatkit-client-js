@@ -92,7 +92,6 @@ export default class GlobalUserStore {
     })
 
     allPromisesSettled(presencePayloadPromises).then(() => {
-      console.log("All promises settled for handling presence payloads");
       onComplete();
     })
   }
@@ -135,7 +134,6 @@ export default class GlobalUserStore {
   }
 
   initialFetchOfUsersWithIds(userIds: string[], onSuccess: (users: User[]) => void, onError: (error: Error) => void) {
-    console.log("initialFetchOfUserIds", userIds);
     this.fetchUsersWithIds(userIds, onSuccess, onError);
   }
 }

@@ -1,3 +1,4 @@
+import RoomSubscription from './room_subscription';
 import RoomUserStore from './room_user_store';
 
 export interface RoomOptions {
@@ -19,12 +20,10 @@ export default class Room {
   createdAt: string;
   updatedAt: string;
   deletedAt: string;
-
   userIds: Array<string>;
 
   userStore: RoomUserStore;
-
-  // TODO: subscription?: RoomSubscription;
+  subscription?: RoomSubscription;
 
   constructor(options: RoomOptions) {
     this.id = options.id;

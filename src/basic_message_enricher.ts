@@ -32,13 +32,13 @@ export default class BasicMessageEnricher {
   userStore: GlobalUserStore;
   room: Room;
 
-  private completionOrderList: number[];
-  private messageIdToCompletionHandlers: MessageIdsToCompletionHandlers;
-  private enrichedMessagesAwaitingCompletionCalls: MessageIdsToEnrichmentResults;
+  private completionOrderList: number[] = [];
+  private messageIdToCompletionHandlers: MessageIdsToCompletionHandlers = {};
+  private enrichedMessagesAwaitingCompletionCalls: MessageIdsToEnrichmentResults = {};
 
-  private userIdsBeingRetrieved: string[];
-  private userIdsToBasicMessageIds: UserIdsToBasicMessageIds;
-  private messagesAwaitingEnrichmentDependentOnUserRetrieval: MessageIdsToBasicMessages;
+  private userIdsBeingRetrieved: string[] = [];
+  private userIdsToBasicMessageIds: UserIdsToBasicMessageIds = {};
+  private messagesAwaitingEnrichmentDependentOnUserRetrieval: MessageIdsToBasicMessages = {};
 
 
   // TODO: Logger stuff

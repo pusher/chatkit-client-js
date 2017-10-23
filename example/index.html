@@ -15,7 +15,16 @@
 
       chatManager.connect({
         onSuccess: (currentUser) => {
-          console.log("Successful connection");
+          console.log("Successful connection", currentUser);
+
+          const roomToSubscribeTo = currentUser.rooms[0];
+
+          if (roomToSubscribeTo) {
+            console.log("Going to subscribe to", roomToSubscribeTo);
+            currentUser.subscribeToRoom(roomToSubscribeTo);
+          } else {
+            console.log("No rooms to subscribe to");
+          }
         },
         onError: (error) => {
           console.log("Error on connection");

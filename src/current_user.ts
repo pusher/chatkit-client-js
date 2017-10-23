@@ -2,13 +2,18 @@ import {
   Instance
 } from 'pusher-platform';
 
+import BasicMessage from './basic_message';
+import BasicMessageEnricher from './basic_message_enricher';
 import ChatManagerDelegate from './chat_manager_delegate';
 import GlobalUserStore from './global_user_store';
+import Message from './message';
 import PayloadDeserializer from './payload_deserializer';
 import PresenceSubscription from './presence_subscription';
 import Room from './room';
-import RoomStore from './room_store';
 import RoomDelegate from './room_delegate';
+import RoomStore from './room_store';
+import RoomSubscription from './room_subscription';
+
 
 import { allPromisesSettled } from './utils';
 
@@ -22,6 +27,12 @@ export interface CreateRoomOptions {
 export interface UpdateRoomOptions {
   name?: string;
   isPrivate?: boolean;
+}
+
+export interface FetchRoomMessagesOptions {
+  initialId?: string;
+  limit?: number;
+  direction?: string;
 }
 
 
@@ -50,6 +61,10 @@ export default class CurrentUser {
   instance: Instance;
   pathFriendlyId: string;
   presenceSubscription: PresenceSubscription;
+
+  get rooms(): Room[] {
+    return this.roomStore.rooms;
+  }
 
   constructor(options: CurrentUserOptions) {
     const { rooms, id, instance } = options;
@@ -379,41 +394,98 @@ export default class CurrentUser {
 
   // TODO: Do I need to add a Last-Event-ID option here?
   subscribeToRoom(room: Room, roomDelegate: RoomDelegate, messageLimit = 20) {
-    // const roomSubscription = new RoomSubscription(
-    //   delegate: roomDelegate,
-    //   resumableSubscription: resumableSub,
-    //   logger: self.instance.logger,
-    //   basicMessageEnricher: PCBasicMessageEnricher(userStore: self.userStore, room: room, logger: self.instance.logger)
-    // )
-
-    this.instance.subscribeNonResuming({
-      path: `/rooms/${room.id}`,
-      listeners: {
-        onEvent: this.presenceSubscription.handleEvent.bind(this.presenceSubscription),
-      }
+    room.subscription = new RoomSubscription({
+      delegate: roomDelegate,
+      basicMessageEnricher: new BasicMessageEnricher(
+        this.userStore,
+        room,
+        // logger: self.instance.logger,
+      )
+      // logger: self.instance.logger,
     })
 
 
     // TODO: What happens if you provide both a message_limit and a Last-Event-ID?
-    // let subscribeRequest = PPRequestOptions(
-    //     method: HTTPMethod.SUBSCRIBE.rawValue,
-    //     path: path,
-    //     queryItems: [
-    //         URLQueryItem(name: "user_id", value: self.id),
-    //         URLQueryItem(name: "message_limit", value: String(messageLimit)),
-    //     ]
-    // )
 
+    this.instance.subscribeNonResuming({
+      path: `/rooms/${room.id}`,
+      listeners: {
+        onEvent: room.subscription.handleEvent.bind(room.subscription),
+      }
+    })
+  }
 
-    //   self.instance.subscribeWithResume(
-    //       with: &resumableSub,
-    //       using: subscribeRequest,
-    //       onEvent: room.subscription?.handleEvent
+  fetchMessagesFromRoom(room: Room, fetchOptions: FetchRoomMessagesOptions, onSuccess: (messages: Message[]) => void, onError: (error: any) => void) {
+    const initialIdQueryParam = fetchOptions.initialId ? `initial_id=${fetchOptions.initialId}` : '';
+    const limitQueryParam = fetchOptions.limit ? `limit=${fetchOptions.limit}` : '';
+    const directionQueryParam = fetchOptions.direction ? `direction=${fetchOptions.direction}` : 'direction=older';
 
-    //       // TODO: This will probably be replaced by the state change delegate function, with an associated type, maybe
-    //       //            onError: { error in
-    //       //                roomDelegate.receivedError(error)
-    //       //            }
-    //   )
+    const combinedQueryParams = [
+      initialIdQueryParam,
+      limitQueryParam,
+      directionQueryParam,
+    ].join('&');
+
+    this.instance.request({
+      method: 'GET',
+      path: `/rooms/${room.id}/messages`,
+    }).then(res => {
+      const messagesPayload = JSON.parse(res);
+
+      var messages = new Array<Message>();
+      var basicMessages = new Array<BasicMessage>();
+
+      // TODO: Error handling?
+      const messageUserIds = messagesPayload.map(messagePayload => {
+        const basicMessage = PayloadDeserializer.createBasicMessageFromPayload(messagePayload);
+        basicMessages.push(basicMessage);
+        return basicMessage.id;
+      })
+
+      const messageUserIdsSet = new Set<string>(messageUserIds);
+      const userIdsToFetch = Array.from(messageUserIdsSet.values());
+
+      this.userStore.fetchUsersWithIds(
+        userIdsToFetch,
+        (users) => {
+          const messageEnricher = new BasicMessageEnricher(this.userStore, room);
+          const enrichmentPromises = new Array<Promise<any>>();
+
+          basicMessages.forEach(basicMessage => {
+            const enrichmentPromise = new Promise<any>((resolve, reject) => {
+              messageEnricher.enrich(
+                basicMessage,
+                (message) => {
+                  messages.push(message);
+                  resolve();
+                },
+                (error) => {
+                  // TODO: Proper logging etc
+                  console.log("Unable to enrich basic message: ", basicMessage);
+                  reject();
+                }
+              )
+            });
+
+            enrichmentPromises.push(enrichmentPromise);
+          })
+
+          allPromisesSettled(enrichmentPromises).then(() => {
+            console.log("All promises settled for enriching messages when fetching more messages for a room");
+            // room.subscription?.delegate?.usersUpdated();
+            // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
+            onSuccess(messages.sort((msgOne, msgTwo) => msgOne.id - msgTwo.id));
+          })
+        },
+        (error) => {
+          // TODO: Proper logging
+          console.log()
+        }
+      )
+    }).catch(err => {
+      // TODO: Proper error handling and logging
+      onError(err);
+      console.log("Error", err)
+    })
   }
 }

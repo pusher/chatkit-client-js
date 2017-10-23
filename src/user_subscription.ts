@@ -83,8 +83,6 @@ export default class UserSubscription {
   }
 
   parseInitialStatePayload(eventName: string, data: any, userStore: GlobalUserStore) {
-    console.log(eventName, data, userStore);
-
     const roomsPayload = data.rooms;
     const userPayload = data.current_user;
 
@@ -104,8 +102,6 @@ export default class UserSubscription {
     } else {
       this.currentUser = receivedCurrentUser;
     }
-
-    console.log(receivedCurrentUser);
 
     const receivedRoomsConstructor = roomsPayload.constructor;
 
@@ -141,7 +137,6 @@ export default class UserSubscription {
   }
 
   fetchInitialUserInformationForUserIds(userIds: Set<string>, currentUser: CurrentUser) {
-    console.log("fetchInitialUserInformationForUserIds", userIds);
     const userIdsArray: string[] = Array.from(userIds.values());
 
     this.userStore.initialFetchOfUsersWithIds(
@@ -175,7 +170,6 @@ export default class UserSubscription {
             // TODO: When all room user promises done:
 
             allPromisesSettled(roomUsersPromises).then(() => {
-              console.log("All promises settled for fetching room users");
               // room.subscription?.delegate?.usersUpdated();
               // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
               roomResolve();
@@ -188,8 +182,6 @@ export default class UserSubscription {
         // TODO: When all promises done:
 
         allPromisesSettled(combinedRoomUsersPromises).then(() => {
-          console.log("All promises settled for fetching ALLLLLLLL room users");
-
           this.currentUser.setupPresenceSubscription(this.delegate);
           // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
         })
@@ -207,7 +199,6 @@ export default class UserSubscription {
   }
 
   reconcileExistingRoomStoreWithRoomsReceivedOnConnection(roomsFromConnection: Room[]) {
-    console.log("reconcileExistingRoomStoreWithRoomsReceivedOnConnection", roomsFromConnection);
     if (!this.currentUser) {
       // TODO: Some logging, maybe error
       return;
@@ -277,7 +268,6 @@ export default class UserSubscription {
     // TODO: When all room user promises done:
 
     allPromisesSettled(roomUsersPromises).then(() => {
-      console.log("All promises settled for fetching room users after addedToRoom");
       // room.subscription?.delegate?.usersUpdated();
       // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
     })
@@ -330,10 +320,7 @@ export default class UserSubscription {
     this.currentUser.roomStore.room(
       room.id,
       (roomToUpdate) => {
-        console.log("New room stuff is ", room, "and roomToUpdate is: ", roomToUpdate);
         roomToUpdate.updateWithPropertiesOfRoom(room);
-
-        console.log("roomToUpdate is now", roomToUpdate);
 
         // self.delegate.roomUpdated(room: roomToUpdate)
         // self.instance.logger.log("Room updated: \(room.name)", logLevel: .verbose)
@@ -405,7 +392,6 @@ export default class UserSubscription {
             const addedOrMergedUser = room.userStore.addOrMerge(user);
             if (room.userIds.indexOf(addedOrMergedUser.id) === -1) {
               room.userIds.push(addedOrMergedUser.id);
-              console.log("addedOrMergedUser.id", addedOrMergedUser.id, "joined ", room.name);
             }
 
       //         strongSelf.delegate.userJoinedRoom(room: room, user: addedOrMergedUser)
@@ -474,7 +460,6 @@ export default class UserSubscription {
 
             if (roomUserIdIndex > -1) {
               room.userIds.splice(roomUserIdIndex, 1);
-              console.log("user", user.id, "left ", room.name);
             }
 
             room.userStore.remove(user.id);
@@ -528,7 +513,6 @@ export default class UserSubscription {
         this.currentUser.userStore.user(
           userId,
           (user) => {
-            console.log("User ", user.id, " started typing in room ", room.name);
             // strongSelf.delegate.userStartedTyping(room: room, user: user)
             // room.subscription?.delegate?.userStartedTyping(user: user)
             // strongSelf.instance.logger.log("\(user.displayName) started typing in room \(room.name)", logLevel: .verbose)
@@ -568,7 +552,6 @@ export default class UserSubscription {
         this.currentUser.userStore.user(
           userId,
           (user) => {
-            console.log("User ", user.id, " stopped typing in room ", room.name);
 
             // strongSelf.delegate.userStoppedTyping(room: room, user: user)
             // room.subscription?.delegate?.userStoppedTyping(user: user)

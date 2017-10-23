@@ -29,8 +29,6 @@ export default class RoomSubscription {
     const { data } = body;
     const eventName = body.event_name;
 
-    console.log('Handling event: ', event)
-
     if (eventName !== 'new_message') {
       console.log("Room sub got an event type it doesn't understand");
       // TODO: Logging properly
@@ -44,7 +42,6 @@ export default class RoomSubscription {
     this.basicMessageEnricher.enrich(
       basicMessage,
       (message) => {
-        console.log("Received new message", message);
         // strongSelf.delegate?.newMessage(message: message)
         // strongSelf.logger.log("Room received new message: \(message.text)", logLevel: .verbose)
       },

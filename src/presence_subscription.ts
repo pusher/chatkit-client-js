@@ -36,8 +36,6 @@ export default class PresenceSubscription {
     const { data } = body;
     const eventName = body.event_name;
 
-    console.log('Handling event: ', event)
-
     // self.instance.logger.log("Received event name: \(eventNameString), and data: \(apiEventData)", logLevel: .verbose)
 
     switch (eventName) {
@@ -87,7 +85,6 @@ export default class PresenceSubscription {
       userStates,
       () => {
         this.roomStore.rooms.forEach(room => {
-          console.log("Go through each room and update with presence payloads, sort of");
           // TODO: Delegate stuff
 
           // room.subscription?.delegate?.usersUpdated()
@@ -178,7 +175,6 @@ export default class PresenceSubscription {
       userStates,
       () => {
         this.roomStore.rooms.forEach(room => {
-          console.log("Go through each room and update with presence payloads, sort of");
           // TODO: Delegate stuff
 
           // room.subscription?.delegate?.usersUpdated()

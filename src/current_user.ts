@@ -159,7 +159,6 @@ export default class CurrentUser {
     })
 
     allPromisesSettled(userPromises).then(() => {
-      console.log("All promises settled for populating room user stores");
       // TODO: Logging and delegate stuff
 
       // room.subscription?.delegate?.usersUpdated()
@@ -471,7 +470,6 @@ export default class CurrentUser {
           })
 
           allPromisesSettled(enrichmentPromises).then(() => {
-            console.log("All promises settled for enriching messages when fetching more messages for a room");
             // room.subscription?.delegate?.usersUpdated();
             // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
             onSuccess(messages.sort((msgOne, msgTwo) => msgOne.id - msgTwo.id));
@@ -479,7 +477,7 @@ export default class CurrentUser {
         },
         (error) => {
           // TODO: Proper logging
-          console.log()
+          console.log("Error fetching users with ids", error);
         }
       )
     }).catch(err => {

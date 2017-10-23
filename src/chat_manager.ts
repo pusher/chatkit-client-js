@@ -42,14 +42,10 @@ export default class ChatManager {
   }
 
   connect(options: ConnectOptions) {
-    console.log("Let's connect yeah");
-
     this.userSubscription = new UserSubscription({
       instance: this.instance,
       userStore: this.userStore,
       connectCompletionHandler: (currentUser, error) => {
-        console.log("Connect completion handler called: ", currentUser, error);
-
         if (currentUser) {
           options.onSuccess(currentUser);
         } else {

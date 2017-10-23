@@ -4,12 +4,12 @@
     <script type="text/javascript" src="../target/chatkit.js"></script>
     <script type="text/javascript">
       const tokenProvider = new Chatkit.TokenProvider({
-        authEndpoint: "https://us1.pusherplatform.io/services/chatkit_token_provider/v1/dc9ef674-4afb-43e8-94a5-438f47c02ea6/token?instance_id=v1:us1:dc9ef674-4afb-43e8-94a5-438f47c02ea6",
+        authEndpoint: "https://us1-staging.pusherplatform.io/services/chatkit_token_provider/v1/80215247-1df3-4956-8ba8-9744ffd12164/token?instance_id=v1:us1-staging:80215247-1df3-4956-8ba8-9744ffd12164",
         userId: "ham",
       })
 
       const chatManager = new Chatkit.ChatManager({
-        instanceId: 'v1:us1:dc9ef674-4afb-43e8-94a5-438f47c02ea6',
+        instanceId: 'v1:us1-staging:80215247-1df3-4956-8ba8-9744ffd12164',
         tokenProvider: tokenProvider,
       });
 

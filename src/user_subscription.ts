@@ -23,7 +23,6 @@ export interface UserSubscriptionOptions {
 export default class UserSubscription {
   private instance: Instance;
 
-  // resumingSubscription: ResumingSubscription;
   userStore: GlobalUserStore;
   delegate: ChatManagerDelegate;
   connectCompletionHandlers: [(CurrentUser?, Error?) => void];
@@ -41,7 +40,7 @@ export default class UserSubscription {
     const { data } = body;
     const eventName = body.event_name;
 
-    // self.instance.logger.log("Received event name: \(eventNameString), and data: \(apiEventData)", logLevel: .verbose)
+    this.instance.logger.verbose(`Received event name: ${eventName}, and data: ${data}`);
 
     switch (eventName) {
       case 'initial_state':
@@ -108,8 +107,8 @@ export default class UserSubscription {
     }
 
     if (roomsPayload.length === 0) {
-      // TODO: Finish setup e.g. presence sub and call completion handlers
       this.currentUser.setupPresenceSubscription(this.delegate);
+      this.callConnectCompletionHandlers(this.currentUser);
     }
 
     var combinedRoomUserIds = new Set<string>([]);
@@ -151,13 +150,11 @@ export default class UserSubscription {
                 this.userStore.user(
                   userId,
                   (user) => {
-                    // TODO: Do some logging
-
                     room.userStore.addOrMerge(user);
                     userResolve();
                   },
                   (error) => {
-                    // TODO: Do some logging
+                    this.instance.logger.verbose(`Unable to fetch information about user ${userId}`);
                     userReject();
                   }
                 )
@@ -165,18 +162,16 @@ export default class UserSubscription {
               roomUsersPromises.push(userPromise);
             });
 
-            // TODO: When all room user promises done:
-
             allPromisesSettled(roomUsersPromises).then(() => {
               if (room.subscription === undefined) {
-                console.log(`Room ${room.name} has no subscription object set`);
+                this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
               } else {
                 if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
                   room.subscription.delegate.usersUpdated();
                 }
               }
 
-              // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
+              this.instance.logger.verbose(`Users updated in room ${room.name}"`);
               roomResolve();
             })
           });
@@ -184,20 +179,12 @@ export default class UserSubscription {
           combinedRoomUsersPromises.push(roomPromise);
         });
 
-        // TODO: When all promises done:
-
         allPromisesSettled(combinedRoomUsersPromises).then(() => {
           this.currentUser.setupPresenceSubscription(this.delegate);
-          // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
         })
       },
       (error) => {
-        // TODO: Error handling and logging
-        console.log("Error");
-        // this.instance.logger.log(
-        //   `Unable to fetch user information after successful connection: ${error}`,
-        //   logLevel: .debug
-        // )
+        this.instance.logger.debug(`Unable to fetch user information after successful connection: ${error}`);
         return
       }
     )
@@ -205,7 +192,7 @@ export default class UserSubscription {
 
   reconcileExistingRoomStoreWithRoomsReceivedOnConnection(roomsFromConnection: Room[]) {
     if (!this.currentUser) {
-      // TODO: Some logging, maybe error
+      this.instance.logger.verbose('currentUser property of UserSubscription unset after successful connection');
       return;
     }
 
@@ -229,14 +216,7 @@ export default class UserSubscription {
     const roomPayload = data.room;
 
     if (roomPayload === undefined || (typeof roomPayload) !== 'object') {
-      console.log("Room payload undefined or not an object", roomPayload);
-      //         self.delegate.error(
-      //             error: PCAPIEventError.keyNotPresentInEventPayload(
-      //                 key: "room_id",
-      //                 apiEventName: eventName,
-      //                 payload: data
-      //             )
-      //         )
+      this.instance.logger.verbose(`\`room\` key missing or invalid in \`added_to_room\` payload: ${data}`);
       return;
     }
 
@@ -247,9 +227,7 @@ export default class UserSubscription {
       this.delegate.addedToRoom(room);
     }
 
-    // self.instance.logger.log("Added to room: \(room.name)", logLevel: .verbose)
-
-    roomAdded.userIds.forEach
+    this.instance.logger.verbose(`Added to room: ${room.name}`);
 
     const roomUsersPromises = new Array<Promise<any>>();
 
@@ -258,13 +236,12 @@ export default class UserSubscription {
         this.userStore.user(
           userId,
           (user) => {
-            // TODO: Do some logging
-
+            this.instance.logger.verbose(`Added user id ${userId} to room ${room.name}`);
             room.userStore.addOrMerge(user);
             resolve();
           },
           (error) => {
-            // TODO: Do some logging
+            this.instance.logger.debug(`Unable to add user with id ${userId} to room ${room.name}: ${error}`);
             reject();
           }
         )
@@ -272,33 +249,24 @@ export default class UserSubscription {
       roomUsersPromises.push(userPromise);
     });
 
-    // TODO: When all room user promises done:
-
     allPromisesSettled(roomUsersPromises).then(() => {
       if (room.subscription === undefined) {
-        console.log(`Room ${room.name} has no subscription object set`);
+        this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
       } else {
         if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
           room.subscription.delegate.usersUpdated();
         }
       }
-      // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
+
+      this.instance.logger.verbose(`Users updated in room ${room.name}`);
     })
   }
 
   parseRemovedFromRoomPayload(eventName: string, data: any) {
-    // TODO: Delegate stuff
-
     const roomId = data.room_id;
 
     if (roomId === undefined || (typeof roomId) !== 'number') {
-      //         self.delegate.error(
-      //             error: PCAPIEventError.keyNotPresentInEventPayload(
-      //                 key: "room_id",
-      //                 apiEventName: eventName,
-      //                 payload: data
-      //             )
-      //         )
+      this.instance.logger.verbose(`\`room_id\` key missing or invalid in \`removed_from_room\` payload: ${data}`);
       return;
     }
 
@@ -308,9 +276,9 @@ export default class UserSubscription {
       if (this.delegate.removedFromRoom) {
         this.delegate.removedFromRoom(roomRemoved);
       }
-      // self.instance.logger.log("Removed from room: \(roomRemovedFrom.name)", logLevel: .verbose)
+      this.instance.logger.verbose(`Removed from room: ${roomRemoved.name}`);
     } else {
-      // self.instance.logger.log("Received \(eventName.rawValue) API event but room \(roomId) not found in local store of joined rooms", logLevel: .debug)
+      this.instance.logger.verbose(`Received \`removed_from_room\` API event but room with ID ${roomId} not found in local store of joined rooms`);
       return;
     }
   }
@@ -319,14 +287,7 @@ export default class UserSubscription {
     const roomPayload = data.room;
 
     if (roomPayload === undefined || (typeof roomPayload) !== 'object') {
-      console.log("Room payload undefined or not an object", roomPayload);
-      //         self.delegate.error(
-      //             error: PCAPIEventError.keyNotPresentInEventPayload(
-      //                 key: "room_id",
-      //                 apiEventName: eventName,
-      //                 payload: data
-      //             )
-      //         )
+      this.instance.logger.verbose(`\`room\` key missing or invalid in \`room_updated\` payload: ${data}`);
       return;
     }
 
@@ -340,10 +301,11 @@ export default class UserSubscription {
         if (this.delegate.roomUpdated) {
           this.delegate.roomUpdated(roomToUpdate);
         }
-        // self.instance.logger.log("Room updated: \(room.name)", logLevel: .verbose)
+
+        this.instance.logger.verbose(`Room updated: ${room.name}`);
       },
       (error) => {
-        // TODO: logging
+        this.instance.logger.debug(`Error updating room ${room.id}: ${error}`);
       }
     )
   }
@@ -352,13 +314,7 @@ export default class UserSubscription {
     const roomId = data.room_id;
 
     if (roomId === undefined || (typeof roomId) !== 'number') {
-      //         self.delegate.error(
-      //             error: PCAPIEventError.keyNotPresentInEventPayload(
-      //                 key: "room_id",
-      //                 apiEventName: eventName,
-      //                 payload: data
-      //             )
-      //         )
+      this.instance.logger.verbose(`\`room_id\` key missing or invalid in \`room_deleted\` payload: ${data}`);
       return;
     }
 
@@ -368,9 +324,10 @@ export default class UserSubscription {
       if (this.delegate.roomDeleted) {
         this.delegate.roomDeleted(deletedRoom);
       }
-      // self.instance.logger.log("Room deleted: \(deletedRoom.name)", logLevel: .verbose)
+
+      this.instance.logger.verbose(`Room deleted: ${deletedRoom.name}`);
     } else {
-      // self.instance.logger.log("Room \(roomId) was deleted but was not found in local store of joined rooms", logLevel: .debug)
+      this.instance.logger.verbose(`Received \`room_deleted\` API event but room with ID ${roomId} not found in local store of joined rooms`);
       return;
     }
   }
@@ -379,26 +336,14 @@ export default class UserSubscription {
     const roomId = data.room_id;
 
     if (roomId === undefined || (typeof roomId) !== 'number') {
-      //         self.delegate.error(
-      //             error: PCAPIEventError.keyNotPresentInEventPayload(
-      //                 key: "room_id",
-      //                 apiEventName: eventName,
-      //                 payload: data
-      //             )
-      //         )
+      this.instance.logger.verbose(`\`room_id\` key missing or invalid in \`user_joined\` payload: ${data}`);
       return;
     }
 
     const userId = data.user_id;
 
     if (userId === undefined || (typeof userId) !== 'string') {
-      //         self.delegate.error(
-      //             error: PCAPIEventError.keyNotPresentInEventPayload(
-      //                 key: "room_id",
-      //                 apiEventName: eventName,
-      //                 payload: data
-      //             )
-      //         )
+      this.instance.logger.verbose(`\`user_id\` key missing or invalid in \`user_joined\` payload: ${data}`);
       return;
     }
 
@@ -418,20 +363,18 @@ export default class UserSubscription {
             }
 
             if (room.subscription === undefined) {
-              console.log(`Room ${room.name} has no subscription object set`);
+              this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
             } else {
               if (room.subscription.delegate && room.subscription.delegate.userJoined) {
                 room.subscription.delegate.userJoined(addedOrMergedUser);
               }
             }
 
-            // this.instance.logger.log("User \(user.displayName) joined room: \(room.name)", logLevel: .verbose)
+            this.instance.logger.verbose(`User ${user.id} joined room: ${room.name}`);
           },
           (error) => {
-            // strongSelf.instance.logger.log(
-            //   "User with id \(userId) joined room with id \(roomId) but no information about the user could be retrieved. Error was: \(err!.localizedDescription)",
-            //   logLevel: .error
-            // )
+            this.instance.logger.verbose(`Error fetching user ${userId}: ${error}`);
+            // TODO: Delegate question again
             // strongSelf.delegate.error(error: err!)
             return;
           }
@@ -440,12 +383,7 @@ export default class UserSubscription {
 
       },
       (error) => {
-        // TODO: logging
-
-        // self.instance.logger.log(
-        //   "User with id \(userId) joined room with id \(roomId) but no information about the room could be retrieved. Error was: \(err!.localizedDescription)",
-        //   logLevel: .error
-        // )
+        this.instance.logger.verbose(`User with id ${userId} joined room with id ${roomId} but no information about the room could be retrieved. Error was: ${error}`);
         // self.delegate.error(error: err!)
         return;
       }
@@ -456,26 +394,14 @@ export default class UserSubscription {
     const roomId = data.room_id;
 
     if (roomId === undefined || (typeof roomId) !== 'number') {
-      //         self.delegate.error(
-      //             error: PCAPIEventError.keyNotPresentInEventPayload(
-      //                 key: "room_id",
-      //                 apiEventName: eventName,
-      //                 payload: data
-      //             )
-      //         )
+      this.instance.logger.verbose(`\`room_id\` key missing or invalid in \`user_left\` payload: ${data}`);
       return;
     }
 
     const userId = data.user_id;
 
     if (userId === undefined || (typeof userId) !== 'string') {
-      //         self.delegate.error(
-      //             error: PCAPIEventError.keyNotPresentInEventPayload(
-      //                 key: "room_id",
-      //                 apiEventName: eventName,
-      //                 payload: data
-      //             )
-      //         )
+      this.instance.logger.verbose(`\`user_id\` key missing or invalid in \`user_left\` payload: ${data}`);
       return;
     }
 
@@ -498,20 +424,17 @@ export default class UserSubscription {
             }
 
             if (room.subscription === undefined) {
-              console.log(`Room ${room.name} has no subscription object set`);
+              this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
             } else {
               if (room.subscription.delegate && room.subscription.delegate.userLeft) {
                 room.subscription.delegate.userLeft(user);
               }
             }
 
-            // strongSelf.instance.logger.log("User \(user.displayName) left room: \(room.name)", logLevel: .verbose)
+            this.instance.logger.verbose(`User ${user.id} left room ${room.name}`);
           },
           (error) => {
-            // strongSelf.instance.logger.log(
-            //   "User with id \(userId) left room with id \(roomId) but no information about the user could be retrieved. Error was: \(err!.localizedDescription)",
-            //   logLevel: .error
-            // )
+            this.instance.logger.verbose(`User with id ${userId} left room with id ${roomId} but no information about the user could be retrieved. Error was: ${error}`);
             // strongSelf.delegate.error(error: err!)
             return;
           }
@@ -520,12 +443,7 @@ export default class UserSubscription {
 
       },
       (error) => {
-        // TODO: logging
-
-        // self.instance.logger.log(
-        //   "User with id \(userId) joined room with id \(roomId) but no information about the room could be retrieved. Error was: \(err!.localizedDescription)",
-        //   logLevel: .error
-        // )
+        this.instance.logger.verbose(`User with id ${userId} joined room with id ${roomId} but no information about the room could be retrieved. Error was: ${error}`);
         // self.delegate.error(error: err!)
         return;
       }
@@ -536,13 +454,7 @@ export default class UserSubscription {
     const roomId = data.room_id;
 
     if (roomId === undefined || (typeof roomId) !== 'number') {
-      //         self.delegate.error(
-      //             error: PCAPIEventError.keyNotPresentInEventPayload(
-      //                 key: "room_id",
-      //                 apiEventName: eventName,
-      //                 payload: data
-      //             )
-      //         )
+      this.instance.logger.verbose(`\`room_id\` key missing or invalid in \`typing_start\` payload: ${data}`);
       return;
     }
 
@@ -557,24 +469,24 @@ export default class UserSubscription {
             }
 
             if (room.subscription === undefined) {
-              console.log(`Room ${room.name} has no subscription object set`);
+              this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
             } else {
               if (room.subscription.delegate && room.subscription.delegate.userStartedTyping) {
                 room.subscription.delegate.userStartedTyping(user);
               }
             }
 
-            // strongSelf.instance.logger.log("\(user.displayName) started typing in room \(room.name)", logLevel: .verbose)
+            this.instance.logger.verbose(`User ${user.id} started typing in room ${room.name}`);
           },
           (error) => {
-            // strongSelf.instance.logger.log(err!.localizedDescription, logLevel: .error)
+            this.instance.logger.verbose(`Error fetching information for user ${userId}: ${error}`);
             // strongSelf.delegate.error(error: err!)
             return;
           }
         )
       },
       (error) => {
-        // self.instance.logger.log(err!.localizedDescription, logLevel: .error)
+        this.instance.logger.verbose(`Error fetching information for room ${roomId}: ${error}`);
         // self.delegate.error(error: err!)
         return;
       }
@@ -585,13 +497,7 @@ export default class UserSubscription {
     const roomId = data.room_id;
 
     if (roomId === undefined || (typeof roomId) !== 'number') {
-      //         self.delegate.error(
-      //             error: PCAPIEventError.keyNotPresentInEventPayload(
-      //                 key: "room_id",
-      //                 apiEventName: eventName,
-      //                 payload: data
-      //             )
-      //         )
+      this.instance.logger.verbose(`\`room_id\` key missing or invalid in \`typing_stop\` payload: ${data}`);
       return;
     }
 
@@ -606,24 +512,24 @@ export default class UserSubscription {
             }
 
             if (room.subscription === undefined) {
-              console.log(`Room ${room.name} has no subscription object set`);
+              this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
             } else {
               if (room.subscription.delegate && room.subscription.delegate.userStoppedTyping) {
                 room.subscription.delegate.userStoppedTyping(user);
               }
             }
 
-            // strongSelf.instance.logger.log("\(user.displayName) stopped typing in room \(room.name)", logLevel: .verbose)
+            this.instance.logger.verbose(`User ${user.id} stopped typing in room ${room.name}`);
           },
           (error) => {
-            // strongSelf.instance.logger.log(err!.localizedDescription, logLevel: .error)
+            this.instance.logger.verbose(`Error fetching information for user ${userId}: ${error}`);
             // strongSelf.delegate.error(error: err!)
             return;
           }
         )
       },
       (error) => {
-        // self.instance.logger.log(err!.localizedDescription, logLevel: .error)
+        this.instance.logger.verbose(`Error fetching information for room ${roomId}: ${error}`);
         // self.delegate.error(error: err!)
         return;
       }

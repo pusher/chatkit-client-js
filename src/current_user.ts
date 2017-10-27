@@ -125,10 +125,9 @@ export default class CurrentUser {
       const addedOrMergedRoom = this.roomStore.addOrMerge(room);
       this.populateRoomUserStore(addedOrMergedRoom);
       onSuccess(addedOrMergedRoom);
-    }).catch(err => {
-      // TODO: Proper error handling
-      onError(err);
-      console.log("Error", err)
+    }).catch(error => {
+      this.instance.logger.verbose(`Error creating room: ${error}`);
+      onError(error);
     })
   }
 
@@ -146,10 +145,7 @@ export default class CurrentUser {
             resolve();
           },
           (error) => {
-            // strongSelf.instance.logger.log(
-            //   "Unable to add user with id \(userId) to room \(room.name): \(err!.localizedDescription)",
-            //   logLevel: .debug
-            // )
+            this.instance.logger.debug(`Unable to add user with id ${userId} to room \(room.name):: ${error}`);
             reject();
           }
         )
@@ -159,10 +155,15 @@ export default class CurrentUser {
     })
 
     allPromisesSettled(userPromises).then(() => {
-      // TODO: Logging and delegate stuff
+      if (room.subscription === undefined) {
+        this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
+      } else {
+        if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
+          room.subscription.delegate.usersUpdated();
+        }
+      }
 
-      // room.subscription?.delegate?.usersUpdated()
-      // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
+      this.instance.logger.verbose(`Users updated in room ${room.name}`);
     })
   }
 
@@ -224,10 +225,9 @@ export default class CurrentUser {
       body: roomPayload,
     }).then(res => {
       onSuccess();
-    }).catch(err => {
-      // TODO: Proper error handling
-      onError(err);
-      console.log("Error", err)
+    }).catch(error => {
+      this.instance.logger.verbose(`Error updating room ${roomId}: ${error}`);
+      onError(error);
     })
   }
 
@@ -245,10 +245,9 @@ export default class CurrentUser {
       path: `/rooms/${roomId}`,
     }).then(res => {
       onSuccess();
-    }).catch(err => {
-      // TODO: Proper error handling
-      onError(err);
-      console.log("Error", err)
+    }).catch(error => {
+      this.instance.logger.verbose(`Error deleting room ${roomId}: ${error}`);
+      onError(error);
     })
   }
 
@@ -263,10 +262,9 @@ export default class CurrentUser {
       body: usersPayload,
     }).then(res => {
       onSuccess();
-    }).catch(err => {
-      // TODO: Proper error handling
-      onError(err);
-      console.log("Error", err)
+    }).catch(error => {
+      this.instance.logger.verbose(`Error when attempting to ${membershipChange} users from room ${roomId}: ${error}`);
+      onError(error);
     })
   }
 
@@ -281,10 +279,9 @@ export default class CurrentUser {
       // TODO: room or addedOrMergedRoom ?
       this.populateRoomUserStore(addedOrMergedRoom);
       onSuccess(addedOrMergedRoom);
-    }).catch(err => {
-      // TODO: Proper error handling and logging
-      onError(err);
-      console.log("Error", err)
+    }).catch(error => {
+      this.instance.logger.verbose(`Error joining room ${roomId}: ${error}`);
+      onError(error);
     })
   }
 
@@ -295,10 +292,9 @@ export default class CurrentUser {
     }).then(res => {
       // TODO: Remove room from roomStore or is that handle by UserSubscription?
       onSuccess();
-    }).catch(err => {
-      // TODO: Proper error handling and logging
-      onError(err);
-      console.log("Error", err)
+    }).catch(error => {
+      this.instance.logger.verbose(`Error leaving room ${roomId}: ${error}`);
+      onError(error);
     })
   }
 
@@ -326,15 +322,13 @@ export default class CurrentUser {
     }).then(res => {
       const roomsPayload = JSON.parse(res);
       const rooms = roomsPayload.map((roomPayload) => {
-        // TODO: Some logging etc
         return PayloadDeserializer.createRoomFromPayload(roomPayload);
       })
       // TODO: filter if undefined returned?
       onSuccess(rooms);
-    }).catch(err => {
-      // TODO: Proper error handling and logging
-      onError(err);
-      console.log("Error", err)
+    }).catch(error => {
+      this.instance.logger.verbose(`Error when getting instance rooms: ${error}`);
+      onError(error);
     })
   }
 
@@ -346,10 +340,9 @@ export default class CurrentUser {
       body: eventPayload,
     }).then(res => {
       onSuccess();
-    }).catch(err => {
-      // TODO: Proper error handling and logging
-      onError(err);
-      console.log("Error", err)
+    }).catch(error => {
+      this.instance.logger.verbose(`Error sending typing state change in room ${roomId}: ${error}`);
+      onError(error);
     })
   }
 
@@ -384,10 +377,9 @@ export default class CurrentUser {
       const messageId = messageIdPayload.message_id;
       // TODO: Error handling
       onSuccess(messageId);
-    }).catch(err => {
-      // TODO: Proper error handling and logging
-      onError(err);
-      console.log("Error", err)
+    }).catch(error => {
+      this.instance.logger.verbose(`Error adding message to room ${room.name}: ${error}`);
+      onError(error);
     })
   }
 
@@ -398,9 +390,9 @@ export default class CurrentUser {
       basicMessageEnricher: new BasicMessageEnricher(
         this.userStore,
         room,
-        // logger: self.instance.logger,
-      )
-      // logger: self.instance.logger,
+        this.instance.logger
+      ),
+      logger: this.instance.logger
     })
 
 
@@ -434,7 +426,7 @@ export default class CurrentUser {
       var messages = new Array<Message>();
       var basicMessages = new Array<BasicMessage>();
 
-      // TODO: Error handling?
+      // TODO: Error handling
       const messageUserIds = messagesPayload.map(messagePayload => {
         const basicMessage = PayloadDeserializer.createBasicMessageFromPayload(messagePayload);
         basicMessages.push(basicMessage);
@@ -447,7 +439,7 @@ export default class CurrentUser {
       this.userStore.fetchUsersWithIds(
         userIdsToFetch,
         (users) => {
-          const messageEnricher = new BasicMessageEnricher(this.userStore, room);
+          const messageEnricher = new BasicMessageEnricher(this.userStore, room, this.instance.logger);
           const enrichmentPromises = new Array<Promise<any>>();
 
           basicMessages.forEach(basicMessage => {
@@ -459,8 +451,7 @@ export default class CurrentUser {
                   resolve();
                 },
                 (error) => {
-                  // TODO: Proper logging etc
-                  console.log("Unable to enrich basic message: ", basicMessage);
+                  this.instance.logger.verbose(`Unable to enrich basic mesage ${basicMessage.id}: ${error}`);
                   reject();
                 }
               )
@@ -471,27 +462,25 @@ export default class CurrentUser {
 
           allPromisesSettled(enrichmentPromises).then(() => {
             if (room.subscription === undefined) {
-              console.log(`Room ${room.name} has no subscription object set`);
+              this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
             } else {
               if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
                 room.subscription.delegate.usersUpdated();
               }
             }
 
-            // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
+            this.instance.logger.verbose(`Users updated in room ${room.name}`);
 
             onSuccess(messages.sort((msgOne, msgTwo) => msgOne.id - msgTwo.id));
           })
         },
         (error) => {
-          // TODO: Proper logging
-          console.log("Error fetching users with ids", error);
+          this.instance.logger.verbose(`Error fetching users with ids ${userIdsToFetch}: ${error}`);
         }
       )
-    }).catch(err => {
-      // TODO: Proper error handling and logging
-      onError(err);
-      console.log("Error", err)
+    }).catch(error => {
+      this.instance.logger.verbose(`Error fetching messages froom room ${room.name}: ${error}`);
+      onError(error);
     })
   }
 }

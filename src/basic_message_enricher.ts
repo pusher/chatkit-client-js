@@ -1,3 +1,5 @@
+import { Logger } from 'pusher-platform';
+
 import BasicMessage from './basic_message';
 import GlobalUserStore from './global_user_store';
 import Message from './message';
@@ -31,6 +33,7 @@ export type MessageIdsToBasicMessages = {
 export default class BasicMessageEnricher {
   userStore: GlobalUserStore;
   room: Room;
+  logger: Logger;
 
   private completionOrderList: number[] = [];
   private messageIdToCompletionHandlers: MessageIdsToCompletionHandlers = {};
@@ -40,11 +43,10 @@ export default class BasicMessageEnricher {
   private userIdsToBasicMessageIds: UserIdsToBasicMessageIds = {};
   private messagesAwaitingEnrichmentDependentOnUserRetrieval: MessageIdsToBasicMessages = {};
 
-
-  // TODO: Logger stuff
-  constructor(userStore: GlobalUserStore, room: Room) {
+  constructor(userStore: GlobalUserStore, room: Room, logger: Logger) {
     this.userStore = userStore;
     this.room = room;
+    this.logger = logger;
   }
 
   enrich(basicMessage: BasicMessage, onSuccess: (message: Message) => void, onError: (error: any) => void) {
@@ -77,10 +79,7 @@ export default class BasicMessageEnricher {
         const basicMessageIds = this.userIdsToBasicMessageIds[basicMessageSenderId];
 
         if (basicMessageIds === undefined) {
-          // strongSelf.logger.log(
-          //     "Fetched user information for user with id \(user.id) but no messages needed information for this user",
-          //     logLevel: .verbose
-          // )
+          this.logger.verbose(`Fetched user information for user with id ${user.id} but no messages needed information for this user`);
           return;
         }
 
@@ -97,11 +96,8 @@ export default class BasicMessageEnricher {
         }
       },
       (error) => {
-        // strongSelf.logger.log(
-        //     "Unable to find user with id \(basicMessage.senderId), associated with message \(basicMessageId). Error: \(err!.localizedDescription)",
-        //     logLevel: .debug
-        // )
-        // strongSelf.callCompletionHandlersForEnrichedMessagesWithIdsLessThanOrEqualTo(id: basicMessageId, result: .error(err!))
+        this.logger.debug(`Unable to find user with id ${basicMessage.senderId}, associated with message ${basicMessageId}. Error: ${error}`);
+        this.callCompletionHandlersForEnrichedMessagesWithIdsLessThanOrEqualTo(basicMessageId, error);
       }
     )
   }
@@ -134,10 +130,7 @@ export default class BasicMessageEnricher {
       // If the message id received isn't the next to have its completionHandler called
       // then return as we've already stored the result so it can be used later
       // TODO: Fixme
-      // self.logger.log(
-      //     "Waiting to call completion handler for message id \(id) as there are other older messages still to be enriched",
-      //     logLevel: .verbose
-      // )
+      this.logger.verbose(`Waiting to call completion handler for message id ${id} as there are other older messages still to be enriched`);
       return;
     }
 
@@ -146,13 +139,13 @@ export default class BasicMessageEnricher {
 
       const completionHandler = this.messageIdToCompletionHandlers[messageId];
       if (completionHandler === undefined) {
-        // self.logger.log("Completion handler not stored for message id \(messageId)", logLevel: .debug)
+        this.logger.verbose(`Completion handler not stored for message id ${messageId}`);
         return;
       }
 
       const result = this.enrichedMessagesAwaitingCompletionCalls[messageId];
       if (result === undefined) {
-        // self.logger.log("Enrichment result not stored for message id \(messageId)", logLevel: .debug)
+        this.logger.verbose(`Enrichment result not stored for message id ${messageId}`);
         return;
       }
 

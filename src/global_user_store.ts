@@ -55,20 +55,15 @@ export default class GlobalUserStore {
       const user = PayloadDeserializer.createUserFromPayload(userPayload);
       const userToReturn = this.addOrMerge(user);
       onSuccess(userToReturn);
-    }).catch(err => {
-      // TODO: Proper error handling
-      onError(err);
-      console.log("Error", err)
+    }).catch(error => {
+      this.instance.logger.verbose(`Error fetching user information: ${error}`);
+      onError(error);
     })
   }
 
   handleInitialPresencePayloadsAfterRoomJoin(payloads: PresencePayload[], onComplete: () => void) {
     this.handleInitialPresencePayloads(payloads, onComplete);
   }
-
-  // handleInitialPresencePayloads(payloads: PCPresencePayload[], onComplete: () => void) {
-  //   this.handleInitialPresencePayloads(payloads, onComplete);
-  // }
 
   handleInitialPresencePayloads(payloads: PresencePayload[], onComplete: () => void) {
     const presencePayloadPromises = new Array<Promise<any>>();
@@ -82,7 +77,7 @@ export default class GlobalUserStore {
             resolve();
           },
           (error) => {
-            // TODO: Logging
+            this.instance.logger.verbose(`Error fetching user information: ${error}`);
             reject();
           }
         )
@@ -100,11 +95,9 @@ export default class GlobalUserStore {
   // provided and then only makes a request to fetch the user information for the userIds
   // that aren't known about. This would be used in the creatRoom callback and the
   // addedToRoom parsing function
-
   fetchUsersWithIds(userIds: string[], onSuccess: (users: User[]) => void, onError: (error: Error) => void) {
     if (userIds.length === 0) {
-      // TODO: Log something
-      // this.instance.logger.log("Requested to fetch users for a list of user ids which was empty", logLevel: .debug);
+      this.instance.logger.verbose('Requested to fetch users for a list of user ids which was empty');
       onSuccess([]);
       return
     }
@@ -126,10 +119,9 @@ export default class GlobalUserStore {
       })
 
       onSuccess(users);
-    }).catch(err => {
-      // TODO: Proper error handling
-      onError(err);
-      console.log("Error", err)
+    }).catch(error => {
+      this.instance.logger.verbose(`Error fetching user information: ${error}`);
+      onError(error);
     })
   }
 

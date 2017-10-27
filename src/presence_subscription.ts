@@ -36,7 +36,7 @@ export default class PresenceSubscription {
     const { data } = body;
     const eventName = body.event_name;
 
-    // self.instance.logger.log("Received event name: \(eventNameString), and data: \(apiEventData)", logLevel: .verbose)
+    this.instance.logger.verbose(`Received event type: ${eventName}, and data: ${data}`);
 
     switch (eventName) {
       case 'initial_state':
@@ -48,25 +48,23 @@ export default class PresenceSubscription {
       case 'join_room_presence_update':
         this.parseJoinRoomPresenceUpdatePayload(eventName, data, this.userStore);
         break;
+      default:
+        this.instance.logger.verbose(`Unsupported event type received: ${eventName}, and data: ${data}`);
+        break;
     }
   }
 
   end() {
-
+    // TODO: Work out how to implement
   }
 
   parseInitialStatePayload(eventName: string, data: any, userStore: GlobalUserStore) {
     const userStatesPayload = data.user_states;
 
     if (userStatesPayload === undefined || userStatesPayload.constructor !== Array) {
-       //     let error = PCPresenceEventError.keyNotPresentInEventPayload(
-      //         key: "user_states",
-      //         apiEventName: eventName,
-      //         payload: data
-      //     )
-
-      //     self.instance.logger.log(error.localizedDescription, logLevel: .debug)
-      //     self.delegate?.error(error: error)
+      this.instance.logger.debug(`'user_stats' value missing from ${eventName} presence payload: ${data}`);
+      // TODO: Do we want the error delegate?
+      // self.delegate?.error(error: error)
       return;
     }
 
@@ -76,8 +74,7 @@ export default class PresenceSubscription {
     }).filter(el => el !== undefined);
 
     if (userStates.length === 0) {
-      // TODO: log
-      console.log("No user states");
+      this.instance.logger.verbose('No presence user states to process');
       return;
     }
 
@@ -85,16 +82,14 @@ export default class PresenceSubscription {
       userStates,
       () => {
         this.roomStore.rooms.forEach(room => {
-          // TODO: Delegate stuff
-
           if (room.subscription === undefined) {
-            console.log(`Room ${room.name} has no subscription object set`);
+            this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
           } else {
             if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
               room.subscription.delegate.usersUpdated();
             }
           }
-          // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
+          this.instance.logger.verbose(`Users updated in room ${room.name}`);
         })
       }
     )
@@ -113,28 +108,25 @@ export default class PresenceSubscription {
             if (this.delegate.userCameOnline) {
               this.delegate.userCameOnline(user);
             }
-
-            // strongSelf.instance.logger.log("\(user.displayName) came online", logLevel: .verbose)
+            this.instance.logger.verbose(`${user.id} came online`);
             break;
           case 'offline':
             if (this.delegate.userWentOffline) {
               this.delegate.userWentOffline(user);
             }
-
-            // strongSelf.instance.logger.log("\(user.displayName) came offline", logLevel: .verbose)
+            this.instance.logger.verbose(`${user.id} went offline`);
             break;
           case 'unknown':
             // This should never be the case
-            // strongSelf.instance.logger.log("Somehow the presence state of user \(user.debugDescription) is unknown", logLevel: .debug)
+            this.instance.logger.verbose(`Somehow the presence state of user ${user.id} is unknown`);
             break;
         }
 
         // TODO: Could check if any room is active to speed this up? Or keep a better
         // map of user_ids to rooms
-
         this.roomStore.rooms.forEach(room => {
           if (room.subscription === undefined) {
-            console.log(`Room ${room.name} has no subscription object set`);
+            this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
             return;
           }
 
@@ -157,12 +149,7 @@ export default class PresenceSubscription {
         })
       },
       (error) => {
-        // TODO: Some logging
-
-        // strongSelf.instance.logger.log(
-        //   "Error fetching user information for user with id \(presencePayload.userId): \(err!.localizedDescription)",
-        //   logLevel: .debug
-        // )
+        this.instance.logger.debug(`Error fetching user information for user with id ${presencePayload.userId}: ${error}`);
         return;
       }
     )
@@ -173,14 +160,9 @@ export default class PresenceSubscription {
     const userStatesPayload = data.user_states;
 
     if (userStatesPayload === undefined || userStatesPayload.constructor !== Array) {
-       //     let error = PCPresenceEventError.keyNotPresentInEventPayload(
-      //         key: "user_states",
-      //         apiEventName: eventName,
-      //         payload: data
-      //     )
-
-      //     self.instance.logger.log(error.localizedDescription, logLevel: .debug)
-      //     self.delegate?.error(error: error)
+       this.instance.logger.debug(`'user_stats' value missing from ${eventName} presence payload: ${data}`);
+      // TODO: Delegate question again
+      // self.delegate?.error(error: error)
       return;
     }
 
@@ -190,8 +172,7 @@ export default class PresenceSubscription {
     }).filter(el => el !== undefined);
 
     if (userStates.length === 0) {
-      // TODO: log
-      console.log("No user states");
+      this.instance.logger.verbose('No presence user states to process');
       return;
     }
 
@@ -200,14 +181,14 @@ export default class PresenceSubscription {
       () => {
         this.roomStore.rooms.forEach(room => {
           if (room.subscription === undefined) {
-            console.log(`Room ${room.name} has no subscription object set`);
+            this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
           } else {
             if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
               room.subscription.delegate.usersUpdated();
             }
           }
 
-          // strongSelf.instance.logger.log("Users updated in room \(room.name)", logLevel: .verbose)
+          this.instance.logger.verbose(`Users updated in room ${room.name}`);
         })
       }
     )

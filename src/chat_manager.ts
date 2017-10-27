@@ -18,16 +18,13 @@ export interface ChatManagerOptions {
 }
 
 export default class ChatManager {
-  private instance: Instance;
   private userSubscription: UserSubscription;
   private userStore: GlobalUserStore;
+
+  instance: Instance;
   tokenProvider: TokenProvider;
 
   constructor(options: ChatManagerOptions) {
-    // if (!logger && logLevel) {
-    //   logger = new PusherPlatform.ConsoleLogger(logLevel);
-    // }
-
     this.tokenProvider = options.tokenProvider;
 
     this.instance = new Instance({
@@ -36,7 +33,7 @@ export default class ChatManager {
       serviceVersion: 'v1',
       tokenProvider: options.tokenProvider,
       client: options.baseClient,
-      // TODO: logger,
+      logger: options.logger,
     });
 
     this.userStore = new GlobalUserStore({ instance: this.instance });

@@ -11,7 +11,7 @@ import GlobalUserStore from './global_user_store';
 import UserSubscription from './user_subscription';
 
 export interface ChatManagerOptions {
-  instanceId: string;
+  instanceLocator: string;
   tokenProvider: TokenProvider;
   logger?: Logger;
   baseClient?: BaseClient;
@@ -28,7 +28,7 @@ export default class ChatManager {
     this.tokenProvider = options.tokenProvider;
 
     this.instance = new Instance({
-      instanceId: options.instanceId,
+      locator: options.instanceLocator,
       serviceName: 'chatkit',
       serviceVersion: 'v1',
       tokenProvider: options.tokenProvider,

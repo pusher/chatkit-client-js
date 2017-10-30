@@ -395,11 +395,10 @@ export default class CurrentUser {
       logger: this.instance.logger
     })
 
-
     // TODO: What happens if you provide both a message_limit and a Last-Event-ID?
 
     this.instance.subscribeNonResuming({
-      path: `/rooms/${room.id}`,
+      path: `/rooms/${room.id}?message_limit=${messageLimit}`,
       listeners: {
         onEvent: room.subscription.handleEvent.bind(room.subscription),
       }

@@ -1,6 +1,5 @@
 node_modules
 npm-debug.log
-/target/
 /.vscode/
 /declarations/
 config.js

@@ -1,18 +1,18 @@
 {
-  "name": "chatkit-js",
+  "name": "pusher-chatkit-client",
   "description": "Pusher Chatkit client library for web browsers",
   "main": "target/chatkit.js",
   "version": "0.1.0",
   "types": "declarations/index.d.ts",
   "author": "Pusher",
   "license": "MIT",
-  "homepage": "https://github.com/pusher/chatkit-js",
+  "homepage": "https://github.com/pusher/chatkit-client-js",
   "bugs": {
-    "url": "https://github.com/pusher/chatkit-js/issues"
+    "url": "https://github.com/pusher/chatkit-client-js/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pusher/chatkit-js.git"
+    "url": "git+https://github.com/pusher/chatkit-client-js.git"
   },
   "scripts": {
     "build": "rm -rf target declarations && webpack"

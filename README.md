@@ -18,6 +18,12 @@ For more information on the Chatkit service, [see here](https://pusher.com/chatk
 $ yarn add chatkit-js
 ```
 
+## Script tag
+
+```html
+<script src="https://unpkg.com/pusher-chatkit-client"></script>
+```
+
 ## Getting started
 
 Head over to [our documentation](https://docs.pusher.com/chatkit/reference/js).

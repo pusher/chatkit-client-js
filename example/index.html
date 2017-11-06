@@ -4,8 +4,8 @@
     <script type="text/javascript" src="../target/chatkit.js"></script>
     <script type="text/javascript">
       const tokenProvider = new Chatkit.TokenProvider({
-        url: "https://us1-staging.pusherplatform.io/services/chatkit_token_provider/v1/80215247-1df3-4956-8ba8-9744ffd12164/token?instance_id=v1:us1-staging:80215247-1df3-4956-8ba8-9744ffd12164",
-        userId: "ham",
+        url: "YOUR_TEST_TOKEN_PROVIDER_URL_FROM_THE_DASHBOARD_GETTING_STARTED",
+        userId: "YOUR_CREATED_USERS_ID",
         authContext: {
           queryParams: {
             somekey: "somevalue"
@@ -17,7 +17,7 @@
       })
 
       const chatManager = new Chatkit.ChatManager({
-        instanceLocator: 'v1:us1-staging:80215247-1df3-4956-8ba8-9744ffd12164',
+        instanceLocator: 'YOUR_INSTANCE_LOCATOR',
         tokenProvider: tokenProvider,
       });
 

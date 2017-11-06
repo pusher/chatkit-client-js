@@ -2,7 +2,7 @@
   "name": "pusher-chatkit-client",
   "description": "Pusher Chatkit client library for web browsers",
   "main": "target/chatkit.js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "types": "declarations/index.d.ts",
   "author": "Pusher",
   "license": "MIT",

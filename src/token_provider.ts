@@ -29,7 +29,7 @@ export default class TokenProvider {
   constructor(options: TokenProviderOptions) {
     this.url = options.url;
     this.userId = options.userId;
-    this.authContext = options.authContext;
+    this.authContext = options.authContext || {};
   }
 
   fetchToken(tokenParams?: any): PCancelable<string> {
@@ -50,6 +50,7 @@ export default class TokenProvider {
         url = mergeQueryParamsIntoUrl(this.url, this.authContext.queryParams);
       } else {
         const authContextWithUserId = Object.assign(
+          {},
           this.authContext.queryParams,
           { user_id: this.userId },
         );

@@ -1783,7 +1783,7 @@ var TokenProvider = /** @class */ (function () {
     function TokenProvider(options) {
         this.url = options.url;
         this.userId = options.userId;
-        this.authContext = options.authContext;
+        this.authContext = options.authContext || {};
     }
     TokenProvider.prototype.fetchToken = function (tokenParams) {
         return this.makeAuthRequest().then(function (responseBody) {
@@ -1802,7 +1802,7 @@ var TokenProvider = /** @class */ (function () {
                 url = utils_1.mergeQueryParamsIntoUrl(_this.url, _this.authContext.queryParams);
             }
             else {
-                var authContextWithUserId = Object.assign(_this.authContext.queryParams, { user_id: _this.userId });
+                var authContextWithUserId = Object.assign({}, _this.authContext.queryParams, { user_id: _this.userId });
                 url = utils_1.mergeQueryParamsIntoUrl(_this.url, authContextWithUserId);
             }
             xhr.open("POST", url);

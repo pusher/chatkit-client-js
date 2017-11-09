@@ -15,7 +15,7 @@ For more information on the Chatkit service, [see here](https://pusher.com/chatk
 [yarn](https://yarnpkg.com/):
 
 ```sh
-$ yarn add chatkit-js
+$ yarn add pusher-chatkit-client
 ```
 
 ## Script tag

@@ -368,7 +368,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 12);
+/******/ 	return __webpack_require__(__webpack_require__.s = 11);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -428,244 +428,6 @@ var XhrReadyState;
 
 /***/ }),
 /* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var network_1 = __webpack_require__(0);
-var BaseSubscriptionState;
-(function (BaseSubscriptionState) {
-    BaseSubscriptionState[BaseSubscriptionState["UNOPENED"] = 0] = "UNOPENED";
-    BaseSubscriptionState[BaseSubscriptionState["OPENING"] = 1] = "OPENING";
-    BaseSubscriptionState[BaseSubscriptionState["OPEN"] = 2] = "OPEN";
-    BaseSubscriptionState[BaseSubscriptionState["ENDING"] = 3] = "ENDING";
-    BaseSubscriptionState[BaseSubscriptionState["ENDED"] = 4] = "ENDED"; // called onEnd() or onError(err)
-})(BaseSubscriptionState = exports.BaseSubscriptionState || (exports.BaseSubscriptionState = {}));
-var BaseSubscription = /** @class */ (function () {
-    function BaseSubscription(xhr, logger, onOpen, onError, onEvent, onEnd) {
-        if (onOpen === void 0) { onOpen = function (headers) { }; }
-        if (onError === void 0) { onError = function (error) { }; }
-        if (onEvent === void 0) { onEvent = function (event) { }; }
-        if (onEnd === void 0) { onEnd = function (error) { }; }
-        var _this = this;
-        this.xhr = xhr;
-        this.logger = logger;
-        this.onOpen = onOpen;
-        this.onError = onError;
-        this.onEvent = onEvent;
-        this.onEnd = onEnd;
-        this.state = BaseSubscriptionState.UNOPENED;
-        this.lastNewlineIndex = 0;
-        /******
-        Message parsing
-        ******/
-        this.gotEOS = false;
-        xhr.onreadystatechange = function () {
-            switch (_this.xhr.readyState) {
-                case network_1.XhrReadyState.UNSENT:
-                case network_1.XhrReadyState.OPENED:
-                case network_1.XhrReadyState.HEADERS_RECEIVED:
-                    _this.assertStateIsIn(BaseSubscriptionState.OPENING);
-                    break;
-                case network_1.XhrReadyState.LOADING:
-                    _this.onLoading();
-                    break;
-                case network_1.XhrReadyState.DONE:
-                    _this.onDone();
-                    break;
-            }
-        };
-        this.state = BaseSubscriptionState.OPENING;
-        this.xhr.send();
-    }
-    BaseSubscription.prototype.unsubscribe = function () {
-        this.state = BaseSubscriptionState.ENDED;
-        this.xhr.abort();
-        this.onEnd();
-    };
-    BaseSubscription.prototype.getHeaders = function () {
-        return network_1.responseToHeadersObject(this.xhr.getAllResponseHeaders());
-    };
-    BaseSubscription.prototype.onLoading = function () {
-        this.assertStateIsIn(BaseSubscriptionState.OPENING, BaseSubscriptionState.OPEN, BaseSubscriptionState.ENDING);
-        if (this.xhr.status === 200) {
-            //Check if we just transitioned to the open state
-            if (this.state === BaseSubscriptionState.OPENING) {
-                this.state = BaseSubscriptionState.OPEN;
-                this.onOpen(network_1.responseToHeadersObject(this.xhr.getAllResponseHeaders()));
-            }
-            this.assertStateIsIn(BaseSubscriptionState.OPEN);
-            var err = this.onChunk(); // might transition our state from OPEN -> ENDING
-            this.assertStateIsIn(BaseSubscriptionState.OPEN, BaseSubscriptionState.ENDING);
-            if (err) {
-                this.state = BaseSubscriptionState.ENDED;
-                if (err instanceof network_1.ErrorResponse && err.statusCode != 204) {
-                    this.onError(err);
-                }
-                // Because we abort()ed, we will get no more calls to our onreadystatechange handler,
-                // and so we will not call the event handler again.
-                // Finish with options.onError instead of the options.onEnd.
-            }
-            else {
-                // We consumed some response text, and all's fine. We expect more text.
-            }
-        }
-    };
-    BaseSubscription.prototype.onDone = function () {
-        if (this.xhr.status === 200) {
-            if (this.state === BaseSubscriptionState.OPENING) {
-                this.state = BaseSubscriptionState.OPEN;
-                this.onOpen(network_1.responseToHeadersObject(this.xhr.getAllResponseHeaders()));
-            }
-            this.assertStateIsIn(BaseSubscriptionState.OPEN, BaseSubscriptionState.ENDING);
-            var err = this.onChunk();
-            if (err) {
-                this.state = BaseSubscriptionState.ENDED;
-                if (err.statusCode === 204) {
-                    this.onEnd();
-                }
-                else {
-                    this.onError(err);
-                }
-            }
-            else if (this.state <= BaseSubscriptionState.ENDING) {
-                this.onError(new Error("HTTP response ended without receiving EOS message"));
-            }
-            else {
-                // Stream ended normally.
-                this.onEnd();
-            }
-        }
-        else {
-            this.assertStateIsIn(BaseSubscriptionState.OPENING, BaseSubscriptionState.OPEN, BaseSubscriptionState.ENDED);
-            if (this.state === BaseSubscriptionState.ENDED) {
-                // We aborted the request deliberately, and called onError/onEnd elsewhere.
-                return;
-            }
-            else if (this.xhr.status === 0) {
-                this.onError(new network_1.NetworkError("Connection lost."));
-            }
-            else {
-                this.onError(network_1.ErrorResponse.fromXHR(this.xhr));
-            }
-        }
-    };
-    BaseSubscription.prototype.onChunk = function () {
-        this.assertStateIsIn(BaseSubscriptionState.OPEN);
-        var response = this.xhr.responseText;
-        var newlineIndex = response.lastIndexOf("\n");
-        if (newlineIndex > this.lastNewlineIndex) {
-            var rawEvents = response.slice(this.lastNewlineIndex, newlineIndex).split("\n");
-            this.lastNewlineIndex = newlineIndex;
-            for (var _i = 0, rawEvents_1 = rawEvents; _i < rawEvents_1.length; _i++) {
-                var rawEvent = rawEvents_1[_i];
-                if (rawEvent.length === 0) {
-                    continue; // FIXME why? This should be a protocol error
-                }
-                var data = JSON.parse(rawEvent);
-                var err = this.onMessage(data);
-                if (err != null) {
-                    return err;
-                }
-            }
-        }
-    };
-    /**
-    * Calls options.onEvent 0+ times, then returns an Error or null
-    * Also asserts the message is formatted correctly and we're in an allowed state (not terminated).
-    */
-    BaseSubscription.prototype.onMessage = function (message) {
-        this.assertStateIsIn(BaseSubscriptionState.OPEN);
-        this.verifyMessage(message);
-        switch (message[0]) {
-            case 0:
-                return null;
-            case 1:
-                return this.onEventMessage(message);
-            case 255:
-                return this.onEOSMessage(message);
-            default:
-                return new Error("Unknown Message: " + JSON.stringify(message));
-        }
-    };
-    // EITHER calls options.onEvent, OR returns an error
-    BaseSubscription.prototype.onEventMessage = function (eventMessage) {
-        this.assertStateIsIn(BaseSubscriptionState.OPEN);
-        if (eventMessage.length !== 4) {
-            return new Error("Event message has " + eventMessage.length + " elements (expected 4)");
-        }
-        var _ = eventMessage[0], id = eventMessage[1], headers = eventMessage[2], body = eventMessage[3];
-        if (typeof id !== "string") {
-            return new Error("Invalid event ID in message: " + JSON.stringify(eventMessage));
-        }
-        if (typeof headers !== "object" || Array.isArray(headers)) {
-            return new Error("Invalid event headers in message: " + JSON.stringify(eventMessage));
-        }
-        this.onEvent({ eventId: id, headers: headers, body: body });
-    };
-    /**
-    * EOS message received. Sets subscription state to Ending and returns an error with given status code
-    * @param eosMessage final message of the subscription
-    */
-    BaseSubscription.prototype.onEOSMessage = function (eosMessage) {
-        this.assertStateIsIn(BaseSubscriptionState.OPEN);
-        if (eosMessage.length !== 4) {
-            return new Error("EOS message has " + eosMessage.length + " elements (expected 4)");
-        }
-        var _ = eosMessage[0], statusCode = eosMessage[1], headers = eosMessage[2], info = eosMessage[3];
-        if (typeof statusCode !== "number") {
-            return new Error("Invalid EOS Status Code");
-        }
-        if (typeof headers !== "object" || Array.isArray(headers)) {
-            return new Error("Invalid EOS ElementsHeaders");
-        }
-        this.state = BaseSubscriptionState.ENDING;
-        return new network_1.ErrorResponse(statusCode, headers, info);
-    };
-    /******
-    Utility methods
-    ******/
-    /**
-    * Asserts whether this subscription falls in one of the expected states and logs a warning if it's not.
-    * @param validStates Array of possible states this subscription could be in.
-    */
-    BaseSubscription.prototype.assertStateIsIn = function () {
-        var _this = this;
-        var validStates = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            validStates[_i] = arguments[_i];
-        }
-        var stateIsValid = validStates.some(function (validState) { return validState === _this.state; });
-        if (!stateIsValid) {
-            var expectedStates = validStates.map(function (state) { return BaseSubscriptionState[state]; }).join(', ');
-            var actualState = BaseSubscriptionState[this.state];
-            this.logger.warn("Expected this.state to be one of [" + expectedStates + "] but it is " + actualState);
-        }
-    };
-    /**
-    * Check if a single subscription message is in the right format.
-    * @param message The message to check.
-    * @returns null or error if the message is wrong.
-    */
-    BaseSubscription.prototype.verifyMessage = function (message) {
-        if (this.gotEOS) {
-            return new Error("Got another message after EOS message");
-        }
-        if (!Array.isArray(message)) {
-            return new Error("Message is not an array");
-        }
-        if (message.length < 1) {
-            return new Error("Message is empty array");
-        }
-    };
-    return BaseSubscription;
-}());
-exports.BaseSubscription = BaseSubscription;
-
-
-/***/ }),
-/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -740,7 +502,7 @@ exports.EmptyLogger = EmptyLogger;
 
 
 /***/ }),
-/* 3 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -848,58 +610,48 @@ exports.RetryResolution = RetryResolution;
 
 
 /***/ }),
-/* 4 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var retrying_subscription_1 = __webpack_require__(7);
-var resuming_subscription_1 = __webpack_require__(6);
-var request_1 = __webpack_require__(5);
-var logger_1 = __webpack_require__(2);
-var subscription_1 = __webpack_require__(14);
-var base_subscription_1 = __webpack_require__(1);
-var token_providing_subscription_1 = __webpack_require__(8);
-var transports_1 = __webpack_require__(9);
-var subscribe_strategy_1 = __webpack_require__(13);
+var retrying_subscription_1 = __webpack_require__(6);
+var resuming_subscription_1 = __webpack_require__(5);
+var request_1 = __webpack_require__(4);
+var logger_1 = __webpack_require__(1);
+var subscription_1 = __webpack_require__(13);
+var token_providing_subscription_1 = __webpack_require__(7);
+var transports_1 = __webpack_require__(8);
+var subscribe_strategy_1 = __webpack_require__(12);
+var websocket_1 = __webpack_require__(15);
+var http_1 = __webpack_require__(14);
 var BaseClient = /** @class */ (function () {
     function BaseClient(options) {
-        var _this = this;
         this.options = options;
-        this.xhrConstructor = function (path) {
-            return function (headers) {
-                var requestOptions = {
-                    method: "SUBSCRIBE",
-                    path: path,
-                    headers: headers
-                };
-                return _this.createXHR(_this.baseURL, requestOptions);
-            };
-        };
-        var host = options.host.replace(/\/$/, '');
-        this.baseURL = (options.encrypted !== false ? "https" : "http") + "://" + host;
+        this.host = options.host.replace(/(\/)+$/, '');
         this.logger = options.logger || new logger_1.ConsoleLogger();
+        this.websocketTransport = new websocket_1.default(this.host);
+        this.httpTransport = new http_1.default(this.host);
     }
     BaseClient.prototype.request = function (options, tokenProvider, tokenParams) {
         var _this = this;
         if (tokenProvider) {
             return tokenProvider.fetchToken(tokenParams).then(function (token) {
                 options.headers['Authorization'] = "Bearer " + token;
-                return request_1.executeNetworkRequest(function () { return _this.createXHR(_this.baseURL, options); }, options);
+                return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
             }).catch(function (error) {
                 console.log(error);
             });
         }
         else {
-            return request_1.executeNetworkRequest(function () { return _this.createXHR(_this.baseURL, options); }, options);
+            return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
         }
     };
     BaseClient.prototype.subscribeResuming = function (path, headers, listeners, retryStrategyOptions, initialEventId, tokenProvider) {
-        var requestFactory = this.xhrConstructor(path);
         listeners = subscription_1.replaceMissingListenersWithNoOps(listeners);
         var subscribeStrategyListeners = subscribe_strategy_1.subscribeStrategyListenersFromSubscriptionListeners(listeners);
-        var subscriptionStrategy = resuming_subscription_1.createResumingStrategy(retryStrategyOptions, initialEventId, token_providing_subscription_1.createTokenProvidingStrategy(tokenProvider, transports_1.createH2TransportStrategy(requestFactory, this.logger), this.logger), this.logger);
+        var subscriptionStrategy = resuming_subscription_1.createResumingStrategy(retryStrategyOptions, initialEventId, token_providing_subscription_1.createTokenProvidingStrategy(tokenProvider, transports_1.createTransportStrategy(path, this.websocketTransport, this.logger), this.logger), this.logger);
         var opened = false;
         return subscriptionStrategy({
             onOpen: function (headers) {
@@ -916,12 +668,9 @@ var BaseClient = /** @class */ (function () {
         }, headers);
     };
     BaseClient.prototype.subscribeNonResuming = function (path, headers, listeners, retryStrategyOptions, tokenProvider) {
-        var _this = this;
-        var xhrFactory = this.xhrConstructor(path);
         listeners = subscription_1.replaceMissingListenersWithNoOps(listeners);
         var subscribeStrategyListeners = subscribe_strategy_1.subscribeStrategyListenersFromSubscriptionListeners(listeners);
-        var subscriptionConstructor = function (onOpen, onError, onEvent, onEnd, headers) { return new base_subscription_1.BaseSubscription(xhrFactory(headers), _this.logger, onOpen, onError, onEvent, onEnd); };
-        var subscriptionStrategy = retrying_subscription_1.createRetryingStrategy(retryStrategyOptions, token_providing_subscription_1.createTokenProvidingStrategy(tokenProvider, transports_1.createH2TransportStrategy(xhrFactory, this.logger), this.logger), this.logger);
+        var subscriptionStrategy = retrying_subscription_1.createRetryingStrategy(retryStrategyOptions, token_providing_subscription_1.createTokenProvidingStrategy(tokenProvider, transports_1.createTransportStrategy(path, this.websocketTransport, this.logger), this.logger), this.logger);
         var opened = false;
         return subscriptionStrategy({
             onOpen: function (headers) {
@@ -937,37 +686,20 @@ var BaseClient = /** @class */ (function () {
             onEnd: subscribeStrategyListeners.onEnd
         }, headers);
     };
-    BaseClient.prototype.createXHR = function (baseURL, options) {
-        var XMLHttpRequest = window.XMLHttpRequest;
-        var xhr = new XMLHttpRequest();
-        var path = options.path.replace(/^\/+/, "");
-        var endpoint = baseURL + "/" + path;
-        xhr.open(options.method.toUpperCase(), endpoint, true);
-        if (options.body) {
-            xhr.setRequestHeader("content-type", "application/json");
-        }
-        if (options.jwt) {
-            xhr.setRequestHeader("authorization", "Bearer " + options.jwt);
-        }
-        for (var key in options.headers) {
-            xhr.setRequestHeader(key, options.headers[key]);
-        }
-        return xhr;
-    };
     return BaseClient;
 }());
 exports.BaseClient = BaseClient;
 
 
 /***/ }),
-/* 5 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
-var PCancelable = __webpack_require__(11);
+var PCancelable = __webpack_require__(10);
 function executeNetworkRequest(createXhr, options) {
     var cancelablePromise = new PCancelable(function (onCancel, resolve, reject) {
         var xhr = createXhr();
@@ -976,7 +708,7 @@ function executeNetworkRequest(createXhr, options) {
         });
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
+                if (xhr.status >= 200 && xhr.status < 300) {
                     resolve(xhr.response);
                 }
                 else if (xhr.status !== 0) {
@@ -995,13 +727,13 @@ exports.executeNetworkRequest = executeNetworkRequest;
 
 
 /***/ }),
-/* 6 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var retry_strategy_1 = __webpack_require__(3);
+var retry_strategy_1 = __webpack_require__(2);
 var network_1 = __webpack_require__(0);
 exports.createResumingStrategy = function (retryOptions, initialEventId, nextSubscribeStrategy, logger) {
     retryOptions = retry_strategy_1.createRetryStrategyOptionsOrDefault(retryOptions);
@@ -1076,7 +808,9 @@ exports.createResumingStrategy = function (retryOptions, initialEventId, nextSub
                         };
                         var errorResolution = resolveError(error);
                         if (errorResolution instanceof retry_strategy_1.Retry) {
-                            _this.timeout = window.setTimeout(function () { executeNextSubscribeStrategy(lastEventId); }, errorResolution.waitTimeMillis);
+                            _this.timeout = window.setTimeout(function () {
+                                executeNextSubscribeStrategy(lastEventId);
+                            }, errorResolution.waitTimeMillis);
                         }
                         else {
                             onTransition(new FailedSubscriptionState(error));
@@ -1156,13 +890,13 @@ exports.createResumingStrategy = function (retryOptions, initialEventId, nextSub
 
 
 /***/ }),
-/* 7 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var retry_strategy_1 = __webpack_require__(3);
+var retry_strategy_1 = __webpack_require__(2);
 var network_1 = __webpack_require__(0);
 exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, logger) {
     retryOptions = retry_strategy_1.createRetryStrategyOptionsOrDefault(retryOptions);
@@ -1220,7 +954,9 @@ exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, 
                     var executeNextSubscribeStrategy = function () {
                         logger.verbose("RetryingSubscription: trying to re-establish the subscription");
                         var underlyingSubscription = nextSubscribeStrategy({
-                            onOpen: function (headers) { return onTransition(new OpenSubscriptionState(headers, underlyingSubscription, onTransition)); },
+                            onOpen: function (headers) {
+                                onTransition(new OpenSubscriptionState(headers, underlyingSubscription, onTransition));
+                            },
                             onRetrying: listeners.onRetrying,
                             onError: function (error) { return executeSubscriptionOnce(error); },
                             onEvent: listeners.onEvent,
@@ -1239,8 +975,8 @@ exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, 
                 function OpenSubscriptionState(headers, underlyingSubscription, onTransition) {
                     this.underlyingSubscription = underlyingSubscription;
                     this.onTransition = onTransition;
-                    listeners.onOpen(headers);
                     logger.verbose("RetryingSubscription: transitioning to OpenSubscriptionState");
+                    listeners.onOpen(headers);
                 }
                 OpenSubscriptionState.prototype.unsubscribe = function () {
                     this.underlyingSubscription.unsubscribe();
@@ -1277,7 +1013,7 @@ exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, 
 
 
 /***/ }),
-/* 8 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1352,6 +1088,7 @@ exports.createTokenProvidingStrategy = function (tokenProvider, nextSubscribeStr
             }());
             var OpenSubscriptionState = /** @class */ (function () {
                 function OpenSubscriptionState(headers, underlyingSubscription, onTransition) {
+                    this.headers = headers;
                     this.underlyingSubscription = underlyingSubscription;
                     this.onTransition = onTransition;
                     logger.verbose("TokenProvidingSubscription: transitioning to OpenSubscriptionState");
@@ -1400,30 +1137,27 @@ exports.createTokenProvidingStrategy = function (tokenProvider, nextSubscribeStr
 
 
 /***/ }),
+/* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createTransportStrategy = function (path, transport, logger) {
+    var strategy = function (listeners, headers) { return (transport.subscribe(path, listeners, headers)); };
+    return strategy;
+};
+
+
+/***/ }),
 /* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var base_subscription_1 = __webpack_require__(1);
-exports.createH2TransportStrategy = function (requestFactory, logger) {
-    var strategy = function (listeners, headers) {
-        return new base_subscription_1.BaseSubscription(requestFactory(headers), logger, listeners.onOpen, listeners.onError, listeners.onEvent, listeners.onEnd);
-    };
-    return strategy;
-};
-
-
-/***/ }),
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var base_client_1 = __webpack_require__(4);
-var logger_1 = __webpack_require__(2);
+var base_client_1 = __webpack_require__(3);
+var logger_1 = __webpack_require__(1);
 var HOST_BASE = "pusherplatform.io";
 var Instance = /** @class */ (function () {
     function Instance(options) {
@@ -1479,7 +1213,7 @@ exports.default = Instance;
 
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1563,37 +1297,34 @@ module.exports.CancelError = CancelError;
 
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var transports_1 = __webpack_require__(9);
-exports.createH2TransportStrategy = transports_1.createH2TransportStrategy;
-var request_1 = __webpack_require__(5);
+var transports_1 = __webpack_require__(8);
+exports.createTransportStrategy = transports_1.createTransportStrategy;
+var request_1 = __webpack_require__(4);
 exports.executeNetworkRequest = request_1.executeNetworkRequest;
-var resuming_subscription_1 = __webpack_require__(6);
+var resuming_subscription_1 = __webpack_require__(5);
 exports.createResumingStrategy = resuming_subscription_1.createResumingStrategy;
-var retry_strategy_1 = __webpack_require__(3);
+var retry_strategy_1 = __webpack_require__(2);
 exports.createRetryStrategyOptionsOrDefault = retry_strategy_1.createRetryStrategyOptionsOrDefault;
 exports.DoNotRetry = retry_strategy_1.DoNotRetry;
 exports.Retry = retry_strategy_1.Retry;
 exports.RetryResolution = retry_strategy_1.RetryResolution;
-var instance_1 = __webpack_require__(10);
+var instance_1 = __webpack_require__(9);
 exports.Instance = instance_1.default;
-var base_client_1 = __webpack_require__(4);
+var base_client_1 = __webpack_require__(3);
 exports.BaseClient = base_client_1.BaseClient;
-var logger_1 = __webpack_require__(2);
+var logger_1 = __webpack_require__(1);
 exports.ConsoleLogger = logger_1.ConsoleLogger;
 exports.EmptyLogger = logger_1.EmptyLogger;
-var retrying_subscription_1 = __webpack_require__(7);
+var retrying_subscription_1 = __webpack_require__(6);
 exports.createRetryingStrategy = retrying_subscription_1.createRetryingStrategy;
-var token_providing_subscription_1 = __webpack_require__(8);
+var token_providing_subscription_1 = __webpack_require__(7);
 exports.createTokenProvidingStrategy = token_providing_subscription_1.createTokenProvidingStrategy;
-var base_subscription_1 = __webpack_require__(1);
-exports.BaseSubscription = base_subscription_1.BaseSubscription;
-exports.BaseSubscriptionState = base_subscription_1.BaseSubscriptionState;
 var network_1 = __webpack_require__(0);
 exports.ErrorResponse = network_1.ErrorResponse;
 exports.NetworkError = network_1.NetworkError;
@@ -1607,7 +1338,7 @@ exports.default = {
 
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1625,12 +1356,13 @@ exports.subscribeStrategyListenersFromSubscriptionListeners = function (subListe
 
 
 /***/ }),
-/* 14 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
+;
 //Move this util somewhere else?
 var noop = function (arg) { };
 exports.replaceMissingListenersWithNoOps = function (listeners) {
@@ -1649,6 +1381,597 @@ exports.replaceMissingListenersWithNoOps = function (listeners) {
         onEnd: onEnd
     };
 };
+
+
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var network_1 = __webpack_require__(0);
+var HttpTransportState;
+(function (HttpTransportState) {
+    HttpTransportState[HttpTransportState["UNOPENED"] = 0] = "UNOPENED";
+    HttpTransportState[HttpTransportState["OPENING"] = 1] = "OPENING";
+    HttpTransportState[HttpTransportState["OPEN"] = 2] = "OPEN";
+    HttpTransportState[HttpTransportState["ENDING"] = 3] = "ENDING";
+    HttpTransportState[HttpTransportState["ENDED"] = 4] = "ENDED"; // called onEnd() or onError(err)
+})(HttpTransportState = exports.HttpTransportState || (exports.HttpTransportState = {}));
+;
+var HttpSubscription = /** @class */ (function () {
+    function HttpSubscription(xhr, listeners) {
+        var _this = this;
+        this.state = HttpTransportState.UNOPENED;
+        this.lastNewlineIndex = 0;
+        this.gotEOS = false;
+        this.xhr = xhr;
+        this.listeners = listeners;
+        this.xhr.onreadystatechange = function () {
+            switch (_this.xhr.readyState) {
+                case network_1.XhrReadyState.UNSENT:
+                case network_1.XhrReadyState.OPENED:
+                case network_1.XhrReadyState.HEADERS_RECEIVED:
+                    _this.assertStateIsIn(HttpTransportState.OPENING);
+                    break;
+                case network_1.XhrReadyState.LOADING:
+                    _this.onLoading();
+                    break;
+                case network_1.XhrReadyState.DONE:
+                    _this.onDone();
+                    break;
+            }
+        };
+        this.state = HttpTransportState.OPENING;
+        this.xhr.send();
+        return this;
+    }
+    HttpSubscription.prototype.unsubscribe = function () {
+        this.state = HttpTransportState.ENDED;
+        this.xhr.abort();
+        this.listeners.onEnd(null);
+    };
+    HttpSubscription.prototype.onLoading = function () {
+        this.assertStateIsIn(HttpTransportState.OPENING, HttpTransportState.OPEN, HttpTransportState.ENDING);
+        if (this.xhr.status === 200) {
+            //Check if we just transitioned to the open state
+            if (this.state === HttpTransportState.OPENING) {
+                this.state = HttpTransportState.OPEN;
+                console.log(network_1.responseToHeadersObject(this.xhr.getAllResponseHeaders()));
+                this.listeners.onOpen(network_1.responseToHeadersObject(this.xhr.getAllResponseHeaders()));
+            }
+            this.assertStateIsIn(HttpTransportState.OPEN);
+            var err = this.onChunk(); // might transition our state from OPEN -> ENDING
+            this.assertStateIsIn(HttpTransportState.OPEN, HttpTransportState.ENDING);
+            if (err) {
+                this.state = HttpTransportState.ENDED;
+                if (err instanceof network_1.ErrorResponse && err.statusCode != 204) {
+                    this.listeners.onError(err);
+                }
+                // Because we abort()ed, we will get no more calls to our onreadystatechange handler,
+                // and so we will not call the event handler again.
+                // Finish with options.onError instead of the options.onEnd.
+            }
+            else {
+                // We consumed some response text, and all's fine. We expect more text.
+            }
+        }
+    };
+    HttpSubscription.prototype.onDone = function () {
+        if (this.xhr.status === 200) {
+            if (this.state === HttpTransportState.OPENING) {
+                this.state = HttpTransportState.OPEN;
+                this.listeners.onOpen(network_1.responseToHeadersObject(this.xhr.getAllResponseHeaders()));
+            }
+            this.assertStateIsIn(HttpTransportState.OPEN, HttpTransportState.ENDING);
+            var err = this.onChunk();
+            if (err) {
+                this.state = HttpTransportState.ENDED;
+                if (err.statusCode === 204) {
+                    this.listeners.onEnd(null);
+                }
+                else {
+                    this.listeners.onError(err);
+                }
+            }
+            else if (this.state <= HttpTransportState.ENDING) {
+                this.listeners.onError(new Error("HTTP response ended without receiving EOS message"));
+            }
+            else {
+                // Stream ended normally.
+                this.listeners.onEnd(null);
+            }
+        }
+        else {
+            this.assertStateIsIn(HttpTransportState.OPENING, HttpTransportState.OPEN, HttpTransportState.ENDED);
+            if (this.state === HttpTransportState.ENDED) {
+                // We aborted the request deliberately, and called onError/onEnd elsewhere.
+                return;
+            }
+            else if (this.xhr.status === 0) {
+                this.listeners.onError(new network_1.NetworkError("Connection lost."));
+            }
+            else {
+                this.listeners.onError(network_1.ErrorResponse.fromXHR(this.xhr));
+            }
+        }
+    };
+    HttpSubscription.prototype.onChunk = function () {
+        this.assertStateIsIn(HttpTransportState.OPEN);
+        var response = this.xhr.responseText;
+        var newlineIndex = response.lastIndexOf("\n");
+        if (newlineIndex > this.lastNewlineIndex) {
+            var rawEvents = response.slice(this.lastNewlineIndex, newlineIndex).split("\n");
+            this.lastNewlineIndex = newlineIndex;
+            for (var _i = 0, rawEvents_1 = rawEvents; _i < rawEvents_1.length; _i++) {
+                var rawEvent = rawEvents_1[_i];
+                if (rawEvent.length === 0) {
+                    continue; // FIXME why? This should be a protocol error
+                }
+                var data = JSON.parse(rawEvent);
+                var err = this.onMessage(data);
+                if (err != null) {
+                    return err;
+                }
+            }
+        }
+    };
+    HttpSubscription.prototype.assertStateIsIn = function () {
+        var _this = this;
+        var validStates = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            validStates[_i] = arguments[_i];
+        }
+        var stateIsValid = validStates.some(function (validState) { return validState === _this.state; });
+        if (!stateIsValid) {
+            var expectedStates = validStates.map(function (state) { return HttpTransportState[state]; }).join(', ');
+            var actualState = HttpTransportState[this.state];
+            console.warn("Expected this.state to be one of [" + expectedStates + "] but it is " + actualState);
+        }
+    };
+    /**
+    * Calls options.onEvent 0+ times, then returns an Error or null
+    * Also asserts the message is formatted correctly and we're in an allowed state (not terminated).
+    */
+    HttpSubscription.prototype.onMessage = function (message) {
+        this.assertStateIsIn(HttpTransportState.OPEN);
+        this.verifyMessage(message);
+        switch (message[0]) {
+            case 0:
+                return null;
+            case 1:
+                return this.onEventMessage(message);
+            case 255:
+                return this.onEOSMessage(message);
+            default:
+                return new Error("Unknown Message: " + JSON.stringify(message));
+        }
+    };
+    // EITHER calls options.onEvent, OR returns an error
+    HttpSubscription.prototype.onEventMessage = function (eventMessage) {
+        this.assertStateIsIn(HttpTransportState.OPEN);
+        if (eventMessage.length !== 4) {
+            return new Error("Event message has " + eventMessage.length + " elements (expected 4)");
+        }
+        var _ = eventMessage[0], id = eventMessage[1], headers = eventMessage[2], body = eventMessage[3];
+        if (typeof id !== "string") {
+            return new Error("Invalid event ID in message: " + JSON.stringify(eventMessage));
+        }
+        if (typeof headers !== "object" || Array.isArray(headers)) {
+            return new Error("Invalid event headers in message: " + JSON.stringify(eventMessage));
+        }
+        this.listeners.onEvent({ eventId: id, headers: headers, body: body });
+    };
+    /**
+    * EOS message received. Sets subscription state to Ending and returns an error with given status code
+    * @param eosMessage final message of the subscription
+    */
+    HttpSubscription.prototype.onEOSMessage = function (eosMessage) {
+        this.assertStateIsIn(HttpTransportState.OPEN);
+        if (eosMessage.length !== 4) {
+            return new Error("EOS message has " + eosMessage.length + " elements (expected 4)");
+        }
+        var _ = eosMessage[0], statusCode = eosMessage[1], headers = eosMessage[2], info = eosMessage[3];
+        if (typeof statusCode !== "number") {
+            return new Error("Invalid EOS Status Code");
+        }
+        if (typeof headers !== "object" || Array.isArray(headers)) {
+            return new Error("Invalid EOS ElementsHeaders");
+        }
+        this.state = HttpTransportState.ENDING;
+        return new network_1.ErrorResponse(statusCode, headers, info);
+    };
+    /**
+    * Check if a single subscription message is in the right format.
+    * @param message The message to check.
+    * @returns null or error if the message is wrong.
+    */
+    HttpSubscription.prototype.verifyMessage = function (message) {
+        if (this.gotEOS) {
+            return new Error("Got another message after EOS message");
+        }
+        if (!Array.isArray(message)) {
+            return new Error("Message is not an array");
+        }
+        if (message.length < 1) {
+            return new Error("Message is empty array");
+        }
+    };
+    return HttpSubscription;
+}());
+var HttpTransport = /** @class */ (function () {
+    function HttpTransport(host, encrypted) {
+        this.baseURL = (encrypted !== false ? "https" : "http") + "://" + host;
+    }
+    HttpTransport.prototype.request = function (requestOptions) {
+        return this.createXHR(this.baseURL, requestOptions);
+    };
+    HttpTransport.prototype.subscribe = function (path, listeners, headers) {
+        var requestOptions = {
+            method: "SUBSCRIBE",
+            path: path,
+            headers: headers
+        };
+        return new HttpSubscription(this.createXHR(this.baseURL, requestOptions), listeners);
+    };
+    HttpTransport.prototype.createXHR = function (baseURL, options) {
+        var XMLHttpRequest = window.XMLHttpRequest;
+        var xhr = new XMLHttpRequest();
+        var path = options.path.replace(/^\/+/, "");
+        var endpoint = baseURL + "/" + path;
+        xhr.open(options.method.toUpperCase(), endpoint, true);
+        if (options.body) {
+            xhr.setRequestHeader("content-type", "application/json");
+        }
+        if (options.jwt) {
+            xhr.setRequestHeader("authorization", "Bearer " + options.jwt);
+        }
+        for (var key in options.headers) {
+            xhr.setRequestHeader(key, options.headers[key]);
+        }
+        return xhr;
+    };
+    return HttpTransport;
+}());
+exports.default = HttpTransport;
+
+
+/***/ }),
+/* 15 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var network_1 = __webpack_require__(0);
+var SubscribeMessageType = 100;
+var OpenMessageType = 101;
+var EventMessageType = 102;
+var UnsubscribeMessageType = 198;
+var EosMessageType = 199;
+var PingMessageType = 16;
+var PongMessageType = 17;
+var CloseMessageType = 99;
+var WSReadyState;
+(function (WSReadyState) {
+    WSReadyState[WSReadyState["Connecting"] = 0] = "Connecting";
+    WSReadyState[WSReadyState["Open"] = 1] = "Open";
+    WSReadyState[WSReadyState["Closing"] = 2] = "Closing";
+    WSReadyState[WSReadyState["Closed"] = 3] = "Closed";
+})(WSReadyState = exports.WSReadyState || (exports.WSReadyState = {}));
+;
+var WsSubscriptions = /** @class */ (function () {
+    function WsSubscriptions() {
+        this.subscriptions = {};
+    }
+    WsSubscriptions.prototype.add = function (subID, path, listeners, headers) {
+        this.subscriptions[subID] = {
+            path: path,
+            listeners: listeners,
+            headers: headers
+        };
+        return subID;
+    };
+    WsSubscriptions.prototype.has = function (subID) {
+        return this.subscriptions[subID] != undefined;
+    };
+    WsSubscriptions.prototype.isEmpty = function () {
+        return Object.keys(this.subscriptions).length === 0;
+    };
+    WsSubscriptions.prototype.remove = function (subID) {
+        return delete this.subscriptions[subID];
+    };
+    WsSubscriptions.prototype.get = function (subID) {
+        return this.subscriptions[subID];
+    };
+    WsSubscriptions.prototype.getAll = function () {
+        return this.subscriptions;
+    };
+    WsSubscriptions.prototype.getAllAsArray = function () {
+        var _this = this;
+        return Object.keys(this.subscriptions).map(function (subID) { return (__assign({ subID: parseInt(subID) }, _this.subscriptions[subID])); });
+    };
+    WsSubscriptions.prototype.removeAll = function () {
+        this.subscriptions = {};
+    };
+    return WsSubscriptions;
+}());
+var WsSubscription = /** @class */ (function () {
+    function WsSubscription(wsTransport, subID) {
+        this.wsTransport = wsTransport;
+        this.subID = subID;
+    }
+    WsSubscription.prototype.unsubscribe = function () {
+        this.wsTransport.unsubscribe(this.subID);
+    };
+    return WsSubscription;
+}());
+var pingIntervalMs = 30000;
+var pingTimeoutMs = 10000;
+var WebSocketTransport = /** @class */ (function () {
+    function WebSocketTransport(host) {
+        this.webSocketPath = '/ws';
+        this.forcedClose = false;
+        this.closedError = null;
+        this.baseURL = "wss://" + host + this.webSocketPath;
+        this.lastSubscriptionID = 0;
+        this.subscriptions = new WsSubscriptions();
+        this.pendingSubscriptions = new WsSubscriptions();
+        this.connect();
+    }
+    WebSocketTransport.prototype.connect = function () {
+        var _this = this;
+        this.close();
+        this.forcedClose = false;
+        this.closedError = null;
+        this.socket = new WebSocket(this.baseURL);
+        this.socket.addEventListener('open', function (event) {
+            var allPendingSubscriptions = _this.pendingSubscriptions.getAllAsArray();
+            // Re-subscribe old subscriptions for new connection
+            allPendingSubscriptions.forEach(function (subscription) {
+                var subID = subscription.subID, path = subscription.path, listeners = subscription.listeners, headers = subscription.headers;
+                _this.subscribePending(path, listeners, headers, subID);
+            });
+            _this.pendingSubscriptions.removeAll();
+            _this.pingInterval = setInterval(function () {
+                if (_this.pongTimeout) {
+                    return;
+                }
+                var now = new Date().getTime();
+                if (pingTimeoutMs > (now - _this.lastMessageReceivedTimestamp)) {
+                    return;
+                }
+                _this.sendMessage(_this.getMessage(PingMessageType, now));
+                _this.lastSentPingID = now;
+                _this.pongTimeout = setTimeout(function () {
+                    var now = new Date().getTime();
+                    if (pingTimeoutMs > (now - _this.lastMessageReceivedTimestamp)) {
+                        _this.pongTimeout = null;
+                        return;
+                    }
+                    _this.close(new network_1.NetworkError("Pong response wasn't received until timeout."));
+                }, pingTimeoutMs);
+            }, pingIntervalMs);
+        });
+        this.socket.addEventListener('message', function (event) { return _this.receiveMessage(event); });
+        this.socket.addEventListener('error', function (event) {
+            _this.close(new network_1.NetworkError('Connection was lost.'));
+        });
+        this.socket.addEventListener('close', function (event) {
+            if (!_this.forcedClose) {
+                _this.tryReconnectIfNeeded();
+                return;
+            }
+            var callback = (_this.closedError) ?
+                function (subscription) { return subscription.listeners.onError(_this.closedError); } :
+                function (subscription) { return subscription.listeners.onEnd(null); };
+            var allSubscriptions = (_this.pendingSubscriptions.isEmpty() === false) ?
+                _this.pendingSubscriptions :
+                _this.subscriptions;
+            allSubscriptions
+                .getAllAsArray()
+                .forEach(callback);
+            allSubscriptions.removeAll();
+            if (_this.closedError) {
+                _this.tryReconnectIfNeeded();
+            }
+        });
+    };
+    WebSocketTransport.prototype.close = function (error) {
+        if (!(this.socket instanceof WebSocket)) {
+            return;
+        }
+        this.forcedClose = true;
+        this.closedError = error;
+        this.socket.close();
+        clearTimeout(this.pingInterval);
+        clearTimeout(this.pongTimeout);
+        delete this.pongTimeout;
+        this.lastSentPingID = null;
+    };
+    WebSocketTransport.prototype.tryReconnectIfNeeded = function () {
+        if (this.socket.readyState !== WSReadyState.Closed) {
+            return;
+        }
+        this.connect();
+    };
+    WebSocketTransport.prototype.subscribe = function (path, listeners, headers) {
+        // If connection was closed, try to reconnect
+        this.tryReconnectIfNeeded();
+        var subID = this.lastSubscriptionID++;
+        // Add subscription to pending if socket is not open
+        if (this.socket.readyState !== WSReadyState.Open) {
+            this.pendingSubscriptions.add(subID, path, listeners, headers);
+            return new WsSubscription(this, subID);
+        }
+        // Add or select subscription
+        this.subscriptions.add(subID, path, listeners, headers);
+        this.sendMessage(this.getMessage(SubscribeMessageType, subID, path, headers));
+        return new WsSubscription(this, subID);
+    };
+    WebSocketTransport.prototype.subscribePending = function (path, listeners, headers, subID) {
+        // Add or select subscription
+        this.subscriptions.add(subID, path, listeners, headers);
+        this.sendMessage(this.getMessage(SubscribeMessageType, subID, path, headers));
+    };
+    WebSocketTransport.prototype.unsubscribe = function (subID) {
+        this.sendMessage(this.getMessage(UnsubscribeMessageType, subID));
+        this.subscriptions.get(subID).listeners.onEnd(null);
+        this.subscriptions.remove(subID);
+    };
+    WebSocketTransport.prototype.getMessage = function (messageType, id, path, headers) {
+        return [
+            messageType,
+            id,
+            path,
+            headers
+        ];
+    };
+    WebSocketTransport.prototype.sendMessage = function (message) {
+        if (this.socket.readyState !== WSReadyState.Open) {
+            return console.warn("Can't send in \"" + WSReadyState[this.socket.readyState] + "\" state");
+        }
+        this.socket.send(JSON.stringify(message));
+    };
+    WebSocketTransport.prototype.subscription = function (subID) {
+        return this.subscriptions.get(subID);
+    };
+    WebSocketTransport.prototype.receiveMessage = function (event) {
+        this.lastMessageReceivedTimestamp = new Date().getTime();
+        // First try to parse event to JSON message.
+        var message;
+        try {
+            message = JSON.parse(event.data);
+        }
+        catch (err) {
+            this.close(new Error("Message is not valid JSON format. Getting " + event.data));
+            return;
+        }
+        // Validate structure of message.
+        // Close connection if not valid.
+        var nonValidMessageError = this.validateMessage(message);
+        if (nonValidMessageError) {
+            this.close(new Error(nonValidMessageError.message));
+            return;
+        }
+        var messageType = message.shift();
+        // Try to handle connection level messages first
+        switch (messageType) {
+            case PongMessageType:
+                this.onPongMessage(message);
+                return;
+            case PingMessageType:
+                this.onPingMessage(message);
+                return;
+            case CloseMessageType:
+                this.onCloseMessage(message);
+                return;
+        }
+        var subID = message.shift();
+        var subscription = this.subscription(subID);
+        if (!subscription) {
+            this.close(new Error("Received message for non existing subscription id: \"" + subID + "\""));
+            return;
+        }
+        var listeners = subscription.listeners;
+        // Handle subscription level messages. 
+        switch (messageType) {
+            case OpenMessageType:
+                this.onOpenMessage(message, subID, listeners);
+                break;
+            case EventMessageType:
+                this.onEventMessage(message, listeners);
+                break;
+            case EosMessageType:
+                this.onEOSMessage(message, subID, listeners);
+                break;
+            default:
+                this.close(new Error('Received non existing type of message.'));
+        }
+    };
+    /**
+    * Check if a single subscription message is in the right format.
+    * @param message The message to check.
+    * @returns null or error if the message is wrong.
+    */
+    WebSocketTransport.prototype.validateMessage = function (message) {
+        if (!Array.isArray(message)) {
+            return new Error("Message is expected to be an array. Getting: " + JSON.stringify(message));
+        }
+        if (message.length < 1) {
+            return new Error("Message is empty array: " + JSON.stringify(message));
+        }
+        return null;
+    };
+    WebSocketTransport.prototype.onOpenMessage = function (message, subID, subscriptionListeners) {
+        subscriptionListeners.onOpen(message[1]);
+    };
+    WebSocketTransport.prototype.onEventMessage = function (eventMessage, subscriptionListeners) {
+        if (eventMessage.length !== 3) {
+            return new Error('Event message has ' + eventMessage.length + ' elements (expected 4)');
+        }
+        var eventId = eventMessage[0], headers = eventMessage[1], body = eventMessage[2];
+        if (typeof eventId !== 'string') {
+            return new Error("Invalid event ID in message: " + JSON.stringify(eventMessage));
+        }
+        if (typeof headers !== 'object' || Array.isArray(headers)) {
+            return new Error("Invalid event headers in message: " + JSON.stringify(eventMessage));
+        }
+        subscriptionListeners.onEvent({ eventId: eventId, headers: headers, body: body });
+    };
+    WebSocketTransport.prototype.onEOSMessage = function (eosMessage, subID, subscriptionListeners) {
+        this.subscriptions.remove(subID);
+        if (eosMessage.length !== 3) {
+            return subscriptionListeners.onError(new Error("EOS message has " + eosMessage.length + " elements (expected 4)"));
+        }
+        var statusCode = eosMessage[0], headers = eosMessage[1], body = eosMessage[2];
+        if (typeof statusCode !== 'number') {
+            return subscriptionListeners.onError(new Error('Invalid EOS Status Code'));
+        }
+        if (typeof headers !== 'object' || Array.isArray(headers)) {
+            return subscriptionListeners.onError(new Error('Invalid EOS ElementsHeaders'));
+        }
+        if (statusCode === 204) {
+            return subscriptionListeners.onEnd(null);
+        }
+        return subscriptionListeners.onError(new network_1.ErrorResponse(statusCode, headers, body));
+    };
+    WebSocketTransport.prototype.onCloseMessage = function (closeMessage) {
+        var statusCode = closeMessage[0], headers = closeMessage[1], body = closeMessage[2];
+        if (typeof statusCode !== 'number') {
+            return this.close(new Error('Close message: Invalid EOS Status Code'));
+        }
+        if (typeof headers !== 'object' || Array.isArray(headers)) {
+            return this.close(new Error('Close message: Invalid EOS ElementsHeaders'));
+        }
+        this.close();
+    };
+    WebSocketTransport.prototype.onPongMessage = function (message) {
+        var receviedPongID = message[0];
+        if (this.lastSentPingID !== receviedPongID) {
+            // Close with protocol error status code
+            this.close(new network_1.NetworkError("Didn't received pong with proper ID"));
+        }
+        clearTimeout(this.pongTimeout);
+        delete this.pongTimeout;
+        this.lastSentPingID = null;
+    };
+    WebSocketTransport.prototype.onPingMessage = function (message) {
+        var receviedPingID = message[0];
+        this.sendMessage(this.getMessage(PongMessageType, receviedPingID));
+    };
+    return WebSocketTransport;
+}());
+exports.default = WebSocketTransport;
 
 
 /***/ })

@@ -2,7 +2,7 @@
   "name": "pusher-chatkit-client",
   "description": "Pusher Chatkit client library for web browsers",
   "main": "target/chatkit.js",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "types": "declarations/index.d.ts",
   "author": "Pusher",
   "license": "MIT",
@@ -18,7 +18,7 @@
     "build": "rm -rf target declarations && webpack"
   },
   "dependencies": {
-    "pusher-platform": "^0.10.0"
+    "pusher-platform": "^0.11.1"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",

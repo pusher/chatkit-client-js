@@ -1,9 +1,8 @@
 {
   "name": "pusher-chatkit-client",
   "description": "Pusher Chatkit client library for web browsers",
-  "main": "target/chatkit.js",
+  "main": "dist/web/chatkit.js",
   "version": "0.1.2",
-  "types": "declarations/index.d.ts",
   "author": "Pusher",
   "license": "MIT",
   "homepage": "https://github.com/pusher/chatkit-client-js",
@@ -15,7 +14,11 @@
     "url": "git+https://github.com/pusher/chatkit-client-js.git"
   },
   "scripts": {
-    "build": "rm -rf target declarations && webpack"
+    "build": "yarn build:all",
+    "build:all": "yarn clean && yarn build:web && yarn build:react-native",
+    "build:web": "webpack --config=webpack/config.web.js",
+    "build:react-native": "webpack --config=webpack/config.react-native.js",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "pusher-platform": "^0.11.1"
@@ -24,7 +27,6 @@
     "babel-core": "^6.25.0",
     "babel-loader": "^7.0.0",
     "babel-preset-env": "^1.6.0",
-    "dts-bundle": "^0.7.3",
     "ts-loader": "^2.1.0",
     "typescript": "^2.5.2",
     "webpack": "^2.5.1"

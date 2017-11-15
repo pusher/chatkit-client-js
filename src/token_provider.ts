@@ -59,7 +59,7 @@ export default class TokenProvider {
 
   makeAuthRequest(): PCancelable<string> {
     return new PCancelable<string>((onCancel, resolve, reject) => {
-      const xhr = new XMLHttpRequest();
+      const xhr = new global.XMLHttpRequest();
       var url;
       if (this.userId === undefined) {
         url = mergeQueryParamsIntoUrl(this.url, this.authContext.queryParams);

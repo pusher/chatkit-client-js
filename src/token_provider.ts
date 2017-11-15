@@ -16,30 +16,45 @@ export type TokenProviderAuthContextQueryParams = {
 }
 
 export interface TokenProviderOptions {
+  authContext?: TokenProviderAuthContextOptions;
   url: string;
   userId?: string;
-  authContext?: TokenProviderAuthContextOptions;
 }
 
 export default class TokenProvider {
+  authContext?: TokenProviderAuthContextOptions;
   url: string;
   userId?: string;
-  authContext?: TokenProviderAuthContextOptions;
+
+  cachedAccessToken?: string;
+  cachedTokenExpiresAt?: number;
 
   constructor(options: TokenProviderOptions) {
+    this.authContext = options.authContext || {};
     this.url = options.url;
     this.userId = options.userId;
-    this.authContext = options.authContext || {};
+  }
+
+  get cacheIsStale() {
+    return !this.cachedAccessToken || this.unixTimeNow() > this.cachedTokenExpiresAt;
   }
 
   fetchToken(tokenParams?: any): PCancelable<string> {
-    return this.makeAuthRequest().then(responseBody => {
-      return responseBody.access_token;
+    if (this.cacheIsStale) {
+      return this.makeAuthRequest().then(responseBody => {
+        const { access_token, expires_in } = responseBody;
+        this.cache(access_token, expires_in);
+        return access_token;
+      });
+    }
+    return new PCancelable<string>((onCancel, resolve, reject) => {
+      resolve(this.cachedAccessToken);
     });
   }
 
   clearToken(token?: string) {
-    // TODO: Caching
+    this.cachedAccessToken = undefined;
+    this.cachedTokenExpiresAt = undefined;
   }
 
   makeAuthRequest(): PCancelable<string> {
@@ -86,6 +101,11 @@ export default class TokenProvider {
         grant_type: "client_credentials",
       }));
     });
+  }
+
+  private cache(accessToken: string, expiresIn: number) {
+    this.cachedAccessToken = accessToken;
+    this.cachedTokenExpiresAt = this.unixTimeNow() + expiresIn;
   }
 
   private unixTimeNow(): number {

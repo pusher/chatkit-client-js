@@ -4,16 +4,16 @@
     <script type="text/javascript" src="../target/chatkit.js"></script>
     <script type="text/javascript">
       const tokenProvider = new Chatkit.TokenProvider({
-        url: "YOUR_TEST_TOKEN_PROVIDER_URL_FROM_THE_DASHBOARD_GETTING_STARTED",
-        userId: "YOUR_CREATED_USERS_ID",
-        authContext: {
-          queryParams: {
-            somekey: "somevalue"
-          },
-          headers: {
-            SomeHeader: "some-header-value"
-          }
-        }
+        url: 'YOUR_TOKEN_PROVIDER_URL',
+        userId: 'YOUR_CREATED_USER_ID',
+        // authContext: {
+        //   queryParams: {
+        //     somekey: "somevalue"
+        //   },
+        //   headers: {
+        //     SomeHeader: "some-header-value"
+        //   }
+        // }
       })
 
       const chatManager = new Chatkit.ChatManager({
@@ -34,7 +34,14 @@
 
           if (roomToSubscribeTo) {
             console.log("Going to subscribe to", roomToSubscribeTo);
-            currentUser.subscribeToRoom(roomToSubscribeTo);
+            currentUser.subscribeToRoom(
+              roomToSubscribeTo,
+              {
+                newMessage: () => {
+                  console.log(`New message received from ${message.sender.name}: ${message.text}`);
+                }
+              }
+            );
           } else {
             console.log("No rooms to subscribe to");
           }

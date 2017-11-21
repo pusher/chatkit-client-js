@@ -37,7 +37,7 @@
             currentUser.subscribeToRoom(
               roomToSubscribeTo,
               {
-                newMessage: () => {
+                newMessage: (message) => {
                   console.log(`New message received from ${message.sender.name}: ${message.text}`);
                 }
               }

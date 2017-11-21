@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 11);
+/******/ 	return __webpack_require__(__webpack_require__.s = 10);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -83,11 +83,11 @@ return /******/ (function(modules) { // webpackBootstrap
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var current_user_1 = __webpack_require__(9);
+var current_user_1 = __webpack_require__(8);
 var presence_state_1 = __webpack_require__(3);
-var room_1 = __webpack_require__(13);
-var user_1 = __webpack_require__(17);
-var PayloadDeserializer = /** @class */ (function () {
+var room_1 = __webpack_require__(12);
+var user_1 = __webpack_require__(16);
+var PayloadDeserializer = (function () {
     function PayloadDeserializer() {
     }
     PayloadDeserializer.createUserFromPayload = function (userPayload) {
@@ -148,8 +148,6 @@ var PayloadDeserializer = /** @class */ (function () {
             userIds: memberUserIds,
         });
     };
-    // This returns a PCBasicMessage mainly to signal that it needs to be enriched with
-    // information about its associated sender and the room it belongs to
     PayloadDeserializer.createBasicMessageFromPayload = function (messagePayload) {
         var requiredFieldsWithTypes = {
             id: 'number',
@@ -365,7 +363,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 10);
+/******/ 	return __webpack_require__(__webpack_require__.s = 9);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -506,90 +504,6 @@ exports.EmptyLogger = EmptyLogger;
 
 "use strict";
 
-
-class CancelError extends Error {
-	constructor() {
-		super('Promise was canceled');
-		this.name = 'CancelError';
-	}
-}
-
-class PCancelable {
-	static fn(fn) {
-		return function () {
-			const args = [].slice.apply(arguments);
-			return new PCancelable((onCancel, resolve, reject) => {
-				args.unshift(onCancel);
-				fn.apply(null, args).then(resolve, reject);
-			});
-		};
-	}
-
-	constructor(executor) {
-		this._pending = true;
-		this._canceled = false;
-
-		this._promise = new Promise((resolve, reject) => {
-			this._reject = reject;
-
-			return executor(
-				fn => {
-					this._cancel = fn;
-				},
-				val => {
-					this._pending = false;
-					resolve(val);
-				},
-				err => {
-					this._pending = false;
-					reject(err);
-				}
-			);
-		});
-	}
-
-	then() {
-		return this._promise.then.apply(this._promise, arguments);
-	}
-
-	catch() {
-		return this._promise.catch.apply(this._promise, arguments);
-	}
-
-	cancel() {
-		if (!this._pending || this._canceled) {
-			return;
-		}
-
-		if (typeof this._cancel === 'function') {
-			try {
-				this._cancel();
-			} catch (err) {
-				this._reject(err);
-			}
-		}
-
-		this._canceled = true;
-		this._reject(new CancelError());
-	}
-
-	get canceled() {
-		return this._canceled;
-	}
-}
-
-Object.setPrototypeOf(PCancelable.prototype, Promise.prototype);
-
-module.exports = PCancelable;
-module.exports.CancelError = CancelError;
-
-
-/***/ }),
-/* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
 Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 exports.createRetryStrategyOptionsOrDefault = function (options) {
@@ -700,62 +614,52 @@ exports.RetryResolution = RetryResolution;
 
 
 /***/ }),
-/* 4 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var logger_1 = __webpack_require__(1);
-var request_1 = __webpack_require__(5);
-var resuming_subscription_1 = __webpack_require__(6);
-var retrying_subscription_1 = __webpack_require__(7);
-var subscribe_strategy_1 = __webpack_require__(11);
-var subscription_1 = __webpack_require__(12);
-var token_providing_subscription_1 = __webpack_require__(8);
-var http_1 = __webpack_require__(13);
-var websocket_1 = __webpack_require__(14);
-var transports_1 = __webpack_require__(9);
-var PCancelable = __webpack_require__(2);
+var request_1 = __webpack_require__(4);
+var resuming_subscription_1 = __webpack_require__(5);
+var retrying_subscription_1 = __webpack_require__(6);
+var subscribe_strategy_1 = __webpack_require__(10);
+var subscription_1 = __webpack_require__(11);
+var token_providing_subscription_1 = __webpack_require__(7);
+var http_1 = __webpack_require__(12);
+var websocket_1 = __webpack_require__(13);
+var transports_1 = __webpack_require__(8);
 var BaseClient = (function () {
     function BaseClient(options) {
         this.options = options;
         this.host = options.host.replace(/(\/)+$/, '');
         this.logger = options.logger || new logger_1.ConsoleLogger();
         this.websocketTransport = new websocket_1.default(this.host);
-        this.httpTransport = new http_1.default(this.host);
+        this.httpTransport = new http_1.default(this.host, options.encrypted);
     }
-    BaseClient.prototype.request = function (options, tokenProvider, tokenParams) {
+    BaseClient.prototype.request = function (options, tokenParams) {
         var _this = this;
-        if (tokenProvider) {
-            return new PCancelable(function (onCancel, resolve, reject) {
-                return tokenProvider
-                    .fetchToken(tokenParams)
-                    .then(function (token) {
-                    if (options.headers !== undefined) {
-                        options.headers['Authorization'] = "Bearer " + token;
-                    }
-                    else {
-                        options.headers = (_a = {},
-                            _a['Authorization'] = "Bearer " + token,
-                            _a);
-                    }
-                    var reqPromise = request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
-                    onCancel(function () {
-                        reqPromise.cancel();
-                    });
-                    resolve(reqPromise);
-                    var _a;
-                })
-                    .catch(function (error) {
-                    _this.logger.error(error);
-                    reject(error);
-                });
+        if (options.tokenProvider) {
+            return options.tokenProvider
+                .fetchToken(tokenParams)
+                .then(function (token) {
+                if (options.headers !== undefined) {
+                    options.headers['Authorization'] = "Bearer " + token;
+                }
+                else {
+                    options.headers = (_a = {},
+                        _a['Authorization'] = "Bearer " + token,
+                        _a);
+                }
+                return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
+                var _a;
+            })
+                .catch(function (error) {
+                _this.logger.error(error);
             });
         }
-        else {
-            return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
-        }
+        return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
     };
     BaseClient.prototype.subscribeResuming = function (path, headers, listeners, retryStrategyOptions, initialEventId, tokenProvider) {
         var completeListeners = subscription_1.replaceMissingListenersWithNoOps(listeners);
@@ -801,6 +705,54 @@ exports.BaseClient = BaseClient;
 
 
 /***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var network_1 = __webpack_require__(0);
+function executeNetworkRequest(createXhr, options) {
+    return new Promise(function (resolve, reject) {
+        var xhr = attachOnReadyStateChangeHandler(createXhr(), resolve, reject);
+        xhr.send(JSON.stringify(options.body));
+    });
+}
+exports.executeNetworkRequest = executeNetworkRequest;
+function sendRawRequest(options) {
+    return new Promise(function (resolve, reject) {
+        var xhr = attachOnReadyStateChangeHandler(new window.XMLHttpRequest(), resolve, reject);
+        xhr.open(options.method.toUpperCase(), options.url, true);
+        if (options.headers) {
+            for (var key in options.headers) {
+                if (options.headers.hasOwnProperty(key)) {
+                    xhr.setRequestHeader(key, options.headers[key]);
+                }
+            }
+        }
+        xhr.send(options.body);
+    });
+}
+exports.sendRawRequest = sendRawRequest;
+function attachOnReadyStateChangeHandler(xhr, resolve, reject) {
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(xhr.response);
+            }
+            else if (xhr.status !== 0) {
+                reject(network_1.ErrorResponse.fromXHR(xhr));
+            }
+            else {
+                reject(new network_1.NetworkError('No Connection'));
+            }
+        }
+    };
+    return xhr;
+}
+
+
+/***/ }),
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -808,42 +760,7 @@ exports.BaseClient = BaseClient;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
-var PCancelable = __webpack_require__(2);
-function executeNetworkRequest(createXhr, options) {
-    var cancelablePromise = new PCancelable(function (onCancel, resolve, reject) {
-        var xhr = createXhr();
-        onCancel(function () {
-            xhr.abort();
-        });
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    resolve(xhr.response);
-                }
-                else if (xhr.status !== 0) {
-                    reject(network_1.ErrorResponse.fromXHR(xhr));
-                }
-                else {
-                    reject(new network_1.NetworkError('No Connection'));
-                }
-            }
-        };
-        xhr.send(JSON.stringify(options.body));
-    });
-    return cancelablePromise;
-}
-exports.executeNetworkRequest = executeNetworkRequest;
-
-
-/***/ }),
-/* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var network_1 = __webpack_require__(0);
-var retry_strategy_1 = __webpack_require__(3);
+var retry_strategy_1 = __webpack_require__(2);
 exports.createResumingStrategy = function (retryOptions, nextSubscribeStrategy, logger, initialEventId) {
     var completeRetryOptions = retry_strategy_1.createRetryStrategyOptionsOrDefault(retryOptions);
     var retryResolution = new retry_strategy_1.RetryResolution(completeRetryOptions, logger);
@@ -995,14 +912,14 @@ exports.createResumingStrategy = function (retryOptions, nextSubscribeStrategy, 
 
 
 /***/ }),
-/* 7 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
-var retry_strategy_1 = __webpack_require__(3);
+var retry_strategy_1 = __webpack_require__(2);
 exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, logger) {
     var enrichedRetryOptions = retry_strategy_1.createRetryStrategyOptionsOrDefault(retryOptions);
     var retryResolution = new retry_strategy_1.RetryResolution(enrichedRetryOptions, logger);
@@ -1122,133 +1039,126 @@ exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, 
 
 
 /***/ }),
-/* 8 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
-var PCancelable = __webpack_require__(2);
 exports.createTokenProvidingStrategy = function (nextSubscribeStrategy, logger, tokenProvider) {
     if (tokenProvider) {
         return function (listeners, headers) {
-            return new TokenProvidingSubscription(tokenProvider, logger, nextSubscribeStrategy, listeners, headers);
+            return new TokenProvidingSubscription(logger, listeners, headers, tokenProvider, nextSubscribeStrategy);
         };
     }
-    else {
-        return function (listeners, headers) { return nextSubscribeStrategy(listeners, headers); };
-    }
+    return nextSubscribeStrategy;
 };
 var TokenProvidingSubscription = (function () {
-    function TokenProvidingSubscription(tokenProvider, logger, nextSubscribeStrategy, listeners, headers) {
+    function TokenProvidingSubscription(logger, listeners, headers, tokenProvider, nextSubscribeStrategy) {
         var _this = this;
+        this.logger = logger;
+        this.listeners = listeners;
+        this.headers = headers;
+        this.tokenProvider = tokenProvider;
+        this.nextSubscribeStrategy = nextSubscribeStrategy;
         this.unsubscribe = function () {
             _this.state.unsubscribe();
+            _this.state = new InactiveState(_this.logger);
         };
-        this.onTransition = function (newState) {
-            _this.state = newState;
-        };
-        var TokenProvidingState = (function () {
-            function TokenProvidingState(onTransition) {
-                var _this = this;
-                this.onTransition = onTransition;
-                logger.verbose("TokenProvidingSubscription: transitioning to TokenProvidingState");
-                var isTokenExpiredError = function (error) {
-                    return (error instanceof network_1.ErrorResponse &&
-                        error.statusCode === 401 &&
-                        error.info === 'authentication/expired');
-                };
-                var fetchTokenAndExecuteSubscription = function () {
-                    _this.tokenPromise = new PCancelable(function (onCancel, resolve, reject) {
-                        return tokenProvider
-                            .fetchToken()
-                            .then(function (token) {
-                            _this.putTokenIntoHeader(token);
-                            _this.underlyingSubscription = nextSubscribeStrategy({
-                                onEnd: function (error) {
-                                    onTransition(new EndedSubscriptionState(error));
-                                },
-                                onError: function (error) {
-                                    if (isTokenExpiredError(error)) {
-                                        tokenProvider.clearToken(token);
-                                        fetchTokenAndExecuteSubscription();
-                                    }
-                                    else {
-                                        onTransition(new FailedSubscriptionState(error));
-                                    }
-                                },
-                                onEvent: listeners.onEvent,
-                                onOpen: function (headers) {
-                                    onTransition(new OpenSubscriptionState(headers, _this.underlyingSubscription, onTransition));
-                                },
-                                onRetrying: listeners.onRetrying,
-                            }, headers);
-                        })
-                            .catch(function (error) {
-                            onTransition(new FailedSubscriptionState(error));
-                        });
-                    });
-                };
-                fetchTokenAndExecuteSubscription();
-            }
-            TokenProvidingState.prototype.unsubscribe = function () {
-                if (this.tokenPromise) {
-                    this.tokenPromise.cancel();
-                }
-                this.underlyingSubscription.unsubscribe();
-                this.onTransition(new EndedSubscriptionState());
-            };
-            TokenProvidingState.prototype.putTokenIntoHeader = function (token) {
-                if (token) {
-                    headers['Authorization'] = "Bearer " + token;
-                    logger.verbose("TokenProvidingSubscription: token fetched: " + token);
-                }
-            };
-            return TokenProvidingState;
-        }());
-        var OpenSubscriptionState = (function () {
-            function OpenSubscriptionState(headers, underlyingSubscription, onTransition) {
-                this.headers = headers;
-                this.underlyingSubscription = underlyingSubscription;
-                this.onTransition = onTransition;
-                logger.verbose("TokenProvidingSubscription: transitioning to OpenSubscriptionState");
-                listeners.onOpen(headers);
-            }
-            OpenSubscriptionState.prototype.unsubscribe = function () {
-                this.underlyingSubscription.unsubscribe();
-                this.onTransition(new EndedSubscriptionState());
-            };
-            return OpenSubscriptionState;
-        }());
-        var FailedSubscriptionState = (function () {
-            function FailedSubscriptionState(error) {
-                logger.verbose("TokenProvidingSubscription: transitioning to FailedSubscriptionState", error);
-                listeners.onError(error);
-            }
-            FailedSubscriptionState.prototype.unsubscribe = function () {
-                throw new Error('Subscription has already ended');
-            };
-            return FailedSubscriptionState;
-        }());
-        var EndedSubscriptionState = (function () {
-            function EndedSubscriptionState(error) {
-                logger.verbose("TokenProvidingSubscription: transitioning to EndedSubscriptionState");
-                listeners.onEnd(error);
-            }
-            EndedSubscriptionState.prototype.unsubscribe = function () {
-                throw new Error('Subscription has already ended');
-            };
-            return EndedSubscriptionState;
-        }());
-        this.state = new TokenProvidingState(this.onTransition);
+        this.state = new ActiveState(logger, headers, nextSubscribeStrategy);
+        this.subscribe();
     }
+    TokenProvidingSubscription.prototype.subscribe = function () {
+        var _this = this;
+        this.tokenProvider
+            .fetchToken()
+            .then(function (token) {
+            var existingListeners = Object.assign({}, _this.listeners);
+            _this.state.subscribe(token, {
+                onEnd: function (error) {
+                    _this.state = new InactiveState(_this.logger);
+                    existingListeners.onEnd(error);
+                },
+                onError: function (error) {
+                    if (_this.isTokenExpiredError(error)) {
+                        _this.tokenProvider.clearToken(token);
+                        _this.subscribe();
+                    }
+                    else {
+                        _this.state = new InactiveState(_this.logger);
+                        existingListeners.onError(error);
+                    }
+                },
+                onEvent: _this.listeners.onEvent,
+                onOpen: _this.listeners.onOpen,
+            });
+        })
+            .catch(function (error) {
+            _this.logger.debug("TokenProvidingSubscription: error when fetching token: " + error);
+            _this.state = new InactiveState(_this.logger);
+        });
+    };
+    TokenProvidingSubscription.prototype.isTokenExpiredError = function (error) {
+        return (error instanceof network_1.ErrorResponse &&
+            error.statusCode === 401 &&
+            error.info === 'authentication/expired');
+    };
     return TokenProvidingSubscription;
+}());
+var ActiveState = (function () {
+    function ActiveState(logger, headers, nextSubscribeStrategy) {
+        this.logger = logger;
+        this.headers = headers;
+        this.nextSubscribeStrategy = nextSubscribeStrategy;
+        logger.verbose("TokenProvidingSubscription: transitioning to TokenProvidingState");
+    }
+    ActiveState.prototype.subscribe = function (token, listeners) {
+        var _this = this;
+        this.putTokenIntoHeader(token);
+        this.underlyingSubscription = this.nextSubscribeStrategy({
+            onEnd: function (error) {
+                _this.logger.verbose("TokenProvidingSubscription: subscription ended");
+                listeners.onEnd(error);
+            },
+            onError: function (error) {
+                _this.logger.verbose("TokenProvidingSubscription: subscription errored: " + error);
+                listeners.onError(error);
+            },
+            onEvent: listeners.onEvent,
+            onOpen: function (headers) {
+                _this.logger.verbose("TokenProvidingSubscription: subscription opened");
+                listeners.onOpen(headers);
+            },
+            onRetrying: listeners.onRetrying,
+        }, this.headers);
+    };
+    ActiveState.prototype.unsubscribe = function () {
+        this.underlyingSubscription.unsubscribe();
+    };
+    ActiveState.prototype.putTokenIntoHeader = function (token) {
+        this.headers['Authorization'] = "Bearer " + token;
+        this.logger.verbose("TokenProvidingSubscription: token fetched: " + token);
+    };
+    return ActiveState;
+}());
+var InactiveState = (function () {
+    function InactiveState(logger) {
+        this.logger = logger;
+        logger.verbose("TokenProvidingSubscription: transitioning to OpenTokenProvidingSubscriptionState");
+    }
+    InactiveState.prototype.subscribe = function (token, listeners) {
+        this.logger.verbose('TokenProvidingSubscription: subscribe called in Inactive state; doing nothing');
+    };
+    InactiveState.prototype.unsubscribe = function () {
+        this.logger.verbose('TokenProvidingSubscription: unsubscribe called in Inactive state; doing nothing');
+    };
+    return InactiveState;
 }());
 
 
 /***/ }),
-/* 9 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1260,15 +1170,15 @@ exports.createTransportStrategy = function (path, transport, logger) {
 
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var base_client_1 = __webpack_require__(4);
+var base_client_1 = __webpack_require__(3);
 exports.BaseClient = base_client_1.BaseClient;
-var instance_1 = __webpack_require__(15);
+var instance_1 = __webpack_require__(14);
 exports.Instance = instance_1.default;
 var logger_1 = __webpack_require__(1);
 exports.ConsoleLogger = logger_1.ConsoleLogger;
@@ -1278,20 +1188,21 @@ exports.ErrorResponse = network_1.ErrorResponse;
 exports.NetworkError = network_1.NetworkError;
 exports.responseToHeadersObject = network_1.responseToHeadersObject;
 exports.XhrReadyState = network_1.XhrReadyState;
-var request_1 = __webpack_require__(5);
+var request_1 = __webpack_require__(4);
 exports.executeNetworkRequest = request_1.executeNetworkRequest;
-var resuming_subscription_1 = __webpack_require__(6);
+exports.sendRawRequest = request_1.sendRawRequest;
+var resuming_subscription_1 = __webpack_require__(5);
 exports.createResumingStrategy = resuming_subscription_1.createResumingStrategy;
-var retry_strategy_1 = __webpack_require__(3);
+var retry_strategy_1 = __webpack_require__(2);
 exports.createRetryStrategyOptionsOrDefault = retry_strategy_1.createRetryStrategyOptionsOrDefault;
 exports.DoNotRetry = retry_strategy_1.DoNotRetry;
 exports.Retry = retry_strategy_1.Retry;
 exports.RetryResolution = retry_strategy_1.RetryResolution;
-var retrying_subscription_1 = __webpack_require__(7);
+var retrying_subscription_1 = __webpack_require__(6);
 exports.createRetryingStrategy = retrying_subscription_1.createRetryingStrategy;
-var token_providing_subscription_1 = __webpack_require__(8);
+var token_providing_subscription_1 = __webpack_require__(7);
 exports.createTokenProvidingStrategy = token_providing_subscription_1.createTokenProvidingStrategy;
-var transports_1 = __webpack_require__(9);
+var transports_1 = __webpack_require__(8);
 exports.createTransportStrategy = transports_1.createTransportStrategy;
 exports.default = {
     BaseClient: base_client_1.BaseClient,
@@ -1302,7 +1213,7 @@ exports.default = {
 
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1320,7 +1231,7 @@ exports.subscribeStrategyListenersFromSubscriptionListeners = function (subListe
 
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1351,7 +1262,7 @@ exports.replaceMissingListenersWithNoOps = function (listeners) {
 
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1574,7 +1485,8 @@ var HttpSubscription = (function () {
 }());
 var HttpTransport = (function () {
     function HttpTransport(host, encrypted) {
-        this.baseURL = (encrypted !== false ? 'https' : 'http') + "://" + host;
+        if (encrypted === void 0) { encrypted = true; }
+        this.baseURL = (encrypted ? 'https' : 'http') + "://" + host;
     }
     HttpTransport.prototype.request = function (requestOptions) {
         return this.createXHR(this.baseURL, requestOptions);
@@ -1613,7 +1525,7 @@ exports.default = HttpTransport;
 
 
 /***/ }),
-/* 14 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1960,13 +1872,13 @@ exports.default = WebSocketTransport;
 
 
 /***/ }),
-/* 15 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var base_client_1 = __webpack_require__(4);
+var base_client_1 = __webpack_require__(3);
 var logger_1 = __webpack_require__(1);
 var HOST_BASE = 'pusherplatform.io';
 var Instance = (function () {
@@ -1975,7 +1887,7 @@ var Instance = (function () {
             throw new Error('Expected `locator` property in Instance options!');
         }
         if (options.locator.split(':').length !== 3) {
-            throw new Error('The locator property is in the wrong format!');
+            throw new Error('The instance locator property is in the wrong format!');
         }
         if (!options.serviceName) {
             throw new Error('Expected `serviceName` property in Instance options!');
@@ -2000,13 +1912,13 @@ var Instance = (function () {
                 });
         this.tokenProvider = options.tokenProvider;
     }
-    Instance.prototype.request = function (options, tokenProvider, tokenParams) {
+    Instance.prototype.request = function (options, tokenParams) {
         options.path = this.absPath(options.path);
         if (options.headers == null || options.headers === undefined) {
             options.headers = {};
         }
-        var tokenProviderToUse = tokenProvider || this.tokenProvider;
-        return this.client.request(options, tokenProviderToUse, tokenParams);
+        options.tokenProvider = options.tokenProvider || this.tokenProvider;
+        return this.client.request(options, tokenParams);
     };
     Instance.prototype.subscribeNonResuming = function (options) {
         var headers = options.headers || {};
@@ -2041,7 +1953,7 @@ exports.default = Instance;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var PresenceState = /** @class */ (function () {
+var PresenceState = (function () {
     function PresenceState(state) {
         switch (state) {
             case 'online':
@@ -2067,7 +1979,7 @@ exports.default = PresenceState;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var UserStoreCore = /** @class */ (function () {
+var UserStoreCore = (function () {
     function UserStoreCore(users) {
         if (users === void 0) { users = new Array(); }
         this.users = users;
@@ -2108,9 +2020,9 @@ exports.default = UserStoreCore;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var pusher_platform_1 = __webpack_require__(2);
-var global_user_store_1 = __webpack_require__(10);
-var user_subscription_1 = __webpack_require__(18);
-var ChatManager = /** @class */ (function () {
+var global_user_store_1 = __webpack_require__(9);
+var user_subscription_1 = __webpack_require__(17);
+var ChatManager = (function () {
     function ChatManager(options) {
         this.tokenProvider = options.tokenProvider;
         this.instance = new pusher_platform_1.Instance({
@@ -2155,10 +2067,18 @@ exports.default = ChatManager;
 
 "use strict";
 
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-var PCancelable = __webpack_require__(7);
+var pusher_platform_1 = __webpack_require__(2);
 var utils_1 = __webpack_require__(1);
-var TokenProvider = /** @class */ (function () {
+var TokenProvider = (function () {
     function TokenProvider(options) {
         this.authContext = options.authContext || {};
         this.url = options.url;
@@ -2180,7 +2100,7 @@ var TokenProvider = /** @class */ (function () {
                 return access_token;
             });
         }
-        return new PCancelable(function (onCancel, resolve, reject) {
+        return new Promise(function (resolve, reject) {
             resolve(_this.cachedAccessToken);
         });
     };
@@ -2190,41 +2110,28 @@ var TokenProvider = /** @class */ (function () {
     };
     TokenProvider.prototype.makeAuthRequest = function () {
         var _this = this;
-        return new PCancelable(function (onCancel, resolve, reject) {
-            var xhr = new XMLHttpRequest();
+        return new Promise(function (resolve, reject) {
             var url;
             if (_this.userId === undefined) {
                 url = utils_1.mergeQueryParamsIntoUrl(_this.url, _this.authContext.queryParams);
             }
             else {
-                var authContextWithUserId = Object.assign({}, _this.authContext.queryParams, { user_id: _this.userId });
+                var authContextWithUserId = __assign({ user_id: _this.userId }, _this.authContext.queryParams);
                 url = utils_1.mergeQueryParamsIntoUrl(_this.url, authContextWithUserId);
             }
-            xhr.open("POST", url);
-            if (_this.authContext.headers !== undefined) {
-                Object.keys(_this.authContext.headers).forEach(function (key) {
-                    xhr.setRequestHeader(key, _this.authContext.headers[key]);
-                });
-            }
-            xhr.timeout = 30 * 1000; // 30 seconds
-            xhr.onload = function () {
-                if (xhr.status === 200) {
-                    resolve(JSON.parse(xhr.responseText));
-                }
-                else {
-                    reject(new Error("Couldn't fetch token from " + _this.url + "; got " + xhr.status + " " + xhr.statusText + "."));
-                }
-            };
-            xhr.ontimeout = function () {
-                reject(new Error("Request timed out while fetching token from " + _this.url));
-            };
-            xhr.onerror = function (error) {
-                reject(error);
-            };
-            xhr.setRequestHeader("content-type", "application/x-www-form-urlencoded");
-            xhr.send(utils_1.urlEncode({
-                grant_type: "client_credentials",
-            }));
+            var headers = __assign((_a = {}, _a['Content-Type'] = 'application/x-www-form-urlencoded', _a), _this.authContext.headers);
+            var body = utils_1.urlEncode({ grant_type: 'client_credentials' });
+            pusher_platform_1.sendRawRequest({
+                method: 'POST',
+                url: url,
+                headers: headers,
+                body: body,
+            }).then(function (res) {
+                resolve(JSON.parse(res));
+            }).catch(function (error) {
+                reject(new Error("Couldn't fetch token from " + _this.url + "; error: " + error));
+            });
+            var _a;
         });
     };
     TokenProvider.prototype.cache = function (accessToken, expiresIn) {
@@ -2245,92 +2152,8 @@ exports.default = TokenProvider;
 
 "use strict";
 
-
-class CancelError extends Error {
-	constructor() {
-		super('Promise was canceled');
-		this.name = 'CancelError';
-	}
-}
-
-class PCancelable {
-	static fn(fn) {
-		return function () {
-			const args = [].slice.apply(arguments);
-			return new PCancelable((onCancel, resolve, reject) => {
-				args.unshift(onCancel);
-				fn.apply(null, args).then(resolve, reject);
-			});
-		};
-	}
-
-	constructor(executor) {
-		this._pending = true;
-		this._canceled = false;
-
-		this._promise = new Promise((resolve, reject) => {
-			this._reject = reject;
-
-			return executor(
-				fn => {
-					this._cancel = fn;
-				},
-				val => {
-					this._pending = false;
-					resolve(val);
-				},
-				err => {
-					this._pending = false;
-					reject(err);
-				}
-			);
-		});
-	}
-
-	then() {
-		return this._promise.then.apply(this._promise, arguments);
-	}
-
-	catch() {
-		return this._promise.catch.apply(this._promise, arguments);
-	}
-
-	cancel() {
-		if (!this._pending || this._canceled) {
-			return;
-		}
-
-		if (typeof this._cancel === 'function') {
-			try {
-				this._cancel();
-			} catch (err) {
-				this._reject(err);
-			}
-		}
-
-		this._canceled = true;
-		this._reject(new CancelError());
-	}
-
-	get canceled() {
-		return this._canceled;
-	}
-}
-
-Object.setPrototypeOf(PCancelable.prototype, Promise.prototype);
-
-module.exports = PCancelable;
-module.exports.CancelError = CancelError;
-
-
-/***/ }),
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
 Object.defineProperty(exports, "__esModule", { value: true });
-var BasicMessageEnricher = /** @class */ (function () {
+var BasicMessageEnricher = (function () {
     function BasicMessageEnricher(userStore, room, logger) {
         this.completionOrderList = [];
         this.messageIdToCompletionHandlers = {};
@@ -2370,7 +2193,6 @@ var BasicMessageEnricher = /** @class */ (function () {
                 _this.logger.verbose("Fetched user information for user with id " + user.id + " but no messages needed information for this user");
                 return;
             }
-            // TODO: Is this right?
             var basicMessages = basicMessageIds.map(function (bmId) {
                 return _this.messagesAwaitingEnrichmentDependentOnUserRetrieval[bmId];
             }).filter(function (el) { return el !== undefined; });
@@ -2399,16 +2221,12 @@ var BasicMessageEnricher = /** @class */ (function () {
         });
     };
     BasicMessageEnricher.prototype.callCompletionHandlersForEnrichedMessagesWithIdsLessThanOrEqualTo = function (id, result) {
-        // TODO: There may well be ways to make this faster
         var nextIdToComplete = this.completionOrderList[0];
         if (nextIdToComplete === undefined) {
             return;
         }
         this.enrichedMessagesAwaitingCompletionCalls[id] = result;
         if (id !== nextIdToComplete) {
-            // If the message id received isn't the next to have its completionHandler called
-            // then return as we've already stored the result so it can be used later
-            // TODO: Fixme
             this.logger.verbose("Waiting to call completion handler for message id " + id + " as there are other older messages still to be enriched");
             return;
         }
@@ -2424,7 +2242,6 @@ var BasicMessageEnricher = /** @class */ (function () {
                 this.logger.verbose("Enrichment result not stored for message id " + messageId);
                 return;
             }
-            // TODO: PROPERLY CHECK IF IT'S A MESSAGE OR AN ERROR - NOT THIS FILTHY HACK
             if (result_1['sender'] !== undefined) {
                 completionHandler.onSuccess(result_1);
             }
@@ -2432,8 +2249,8 @@ var BasicMessageEnricher = /** @class */ (function () {
                 completionHandler.onError(result_1);
             }
             this.completionOrderList.shift();
-            this.messageIdToCompletionHandlers[messageId] = undefined; // TODO: Is this right?
-            this.enrichedMessagesAwaitingCompletionCalls[messageId] = undefined;
+            delete this.messageIdToCompletionHandlers[messageId];
+            delete this.enrichedMessagesAwaitingCompletionCalls[messageId];
         } while (this.completionOrderList[0] !== undefined && this.enrichedMessagesAwaitingCompletionCalls[this.completionOrderList[0]] !== undefined);
     };
     return BasicMessageEnricher;
@@ -2442,19 +2259,19 @@ exports.default = BasicMessageEnricher;
 
 
 /***/ }),
-/* 9 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var basic_message_enricher_1 = __webpack_require__(8);
+var basic_message_enricher_1 = __webpack_require__(7);
 var payload_deserializer_1 = __webpack_require__(0);
-var presence_subscription_1 = __webpack_require__(12);
-var room_store_1 = __webpack_require__(14);
-var room_subscription_1 = __webpack_require__(15);
+var presence_subscription_1 = __webpack_require__(11);
+var room_store_1 = __webpack_require__(13);
+var room_subscription_1 = __webpack_require__(14);
 var utils_1 = __webpack_require__(1);
-var CurrentUser = /** @class */ (function () {
+var CurrentUser = (function () {
     function CurrentUser(options) {
         var rooms = options.rooms, id = options.id, instance = options.instance;
         var validRooms = rooms || [];
@@ -2467,7 +2284,7 @@ var CurrentUser = /** @class */ (function () {
         this.roomStore = new room_store_1.default({ instance: instance, rooms: validRooms });
         this.instance = instance;
         this.userStore = options.userStore;
-        this.pathFriendlyId = encodeURIComponent(id); // TODO: This is different to Swift SDK
+        this.pathFriendlyId = encodeURIComponent(id);
     }
     Object.defineProperty(CurrentUser.prototype, "rooms", {
         get: function () {
@@ -2521,7 +2338,6 @@ var CurrentUser = /** @class */ (function () {
         });
     };
     CurrentUser.prototype.populateRoomUserStore = function (room) {
-        // TODO: Use the soon-to-be-created new version of fetchUsersWithIds from the userStore
         var _this = this;
         var userPromises = new Array();
         room.userIds.forEach(function (userId) {
@@ -2548,38 +2364,12 @@ var CurrentUser = /** @class */ (function () {
             _this.instance.logger.verbose("Users updated in room " + room.name);
         });
     };
-    // addUser(user: User, room: Room, onSuccess: () => void, onError: (error: any) => void) {
-    //   this.addUsers([user], room, onSuccess, onError);
-    // }
     CurrentUser.prototype.addUser = function (id, roomId, onSuccess, onError) {
         this.addOrRemoveUsers(roomId, [id], 'add', onSuccess, onError);
     };
-    // addUsers(users: User[], room: Room, onSuccess: () => void, onError: (error: any) => void) {
-    //   const userIds = users.map(el => el.id);
-    //   this.addUsers(userIds, room.id, onSuccess, onError);
-    // }
-    // addUsers(ids: [string], roomId: number, onSuccess: () => void, onError: (error: any) => void) {
-    //   this.addOrRemoveUsers(roomId, ids, 'add', onSuccess, onError);
-    // }
-    // removeUser(user: User, room: Room, onSuccess: () => void, onError: (error: any) => void) {
-    //   this.removeUsers([user], room, onSuccess, onError);
-    // }
     CurrentUser.prototype.removeUser = function (id, roomId, onSuccess, onError) {
         this.addOrRemoveUsers(roomId, [id], 'remove', onSuccess, onError);
     };
-    // removeUsers(users: [PCUser], room: Room, onSuccess: () => void, onError: (error: any) => void) {
-    //   const userIds = users.map(el => el.id);
-    //   this.removeUsers(userIds, room.id, onSuccess, onError);
-    // }
-    // removeUsers(ids: string[], roomId: number, onSuccess: () => void, onError: (error: any) => void) {
-    //   this.addOrRemoveUsers(roomId, ids, 'remove', onSuccess, onError);
-    // }
-    // updateRoom(room: Room, options: UpdateRoomOptions, onSuccess: () => void, onError: (error: any) => void) {
-    //   this.updateRoom(room.id, options, onSuccess, onError);
-    // }
-    // updateRoom(id: number, options: UpdateRoomOptions, onSuccess: () => void, onError: (error: any) => void) {
-    //   this.updateRoom(id, options, onSuccess, onError);
-    // }
     CurrentUser.prototype.updateRoom = function (roomId, options, onSuccess, onError) {
         var _this = this;
         if (options.name === undefined && options.isPrivate === undefined) {
@@ -2604,12 +2394,6 @@ var CurrentUser = /** @class */ (function () {
             onError(error);
         });
     };
-    // deleteRoom(room: Room, onSuccess: () => void, onError: (error: any) => void) {
-    //   this.deleteRoom(room.id, onSuccess, onError);
-    // }
-    // deleteRoom(id: number, onSuccess: () => void, onError: (error: any) => void) {
-    //   this.deleteRoom(id, onSuccess, onError);
-    // }
     CurrentUser.prototype.deleteRoom = function (roomId, onSuccess, onError) {
         var _this = this;
         this.instance.request({
@@ -2647,7 +2431,6 @@ var CurrentUser = /** @class */ (function () {
             var roomPayload = JSON.parse(res);
             var room = payload_deserializer_1.default.createRoomFromPayload(roomPayload);
             var addedOrMergedRoom = _this.roomStore.addOrMerge(room);
-            // TODO: room or addedOrMergedRoom ?
             _this.populateRoomUserStore(addedOrMergedRoom);
             onSuccess(addedOrMergedRoom);
         }).catch(function (error) {
@@ -2661,7 +2444,6 @@ var CurrentUser = /** @class */ (function () {
             method: 'POST',
             path: "/users/" + this.pathFriendlyId + "/rooms/" + roomId + "/leave",
         }).then(function (res) {
-            // TODO: Remove room from roomStore or is that handle by UserSubscription?
             onSuccess();
         }).catch(function (error) {
             _this.instance.logger.verbose("Error leaving room " + roomId + ": " + error);
@@ -2691,14 +2473,12 @@ var CurrentUser = /** @class */ (function () {
             var rooms = roomsPayload.map(function (roomPayload) {
                 return payload_deserializer_1.default.createRoomFromPayload(roomPayload);
             });
-            // TODO: filter if undefined returned?
             onSuccess(rooms);
         }).catch(function (error) {
             _this.instance.logger.verbose("Error when getting instance rooms: " + error);
             onError(error);
         });
     };
-    // TODO: This shouldn't be an any for eventPayload
     CurrentUser.prototype.typingStateChange = function (eventPayload, roomId, onSuccess, onError) {
         var _this = this;
         this.instance.request({
@@ -2739,14 +2519,12 @@ var CurrentUser = /** @class */ (function () {
         }).then(function (res) {
             var messageIdPayload = JSON.parse(res);
             var messageId = messageIdPayload.message_id;
-            // TODO: Error handling
             onSuccess(messageId);
         }).catch(function (error) {
             _this.instance.logger.verbose("Error adding message to room " + room.name + ": " + error);
             onError(error);
         });
     };
-    // TODO: Do I need to add a Last-Event-ID option here?
     CurrentUser.prototype.subscribeToRoom = function (room, roomDelegate, messageLimit) {
         if (messageLimit === void 0) { messageLimit = 20; }
         room.subscription = new room_subscription_1.default({
@@ -2754,7 +2532,6 @@ var CurrentUser = /** @class */ (function () {
             basicMessageEnricher: new basic_message_enricher_1.default(this.userStore, room, this.instance.logger),
             logger: this.instance.logger
         });
-        // TODO: What happens if you provide both a message_limit and a Last-Event-ID?
         this.instance.subscribeNonResuming({
             path: "/rooms/" + room.id + "?message_limit=" + messageLimit,
             listeners: {
@@ -2779,7 +2556,6 @@ var CurrentUser = /** @class */ (function () {
             var messagesPayload = JSON.parse(res);
             var messages = new Array();
             var basicMessages = new Array();
-            // TODO: Error handling
             var messageUserIds = messagesPayload.map(function (messagePayload) {
                 var basicMessage = payload_deserializer_1.default.createBasicMessageFromPayload(messagePayload);
                 basicMessages.push(basicMessage);
@@ -2828,7 +2604,7 @@ exports.default = CurrentUser;
 
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2837,7 +2613,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var payload_deserializer_1 = __webpack_require__(0);
 var user_store_core_1 = __webpack_require__(4);
 var utils_1 = __webpack_require__(1);
-var GlobalUserStore = /** @class */ (function () {
+var GlobalUserStore = (function () {
     function GlobalUserStore(options) {
         this.instance = options.instance;
         this.userStoreCore = options.userStoreCore || new user_store_core_1.default();
@@ -2896,10 +2672,6 @@ var GlobalUserStore = /** @class */ (function () {
             onComplete();
         });
     };
-    // TODO: Need a version of this that first checks the userStore for any of the userIds
-    // provided and then only makes a request to fetch the user information for the userIds
-    // that aren't known about. This would be used in the creatRoom callback and the
-    // addedToRoom parsing function
     GlobalUserStore.prototype.fetchUsersWithIds = function (userIds, onSuccess, onError) {
         var _this = this;
         if (userIds.length === 0) {
@@ -2914,7 +2686,6 @@ var GlobalUserStore = /** @class */ (function () {
             path: "/users_by_ids" + qs,
         }).then(function (res) {
             var usersPayload = JSON.parse(res);
-            // TODO: Make it more like flatMap, or handle errors being thrown?
             var users = usersPayload.map(function (userPayload) {
                 var user = payload_deserializer_1.default.createUserFromPayload(userPayload);
                 var addedOrUpdatedUser = _this.userStoreCore.addOrMerge(user);
@@ -2935,7 +2706,7 @@ exports.default = GlobalUserStore;
 
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2955,14 +2726,14 @@ exports.default = {
 
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var payload_deserializer_1 = __webpack_require__(0);
-var PresenceSubscription = /** @class */ (function () {
+var PresenceSubscription = (function () {
     function PresenceSubscription(options) {
         this.instance = options.instance;
         this.userStore = options.userStore;
@@ -2990,18 +2761,14 @@ var PresenceSubscription = /** @class */ (function () {
         }
     };
     PresenceSubscription.prototype.end = function () {
-        // TODO: Work out how to implement
     };
     PresenceSubscription.prototype.parseInitialStatePayload = function (eventName, data, userStore) {
         var _this = this;
         var userStatesPayload = data.user_states;
         if (userStatesPayload === undefined || userStatesPayload.constructor !== Array) {
             this.instance.logger.debug("'user_stats' value missing from " + eventName + " presence payload: " + data);
-            // TODO: Do we want the error delegate?
-            // self.delegate?.error(error: error)
             return;
         }
-        // TODO: It will never be undefined but might throw - this is semi-aspirational code
         var userStates = userStatesPayload.map(function (userStatePayload) {
             return payload_deserializer_1.default.createPresencePayloadFromPayload(userStatePayload);
         }).filter(function (el) { return el !== undefined; });
@@ -3042,12 +2809,9 @@ var PresenceSubscription = /** @class */ (function () {
                     _this.instance.logger.verbose(user.id + " went offline");
                     break;
                 case 'unknown':
-                    // This should never be the case
                     _this.instance.logger.verbose("Somehow the presence state of user " + user.id + " is unknown");
                     break;
             }
-            // TODO: Could check if any room is active to speed this up? Or keep a better
-            // map of user_ids to rooms
             _this.roomStore.rooms.forEach(function (room) {
                 if (room.subscription === undefined) {
                     _this.instance.logger.verbose("Room " + room.name + " has no subscription object set");
@@ -3075,17 +2839,13 @@ var PresenceSubscription = /** @class */ (function () {
             return;
         });
     };
-    // TODO: So much duplication
     PresenceSubscription.prototype.parseJoinRoomPresenceUpdatePayload = function (eventName, data, userStore) {
         var _this = this;
         var userStatesPayload = data.user_states;
         if (userStatesPayload === undefined || userStatesPayload.constructor !== Array) {
             this.instance.logger.debug("'user_stats' value missing from " + eventName + " presence payload: " + data);
-            // TODO: Delegate question again
-            // self.delegate?.error(error: error)
             return;
         }
-        // TODO: It will never be undefined but might throw - this is semi-aspirational code
         var userStates = userStatesPayload.map(function (userStatePayload) {
             return payload_deserializer_1.default.createPresencePayloadFromPayload(userStatePayload);
         }).filter(function (el) { return el !== undefined; });
@@ -3113,14 +2873,14 @@ exports.default = PresenceSubscription;
 
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var room_user_store_1 = __webpack_require__(16);
-var Room = /** @class */ (function () {
+var room_user_store_1 = __webpack_require__(15);
+var Room = (function () {
     function Room(options) {
         this.id = options.id;
         this.name = options.name;
@@ -3145,14 +2905,14 @@ exports.default = Room;
 
 
 /***/ }),
-/* 14 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var payload_deserializer_1 = __webpack_require__(0);
-var RoomStore = /** @class */ (function () {
+var RoomStore = (function () {
     function RoomStore(options) {
         this.rooms = options.rooms;
         this.instance = options.instance;
@@ -3209,14 +2969,14 @@ exports.default = RoomStore;
 
 
 /***/ }),
-/* 15 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var payload_deserializer_1 = __webpack_require__(0);
-var RoomSubscription = /** @class */ (function () {
+var RoomSubscription = (function () {
     function RoomSubscription(options) {
         this.delegate = options.delegate;
         this.basicMessageEnricher = options.basicMessageEnricher;
@@ -3248,14 +3008,14 @@ exports.default = RoomSubscription;
 
 
 /***/ }),
-/* 16 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var user_store_core_1 = __webpack_require__(4);
-var RoomUserStore = /** @class */ (function () {
+var RoomUserStore = (function () {
     function RoomUserStore(userStoreCore) {
         if (userStoreCore === void 0) { userStoreCore = new user_store_core_1.default(); }
         this.userStoreCore = userStoreCore;
@@ -3272,14 +3032,14 @@ exports.default = RoomUserStore;
 
 
 /***/ }),
-/* 17 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var presence_state_1 = __webpack_require__(3);
-var User = /** @class */ (function () {
+var User = (function () {
     function User(options) {
         this.id = options.id;
         this.createdAt = options.createdAt;
@@ -3308,7 +3068,7 @@ exports.default = User;
 
 
 /***/ }),
-/* 18 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3316,7 +3076,7 @@ exports.default = User;
 Object.defineProperty(exports, "__esModule", { value: true });
 var payload_deserializer_1 = __webpack_require__(0);
 var utils_1 = __webpack_require__(1);
-var UserSubscription = /** @class */ (function () {
+var UserSubscription = (function () {
     function UserSubscription(options) {
         this.instance = options.instance;
         this.userStore = options.userStore;
@@ -3369,9 +3129,6 @@ var UserSubscription = /** @class */ (function () {
         var userPayload = data.current_user;
         var receivedCurrentUser = payload_deserializer_1.default.createCurrentUserFromPayload(userPayload, this.instance, this.userStore);
         var wasExistingCurrentUser = this.currentUser !== undefined;
-        // If the currentUser property is already set then the assumption is that there was
-        // already a user subscription and so instead of setting the property to a new
-        // CurrentUser, we update the existing one to have the most up-to-date state
         if (this.currentUser) {
             this.currentUser.updateWithPropertiesOf(receivedCurrentUser);
         }
@@ -3455,9 +3212,6 @@ var UserSubscription = /** @class */ (function () {
         var mostRecentConnectionRoomsSet = new Set(roomsFromConnection);
         var noLongerAMemberOfRooms = roomStoreRooms.filter(function (room) { return !mostRecentConnectionRoomsSet.has(room); });
         noLongerAMemberOfRooms.forEach(function (room) {
-            // TODO: Not sure if this is the best way of communicating that while the subscription
-            // was closed there was an event that meant that the current user is no longer a
-            // member of a given room
             if (_this.delegate && _this.delegate.removedFromRoom) {
                 _this.delegate.removedFromRoom(room);
             }
@@ -3588,13 +3342,10 @@ var UserSubscription = /** @class */ (function () {
                 _this.instance.logger.verbose("User " + user.id + " joined room: " + room.name);
             }, function (error) {
                 _this.instance.logger.verbose("Error fetching user " + userId + ": " + error);
-                // TODO: Delegate question again
-                // strongSelf.delegate.error(error: err!)
                 return;
             });
         }, function (error) {
             _this.instance.logger.verbose("User with id " + userId + " joined room with id " + roomId + " but no information about the room could be retrieved. Error was: " + error);
-            // self.delegate.error(error: err!)
             return;
         });
     };
@@ -3631,12 +3382,10 @@ var UserSubscription = /** @class */ (function () {
                 _this.instance.logger.verbose("User " + user.id + " left room " + room.name);
             }, function (error) {
                 _this.instance.logger.verbose("User with id " + userId + " left room with id " + roomId + " but no information about the user could be retrieved. Error was: " + error);
-                // strongSelf.delegate.error(error: err!)
                 return;
             });
         }, function (error) {
             _this.instance.logger.verbose("User with id " + userId + " joined room with id " + roomId + " but no information about the room could be retrieved. Error was: " + error);
-            // self.delegate.error(error: err!)
             return;
         });
     };
@@ -3663,12 +3412,10 @@ var UserSubscription = /** @class */ (function () {
                 _this.instance.logger.verbose("User " + user.id + " started typing in room " + room.name);
             }, function (error) {
                 _this.instance.logger.verbose("Error fetching information for user " + userId + ": " + error);
-                // strongSelf.delegate.error(error: err!)
                 return;
             });
         }, function (error) {
             _this.instance.logger.verbose("Error fetching information for room " + roomId + ": " + error);
-            // self.delegate.error(error: err!)
             return;
         });
     };
@@ -3695,12 +3442,10 @@ var UserSubscription = /** @class */ (function () {
                 _this.instance.logger.verbose("User " + user.id + " stopped typing in room " + room.name);
             }, function (error) {
                 _this.instance.logger.verbose("Error fetching information for user " + userId + ": " + error);
-                // strongSelf.delegate.error(error: err!)
                 return;
             });
         }, function (error) {
             _this.instance.logger.verbose("Error fetching information for room " + roomId + ": " + error);
-            // self.delegate.error(error: err!)
             return;
         });
     };

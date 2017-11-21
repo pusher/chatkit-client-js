@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES5",
-    "sourceMap": true,
-    "module": "commonjs",
-    "lib": ["ES6", "dom"],
     "declaration": true,
-    "declarationDir": "declarations"  
+    "declarationDir": "declarations",
+    "lib": ["ES6"],
+    "module": "commonjs",
+    "removeComments": true,
+    "sourceMap": true,
+    "target": "ES5"
     },
     "exclude": [
       "node_modules",
       "target",
-      "test",
-      "declarations"
+      "test"
     ]
 }

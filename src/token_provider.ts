@@ -1,4 +1,4 @@
-import * as PCancelable from 'p-cancelable';
+import { sendRawRequest } from 'pusher-platform';
 
 import { urlEncode, mergeQueryParamsIntoUrl } from './utils';
 
@@ -39,7 +39,7 @@ export default class TokenProvider {
     return !this.cachedAccessToken || this.unixTimeNow() > this.cachedTokenExpiresAt;
   }
 
-  fetchToken(tokenParams?: any): PCancelable<string> {
+  fetchToken(tokenParams?: any): Promise<string> {
     if (this.cacheIsStale) {
       return this.makeAuthRequest().then(responseBody => {
         const { access_token, expires_in } = responseBody;
@@ -47,9 +47,9 @@ export default class TokenProvider {
         return access_token;
       });
     }
-    return new PCancelable<string>((onCancel, resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       resolve(this.cachedAccessToken);
-    });
+    })
   }
 
   clearToken(token?: string) {
@@ -57,49 +57,39 @@ export default class TokenProvider {
     this.cachedTokenExpiresAt = undefined;
   }
 
-  makeAuthRequest(): PCancelable<string> {
-    return new PCancelable<string>((onCancel, resolve, reject) => {
-      const xhr = new XMLHttpRequest();
+  makeAuthRequest(): Promise<any> {
+    return new Promise<any>((resolve, reject) => {
       var url;
+
       if (this.userId === undefined) {
         url = mergeQueryParamsIntoUrl(this.url, this.authContext.queryParams);
       } else {
-        const authContextWithUserId = Object.assign(
-          {},
-          this.authContext.queryParams,
-          { user_id: this.userId },
-        );
+        const authContextWithUserId = {
+          user_id: this.userId,
+          ...this.authContext.queryParams,
+        };
         url = mergeQueryParamsIntoUrl(this.url, authContextWithUserId);
       }
 
-      xhr.open("POST", url);
-      if (this.authContext.headers !== undefined) {
-        Object.keys(this.authContext.headers).forEach(key => {
-          xhr.setRequestHeader(key, this.authContext.headers[key]);
-        });
+      const headers = {
+        ['Content-Type']: 'application/x-www-form-urlencoded',
+        ...this.authContext.headers,
       }
-      xhr.timeout = 30 * 1000; // 30 seconds
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          resolve(JSON.parse(xhr.responseText));
-        } else {
-          reject(new Error(`Couldn't fetch token from ${
-            this.url
-          }; got ${ xhr.status } ${ xhr.statusText }.`));
-        }
-      };
-      xhr.ontimeout = () => {
-        reject(new Error(`Request timed out while fetching token from ${
+
+      const body = urlEncode({ grant_type: 'client_credentials' });
+
+      sendRawRequest({
+        method: 'POST',
+        url: url,
+        headers: headers,
+        body: body,
+      }).then(res => {
+        resolve(JSON.parse(res));
+      }).catch(error => {
+        reject(new Error(`Couldn't fetch token from ${
           this.url
-        }`));
-      };
-      xhr.onerror = error => {
-        reject(error);
-      };
-      xhr.setRequestHeader("content-type", "application/x-www-form-urlencoded");
-      xhr.send(urlEncode({
-        grant_type: "client_credentials",
-      }));
+        }; error: ${error}`));
+      })
     });
   }
 

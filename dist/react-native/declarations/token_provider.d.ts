@@ -9,17 +9,21 @@ export declare type TokenProviderAuthContextQueryParams = {
     [key: string]: string;
 };
 export interface TokenProviderOptions {
+    authContext?: TokenProviderAuthContextOptions;
     url: string;
     userId?: string;
-    authContext?: TokenProviderAuthContextOptions;
 }
 export default class TokenProvider {
+    authContext?: TokenProviderAuthContextOptions;
     url: string;
     userId?: string;
-    authContext?: TokenProviderAuthContextOptions;
+    cachedAccessToken?: string;
+    cachedTokenExpiresAt?: number;
     constructor(options: TokenProviderOptions);
+    readonly cacheIsStale: boolean;
     fetchToken(tokenParams?: any): Promise<string>;
     clearToken(token?: string): void;
     makeAuthRequest(): Promise<any>;
+    private cache(accessToken, expiresIn);
     private unixTimeNow();
 }

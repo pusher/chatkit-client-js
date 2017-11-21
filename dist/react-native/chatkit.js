@@ -282,7 +282,7 @@ exports.allPromisesSettled = allPromisesSettled;
 /* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(19);
+module.exports = __webpack_require__(18);
 
 
 /***/ }),
@@ -405,60 +405,77 @@ exports.default = ChatManager;
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-/* WEBPACK VAR INJECTION */(function(global) {
+
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+var pusher_platform_1 = __webpack_require__(2);
 var utils_1 = __webpack_require__(1);
 var TokenProvider = (function () {
     function TokenProvider(options) {
+        this.authContext = options.authContext || {};
         this.url = options.url;
         this.userId = options.userId;
-        this.authContext = options.authContext || {};
     }
+    Object.defineProperty(TokenProvider.prototype, "cacheIsStale", {
+        get: function () {
+            return !this.cachedAccessToken || this.unixTimeNow() > this.cachedTokenExpiresAt;
+        },
+        enumerable: true,
+        configurable: true
+    });
     TokenProvider.prototype.fetchToken = function (tokenParams) {
-        return this.makeAuthRequest().then(function (responseBody) {
-            return responseBody.access_token;
+        var _this = this;
+        if (this.cacheIsStale) {
+            return this.makeAuthRequest().then(function (responseBody) {
+                var access_token = responseBody.access_token, expires_in = responseBody.expires_in;
+                _this.cache(access_token, expires_in);
+                return access_token;
+            });
+        }
+        return new Promise(function (resolve, reject) {
+            resolve(_this.cachedAccessToken);
         });
     };
     TokenProvider.prototype.clearToken = function (token) {
+        this.cachedAccessToken = undefined;
+        this.cachedTokenExpiresAt = undefined;
     };
     TokenProvider.prototype.makeAuthRequest = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
-            var xhr = new global.XMLHttpRequest();
             var url;
             if (_this.userId === undefined) {
                 url = utils_1.mergeQueryParamsIntoUrl(_this.url, _this.authContext.queryParams);
             }
             else {
-                var authContextWithUserId = Object.assign({}, _this.authContext.queryParams, { user_id: _this.userId });
+                var authContextWithUserId = __assign({ user_id: _this.userId }, _this.authContext.queryParams);
                 url = utils_1.mergeQueryParamsIntoUrl(_this.url, authContextWithUserId);
             }
-            xhr.open("POST", url);
-            if (_this.authContext.headers !== undefined) {
-                Object.keys(_this.authContext.headers).forEach(function (key) {
-                    xhr.setRequestHeader(key, _this.authContext.headers[key]);
-                });
-            }
-            xhr.timeout = 30 * 1000;
-            xhr.onload = function () {
-                if (xhr.status === 200) {
-                    resolve(JSON.parse(xhr.responseText));
-                }
-                else {
-                    reject(new Error("Couldn't fetch token from " + _this.url + "; got " + xhr.status + " " + xhr.statusText + "."));
-                }
-            };
-            xhr.ontimeout = function () {
-                reject(new Error("Request timed out while fetching token from " + _this.url));
-            };
-            xhr.onerror = function (error) {
-                reject(error);
-            };
-            xhr.setRequestHeader("content-type", "application/x-www-form-urlencoded");
-            xhr.send(utils_1.urlEncode({
-                grant_type: "client_credentials",
-            }));
+            var headers = __assign((_a = {}, _a['Content-Type'] = 'application/x-www-form-urlencoded', _a), _this.authContext.headers);
+            var body = utils_1.urlEncode({ grant_type: 'client_credentials' });
+            pusher_platform_1.sendRawRequest({
+                method: 'POST',
+                url: url,
+                headers: headers,
+                body: body,
+            }).then(function (res) {
+                resolve(JSON.parse(res));
+            }).catch(function (error) {
+                reject(new Error("Couldn't fetch token from " + _this.url + "; error: " + error));
+            });
+            var _a;
         });
+    };
+    TokenProvider.prototype.cache = function (accessToken, expiresIn) {
+        this.cachedAccessToken = accessToken;
+        this.cachedTokenExpiresAt = this.unixTimeNow() + expiresIn;
     };
     TokenProvider.prototype.unixTimeNow = function () {
         return Math.floor(Date.now() / 1000);
@@ -467,7 +484,6 @@ var TokenProvider = (function () {
 }());
 exports.default = TokenProvider;
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(18)))
 
 /***/ }),
 /* 7 */
@@ -1779,33 +1795,6 @@ exports.default = UserSubscription;
 
 /***/ }),
 /* 18 */
-/***/ (function(module, exports) {
-
-var g;
-
-// This works in non-strict mode
-g = (function() {
-	return this;
-})();
-
-try {
-	// This works if eval is allowed (see CSP)
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	// This works if the window reference is available
-	if(typeof window === "object")
-		g = window;
-}
-
-// g can still be undefined, but nothing to do about it...
-// We return undefined, instead of nothing here, so it's
-// easier to handle this case. if(!global) { ...}
-
-module.exports = g;
-
-
-/***/ }),
-/* 19 */
 /***/ (function(module, exports) {
 
 module.exports =

@@ -8,9 +8,6 @@
     "sourceMap": true,
     "target": "ES5"
     },
-    "files": [
-      "src/declarations/global/global.d.ts"
-    ],
     "exclude": [
       "node_modules",
       "target",

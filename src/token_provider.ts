@@ -1,3 +1,5 @@
+import { sendRawRequest } from 'pusher-platform';
+
 import { urlEncode, mergeQueryParamsIntoUrl } from './utils';
 
 export interface TokenProviderAuthContextOptions {
@@ -45,7 +47,7 @@ export default class TokenProvider {
         return access_token;
       });
     }
-    return new Promise<string>((onCancel, resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       resolve(this.cachedAccessToken);
     })
   }
@@ -57,47 +59,37 @@ export default class TokenProvider {
 
   makeAuthRequest(): Promise<any> {
     return new Promise<any>((resolve, reject) => {
-      const xhr = new global.XMLHttpRequest();
       var url;
+
       if (this.userId === undefined) {
         url = mergeQueryParamsIntoUrl(this.url, this.authContext.queryParams);
       } else {
-        const authContextWithUserId = Object.assign(
-          {},
-          this.authContext.queryParams,
-          { user_id: this.userId },
-        );
+        const authContextWithUserId = {
+          user_id: this.userId,
+          ...this.authContext.queryParams,
+        };
         url = mergeQueryParamsIntoUrl(this.url, authContextWithUserId);
       }
 
-      xhr.open("POST", url);
-      if (this.authContext.headers !== undefined) {
-        Object.keys(this.authContext.headers).forEach(key => {
-          xhr.setRequestHeader(key, this.authContext.headers[key]);
-        });
+      const headers = {
+        ['Content-Type']: 'application/x-www-form-urlencoded',
+        ...this.authContext.headers,
       }
-      xhr.timeout = 30 * 1000; // 30 seconds
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          resolve(JSON.parse(xhr.responseText));
-        } else {
-          reject(new Error(`Couldn't fetch token from ${
-            this.url
-          }; got ${ xhr.status } ${ xhr.statusText }.`));
-        }
-      };
-      xhr.ontimeout = () => {
-        reject(new Error(`Request timed out while fetching token from ${
+
+      const body = urlEncode({ grant_type: 'client_credentials' });
+
+      sendRawRequest({
+        method: 'POST',
+        url: url,
+        headers: headers,
+        body: body,
+      }).then(res => {
+        resolve(JSON.parse(res));
+      }).catch(error => {
+        reject(new Error(`Couldn't fetch token from ${
           this.url
-        }`));
-      };
-      xhr.onerror = error => {
-        reject(error);
-      };
-      xhr.setRequestHeader("content-type", "application/x-www-form-urlencoded");
-      xhr.send(urlEncode({
-        grant_type: "client_credentials",
-      }));
+        }; error: ${error}`));
+      })
     });
   }
 

@@ -1,14 +1,9 @@
-import {
-  Instance,
-  SubscriptionEvent,
-  Logger,
-} from 'pusher-platform';
+import { Instance, Logger, SubscriptionEvent } from 'pusher-platform';
 
 import BasicMessageEnricher from './basic_message_enricher';
-import RoomDelegate from './room_delegate';
 import PayloadDeserializer from './payload_deserializer';
+import RoomDelegate from './room_delegate';
 import User from './user';
-
 
 export interface RoomSubscriptionOptions {
   delegate?: RoomDelegate;
@@ -33,26 +28,32 @@ export default class RoomSubscription {
     const eventName = body.event_name;
 
     if (eventName !== 'new_message') {
-      this.logger.verbose(`Room subscription received event with type ${eventName}, when 'new_message' was expected`);
+      this.logger.verbose(
+        `Room subscription received event with type ${
+          eventName
+        }, when 'new_message' was expected`,
+      );
       return;
     }
 
     this.logger.verbose(`Received event name: ${eventName}, and data: ${data}`);
 
-    const basicMessage = PayloadDeserializer.createBasicMessageFromPayload(data);
+    const basicMessage = PayloadDeserializer.createBasicMessageFromPayload(
+      data,
+    );
 
     this.basicMessageEnricher.enrich(
       basicMessage,
-      (message) => {
+      message => {
         this.logger.verbose(`Room received new message: ${message.text}`);
 
         if (this.delegate && this.delegate.newMessage) {
           this.delegate.newMessage(message);
         }
       },
-      (error) => {
+      error => {
         this.logger.debug(`Error receiving new message: ${error}`);
-      }
-    )
+      },
+    );
   }
 }

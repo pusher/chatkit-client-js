@@ -1,4 +1,4 @@
-import { Instance, TokenProvider, Logger, BaseClient } from 'pusher-platform';
+import { BaseClient, Instance, Logger, TokenProvider } from 'pusher-platform';
 import ChatManagerDelegate from './chat_manager_delegate';
 import CurrentUser from './current_user';
 export interface ChatManagerOptions {
@@ -8,10 +8,10 @@ export interface ChatManagerOptions {
     baseClient?: BaseClient;
 }
 export default class ChatManager {
-    private userSubscription;
-    private userStore;
     instance: Instance;
     tokenProvider: TokenProvider;
+    private userStore;
+    private userSubscription;
     constructor(options: ChatManagerOptions);
     connect(options: ConnectOptions): void;
 }

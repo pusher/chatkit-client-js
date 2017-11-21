@@ -9,7 +9,7 @@ export interface RoomOptions {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
-  userIds?: Array<string>;
+  userIds?: string[];
 }
 
 export default class Room {
@@ -20,7 +20,7 @@ export default class Room {
   createdAt: string;
   updatedAt: string;
   deletedAt: string;
-  userIds: Array<string>;
+  userIds: string[];
 
   userStore: RoomUserStore;
   subscription?: RoomSubscription;

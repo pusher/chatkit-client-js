@@ -1,6 +1,6 @@
 import { sendRawRequest } from 'pusher-platform';
 
-import { urlEncode, mergeQueryParamsIntoUrl } from './utils';
+import { mergeQueryParamsIntoUrl, urlEncode } from './utils';
 
 export interface TokenProviderAuthContextOptions {
   queryParams?: TokenProviderAuthContextQueryParams;
@@ -9,11 +9,11 @@ export interface TokenProviderAuthContextOptions {
 
 export type TokenProviderAuthContextHeaders = {
   [key: string]: string;
-}
+};
 
 export type TokenProviderAuthContextQueryParams = {
   [key: string]: string;
-}
+};
 
 export interface TokenProviderOptions {
   authContext?: TokenProviderAuthContextOptions;
@@ -36,7 +36,9 @@ export default class TokenProvider {
   }
 
   get cacheIsStale() {
-    return !this.cachedAccessToken || this.unixTimeNow() > this.cachedTokenExpiresAt;
+    return (
+      !this.cachedAccessToken || this.unixTimeNow() > this.cachedTokenExpiresAt
+    );
   }
 
   fetchToken(tokenParams?: any): Promise<string> {
@@ -49,7 +51,7 @@ export default class TokenProvider {
     }
     return new Promise<string>((resolve, reject) => {
       resolve(this.cachedAccessToken);
-    })
+    });
   }
 
   clearToken(token?: string) {
@@ -59,7 +61,7 @@ export default class TokenProvider {
 
   makeAuthRequest(): Promise<any> {
     return new Promise<any>((resolve, reject) => {
-      var url;
+      let url;
 
       if (this.userId === undefined) {
         url = mergeQueryParamsIntoUrl(this.url, this.authContext.queryParams);
@@ -74,22 +76,24 @@ export default class TokenProvider {
       const headers = {
         ['Content-Type']: 'application/x-www-form-urlencoded',
         ...this.authContext.headers,
-      }
+      };
 
       const body = urlEncode({ grant_type: 'client_credentials' });
 
       sendRawRequest({
+        body,
+        headers,
         method: 'POST',
-        url: url,
-        headers: headers,
-        body: body,
-      }).then(res => {
-        resolve(JSON.parse(res));
-      }).catch(error => {
-        reject(new Error(`Couldn't fetch token from ${
-          this.url
-        }; error: ${error}`));
+        url,
       })
+        .then(res => {
+          resolve(JSON.parse(res));
+        })
+        .catch(error => {
+          reject(
+            new Error(`Couldn't fetch token from ${this.url}; error: ${error}`),
+          );
+        });
     });
   }
 

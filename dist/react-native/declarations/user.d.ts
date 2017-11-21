@@ -1,5 +1,5 @@
-import PresenceState from './presence_state';
 import PresencePayload from './presence_payload';
+import PresenceState from './presence_state';
 export interface UserOptions {
     id: string;
     createdAt: string;

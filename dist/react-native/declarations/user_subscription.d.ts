@@ -10,11 +10,11 @@ export interface UserSubscriptionOptions {
     connectCompletionHandler: (currentUser?: CurrentUser, error?: any) => void;
 }
 export default class UserSubscription {
-    private instance;
     userStore: GlobalUserStore;
     delegate: ChatManagerDelegate;
     connectCompletionHandlers: [(CurrentUser?, Error?) => void];
     currentUser?: CurrentUser;
+    private instance;
     constructor(options: UserSubscriptionOptions);
     handleEvent(event: SubscriptionEvent): void;
     callConnectCompletionHandlers(currentUser?: CurrentUser, error?: Error): void;

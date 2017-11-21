@@ -60,11 +60,11 @@ export default class CurrentUser {
     getJoinableRooms(onSuccess: (rooms: Room[]) => void, onError: (error: any) => void): void;
     getUserRooms(onlyJoinable: boolean, onSuccess: (rooms: Room[]) => void, onError: (error: any) => void): void;
     getAllRooms(onSuccess: (rooms: Room[]) => void, onError: (error: any) => void): void;
-    private getRooms(path, onSuccess, onError);
-    private typingStateChange(eventPayload, roomId, onSuccess, onError);
     startedTypingIn(roomId: number, onSuccess: () => void, onError: (error: any) => void): void;
     stoppedTypingIn(roomId: number, onSuccess: () => void, onError: (error: any) => void): void;
     addMessage(text: string, room: Room, onSuccess: (messageId: number) => void, onError: (error: any) => void): void;
     subscribeToRoom(room: Room, roomDelegate: RoomDelegate, messageLimit?: number): void;
     fetchMessagesFromRoom(room: Room, fetchOptions: FetchRoomMessagesOptions, onSuccess: (messages: Message[]) => void, onError: (error: any) => void): void;
+    private getRooms(path, onSuccess, onError);
+    private typingStateChange(eventPayload, roomId, onSuccess, onError);
 }

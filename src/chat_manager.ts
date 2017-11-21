@@ -1,9 +1,4 @@
-import {
-  Instance,
-  TokenProvider,
-  Logger,
-  BaseClient,
-} from 'pusher-platform';
+import { BaseClient, Instance, Logger, TokenProvider } from 'pusher-platform';
 
 import ChatManagerDelegate from './chat_manager_delegate';
 import CurrentUser from './current_user';
@@ -18,22 +13,22 @@ export interface ChatManagerOptions {
 }
 
 export default class ChatManager {
-  private userSubscription: UserSubscription;
-  private userStore: GlobalUserStore;
-
   instance: Instance;
   tokenProvider: TokenProvider;
+
+  private userStore: GlobalUserStore;
+  private userSubscription: UserSubscription;
 
   constructor(options: ChatManagerOptions) {
     this.tokenProvider = options.tokenProvider;
 
     this.instance = new Instance({
+      client: options.baseClient,
       locator: options.instanceLocator,
+      logger: options.logger,
       serviceName: 'chatkit',
       serviceVersion: 'v1',
       tokenProvider: options.tokenProvider,
-      client: options.baseClient,
-      logger: options.logger,
     });
 
     this.userStore = new GlobalUserStore({ instance: this.instance });
@@ -41,24 +36,24 @@ export default class ChatManager {
 
   connect(options: ConnectOptions) {
     this.userSubscription = new UserSubscription({
-      delegate: options.delegate,
-      instance: this.instance,
-      userStore: this.userStore,
       connectCompletionHandler: (currentUser, error) => {
         if (currentUser) {
           options.onSuccess(currentUser);
         } else {
           options.onError(error);
         }
-      }
+      },
+      delegate: options.delegate,
+      instance: this.instance,
+      userStore: this.userStore,
     });
 
     this.instance.subscribeNonResuming({
-      path: '/users',
       listeners: {
         onEvent: this.userSubscription.handleEvent.bind(this.userSubscription),
-      }
-    })
+      },
+      path: '/users',
+    });
   }
 }
 

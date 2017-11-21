@@ -1,14 +1,11 @@
-import {
-  Instance
-} from 'pusher-platform';
+import { Instance } from 'pusher-platform';
 
 import PayloadDeserializer from './payload_deserializer';
 import PresencePayload from './presence_payload';
 import User from './user';
 import UserStoreCore from './user_store_core';
 
-import { queryString, allPromisesSettled } from './utils';
-
+import { allPromisesSettled, queryString } from './utils';
 
 export interface GlobalUserStoreOptions {
   instance: Instance;
@@ -33,10 +30,14 @@ export default class GlobalUserStore {
   }
 
   user(id: string, onSuccess: (User) => void, onError: (Error) => void) {
-    this.findOrGetUser(id, onSuccess, onError)
+    this.findOrGetUser(id, onSuccess, onError);
   }
 
-  findOrGetUser(id: string, onSuccess: (User) => void, onError: (Error) => void) {
+  findOrGetUser(
+    id: string,
+    onSuccess: (User) => void,
+    onError: (Error) => void,
+  ) {
     const user = this.userStoreCore.find(id);
     if (user) {
       onSuccess(user);
@@ -47,85 +48,113 @@ export default class GlobalUserStore {
   }
 
   getUser(id: string, onSuccess: (User) => void, onError: (Error) => void) {
-    this.instance.request({
-      method: "GET",
-      path: `/users/${id}`,
-    }).then(res => {
-      const userPayload = JSON.parse(res);
-      const user = PayloadDeserializer.createUserFromPayload(userPayload);
-      const userToReturn = this.addOrMerge(user);
-      onSuccess(userToReturn);
-    }).catch(error => {
-      this.instance.logger.verbose(`Error fetching user information: ${error}`);
-      onError(error);
-    })
+    this.instance
+      .request({
+        method: 'GET',
+        path: `/users/${id}`,
+      })
+      .then(res => {
+        const userPayload = JSON.parse(res);
+        const user = PayloadDeserializer.createUserFromPayload(userPayload);
+        const userToReturn = this.addOrMerge(user);
+        onSuccess(userToReturn);
+      })
+      .catch(error => {
+        this.instance.logger.verbose(
+          `Error fetching user information: ${error}`,
+        );
+        onError(error);
+      });
   }
 
-  handleInitialPresencePayloadsAfterRoomJoin(payloads: PresencePayload[], onComplete: () => void) {
+  handleInitialPresencePayloadsAfterRoomJoin(
+    payloads: PresencePayload[],
+    onComplete: () => void,
+  ) {
     this.handleInitialPresencePayloads(payloads, onComplete);
   }
 
-  handleInitialPresencePayloads(payloads: PresencePayload[], onComplete: () => void) {
+  handleInitialPresencePayloads(
+    payloads: PresencePayload[],
+    onComplete: () => void,
+  ) {
     const presencePayloadPromises = new Array<Promise<any>>();
 
     payloads.forEach(payload => {
       const presencePromise = new Promise<any>((resolve, reject) => {
         this.user(
           payload.userId,
-          (user) => {
+          user => {
             user.updatePresenceInfoIfAppropriate(payload);
             resolve();
           },
-          (error) => {
-            this.instance.logger.verbose(`Error fetching user information: ${error}`);
+          error => {
+            this.instance.logger.verbose(
+              `Error fetching user information: ${error}`,
+            );
             reject();
-          }
-        )
-      })
+          },
+        );
+      });
 
       presencePayloadPromises.push(presencePromise);
-    })
+    });
 
     allPromisesSettled(presencePayloadPromises).then(() => {
       onComplete();
-    })
+    });
   }
 
   // TODO: Need a version of this that first checks the userStore for any of the userIds
   // provided and then only makes a request to fetch the user information for the userIds
   // that aren't known about. This would be used in the creatRoom callback and the
   // addedToRoom parsing function
-  fetchUsersWithIds(userIds: string[], onSuccess: (users: User[]) => void, onError: (error: Error) => void) {
+  fetchUsersWithIds(
+    userIds: string[],
+    onSuccess: (users: User[]) => void,
+    onError: (error: Error) => void,
+  ) {
     if (userIds.length === 0) {
-      this.instance.logger.verbose('Requested to fetch users for a list of user ids which was empty');
+      this.instance.logger.verbose(
+        'Requested to fetch users for a list of user ids which was empty',
+      );
       onSuccess([]);
-      return
+      return;
     }
 
     const userIdsString = userIds.join(',');
     const qs = queryString({ user_ids: userIdsString });
 
-    this.instance.request({
-      method: "GET",
-      path: `/users_by_ids${qs}`,
-    }).then(res => {
-      const usersPayload = JSON.parse(res);
-
-      // TODO: Make it more like flatMap, or handle errors being thrown?
-      const users = usersPayload.map(userPayload => {
-        const user = PayloadDeserializer.createUserFromPayload(userPayload);
-        const addedOrUpdatedUser = this.userStoreCore.addOrMerge(user);
-        return addedOrUpdatedUser;
+    this.instance
+      .request({
+        method: 'GET',
+        path: `/users_by_ids${qs}`,
       })
+      .then(res => {
+        const usersPayload = JSON.parse(res);
 
-      onSuccess(users);
-    }).catch(error => {
-      this.instance.logger.verbose(`Error fetching user information: ${error}`);
-      onError(error);
-    })
+        // TODO: Make it more like flatMap, or handle errors being thrown?
+        const users = usersPayload.map(userPayload => {
+          const user = PayloadDeserializer.createUserFromPayload(userPayload);
+          const addedOrUpdatedUser = this.userStoreCore.addOrMerge(user);
+          return addedOrUpdatedUser;
+        });
+
+        onSuccess(users);
+      })
+      .catch(error => {
+        this.instance.logger.verbose(
+          `Error fetching user information: ${error}`,
+        );
+        onError(error);
+      });
   }
 
-  initialFetchOfUsersWithIds(userIds: string[], onSuccess: (users: User[]) => void, onError: (error: Error) => void) {
+  initialFetchOfUsersWithIds(
+    userIds: string[],
+    onSuccess: (users: User[]) => void,
+    onError: (error: Error) => void,
+  ) {
     this.fetchUsersWithIds(userIds, onSuccess, onError);
   }
 }

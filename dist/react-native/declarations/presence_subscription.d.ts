@@ -9,10 +9,10 @@ export interface PresenceSubscriptionOptions {
     delegate?: ChatManagerDelegate;
 }
 export default class PresenceSubscription {
-    private instance;
     userStore: GlobalUserStore;
     roomStore: RoomStore;
     delegate: ChatManagerDelegate;
+    private instance;
     constructor(options: PresenceSubscriptionOptions);
     handleEvent(event: SubscriptionEvent): void;
     end(): void;

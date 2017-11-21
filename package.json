@@ -18,7 +18,10 @@
     "build:all": "yarn clean && yarn build:web && yarn build:react-native",
     "build:web": "webpack --config=webpack/config.web.js",
     "build:react-native": "webpack --config=webpack/config.react-native.js",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "format": "yarn prettier --write",
+    "lint": "tslint -c tslint.json 'src/**/*.ts'",
+    "prettier": "prettier 'src/**/*.ts'"
   },
   "dependencies": {
     "pusher-platform": "^0.12.1"
@@ -27,8 +30,10 @@
     "babel-core": "^6.25.0",
     "babel-loader": "^7.0.0",
     "babel-preset-env": "^1.6.0",
+    "prettier": "^1.8.1",
     "ts-loader": "^2.1.0",
-    "typescript": "^2.5.2",
-    "webpack": "^2.5.1"
+    "tslint": "^5.8.0",
+    "typescript": "^2.6.1",
+    "webpack": "^3.8.1"
   }
 }

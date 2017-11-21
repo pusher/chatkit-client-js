@@ -1,9 +1,7 @@
-import {
-  Instance
-} from 'pusher-platform';
+import { Instance } from 'pusher-platform';
 
-import Room from './room';
 import PayloadDeserializer from './payload_deserializer';
+import Room from './room';
 
 export interface RoomStoreOptions {
   rooms: Room[];
@@ -19,7 +17,11 @@ export default class RoomStore {
     this.instance = options.instance;
   }
 
-  room(id: number, onSuccess: (room: Room) => void, onError: (error: Error) => void) {
+  room(
+    id: number,
+    onSuccess: (room: Room) => void,
+    onError: (error: Error) => void,
+  ) {
     this.findOrGetRoom(id, onSuccess, onError);
   }
 
@@ -46,7 +48,11 @@ export default class RoomStore {
     return room;
   }
 
-  findOrGetRoom(id: number, onSuccess: (room: Room) => void, onError: (error: Error) => void) {
+  findOrGetRoom(
+    id: number,
+    onSuccess: (room: Room) => void,
+    onError: (error: Error) => void,
+  ) {
     const room = this.rooms.find(el => el.id === id);
     if (room) {
       onSuccess(room);
@@ -55,17 +61,24 @@ export default class RoomStore {
     }
   }
 
-  getRoom(id: number, onSuccess: (room: Room) => void, onError: (error: Error) => void) {
-    this.instance.request({
-      method: "GET",
-      path: `/rooms/${id}`,
-    }).then(res => {
-      const roomPayload = JSON.parse(res);
-      const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
-      onSuccess(room);
-    }).catch(error => {
-      this.instance.logger.debug(`Error fetching room ${id}: ${error}`);
-      onError(error);
-    })
+  getRoom(
+    id: number,
+    onSuccess: (room: Room) => void,
+    onError: (error: Error) => void,
+  ) {
+    this.instance
+      .request({
+        method: 'GET',
+        path: `/rooms/${id}`,
+      })
+      .then(res => {
+        const roomPayload = JSON.parse(res);
+        const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
+        onSuccess(room);
+      })
+      .catch(error => {
+        this.instance.logger.debug(`Error fetching room ${id}: ${error}`);
+        onError(error);
+      });
   }
 }

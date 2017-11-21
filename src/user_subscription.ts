@@ -1,7 +1,4 @@
-import {
-  Instance,
-  SubscriptionEvent,
-} from 'pusher-platform';
+import { Instance, SubscriptionEvent } from 'pusher-platform';
 
 import ChatManagerDelegate from './chat_manager_delegate';
 import CurrentUser from './current_user';
@@ -12,7 +9,6 @@ import User from './user';
 
 import { allPromisesSettled } from './utils';
 
-
 export interface UserSubscriptionOptions {
   instance: Instance;
   userStore: GlobalUserStore;
@@ -21,12 +17,12 @@ export interface UserSubscriptionOptions {
 }
 
 export default class UserSubscription {
-  private instance: Instance;
-
   userStore: GlobalUserStore;
   delegate: ChatManagerDelegate;
   connectCompletionHandlers: [(CurrentUser?, Error?) => void];
   currentUser?: CurrentUser;
+
+  private instance: Instance;
 
   constructor(options: UserSubscriptionOptions) {
     this.instance = options.instance;
@@ -40,7 +36,9 @@ export default class UserSubscription {
     const { data } = body;
     const eventName = body.event_name;
 
-    this.instance.logger.verbose(`Received event name: ${eventName}, and data: ${data}`);
+    this.instance.logger.verbose(
+      `Received event name: ${eventName}, and data: ${data}`,
+    );
 
     switch (eventName) {
       case 'initial_state':
@@ -75,19 +73,23 @@ export default class UserSubscription {
 
   callConnectCompletionHandlers(currentUser?: CurrentUser, error?: Error) {
     this.connectCompletionHandlers.forEach(completionHandler => {
-       completionHandler(currentUser, error);
-    })
+      completionHandler(currentUser, error);
+    });
   }
 
-  parseInitialStatePayload(eventName: string, data: any, userStore: GlobalUserStore) {
+  parseInitialStatePayload(
+    eventName: string,
+    data: any,
+    userStore: GlobalUserStore,
+  ) {
     const roomsPayload = data.rooms;
     const userPayload = data.current_user;
 
     const receivedCurrentUser = PayloadDeserializer.createCurrentUserFromPayload(
       userPayload,
       this.instance,
-      this.userStore
-     );
+      this.userStore,
+    );
 
     const wasExistingCurrentUser = this.currentUser !== undefined;
 
@@ -95,7 +97,7 @@ export default class UserSubscription {
     // already a user subscription and so instead of setting the property to a new
     // CurrentUser, we update the existing one to have the most up-to-date state
     if (this.currentUser) {
-      this.currentUser.updateWithPropertiesOf(receivedCurrentUser)
+      this.currentUser.updateWithPropertiesOf(receivedCurrentUser);
     } else {
       this.currentUser = receivedCurrentUser;
     }
@@ -103,7 +105,9 @@ export default class UserSubscription {
     const receivedRoomsConstructor = roomsPayload.constructor;
 
     if (receivedRoomsConstructor !== Array) {
-      throw TypeError("`rooms` key of initial_state payload was of type `${receivedRoomsConstructor}`, expected `Array`")
+      throw TypeError(
+        '`rooms` key of initial_state payload was of type `${receivedRoomsConstructor}`, expected `Array`',
+      );
     }
 
     if (roomsPayload.length === 0) {
@@ -111,8 +115,8 @@ export default class UserSubscription {
       this.callConnectCompletionHandlers(this.currentUser);
     }
 
-    var combinedRoomUserIds = new Set<string>([]);
-    var roomsFromConnection: Room[] = [];
+    const combinedRoomUserIds = new Set<string>([]);
+    const roomsFromConnection: Room[] = [];
 
     roomsPayload.forEach(roomPayload => {
       const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
@@ -122,23 +126,31 @@ export default class UserSubscription {
       });
       roomsFromConnection.push(room);
 
-      this.currentUser.roomStore.addOrMerge(room)
-    })
+      this.currentUser.roomStore.addOrMerge(room);
+    });
 
     this.callConnectCompletionHandlers(this.currentUser);
-    this.fetchInitialUserInformationForUserIds(combinedRoomUserIds, this.currentUser);
+    this.fetchInitialUserInformationForUserIds(
+      combinedRoomUserIds,
+      this.currentUser,
+    );
 
     if (wasExistingCurrentUser) {
-      this.reconcileExistingRoomStoreWithRoomsReceivedOnConnection(roomsFromConnection);
+      this.reconcileExistingRoomStoreWithRoomsReceivedOnConnection(
+        roomsFromConnection,
+      );
     }
   }
 
-  fetchInitialUserInformationForUserIds(userIds: Set<string>, currentUser: CurrentUser) {
+  fetchInitialUserInformationForUserIds(
+    userIds: Set<string>,
+    currentUser: CurrentUser,
+  ) {
     const userIdsArray: string[] = Array.from(userIds.values());
 
     this.userStore.initialFetchOfUsersWithIds(
       userIdsArray,
-      (users) => {
+      users => {
         const combinedRoomUsersPromises = new Array<Promise<any>>();
 
         this.currentUser.roomStore.rooms.forEach(room => {
@@ -146,34 +158,45 @@ export default class UserSubscription {
             const roomUsersPromises = new Array<Promise<any>>();
 
             room.userIds.forEach(userId => {
-              const userPromise = new Promise<any>((userResolve, userReject) => {
-                this.userStore.user(
-                  userId,
-                  (user) => {
-                    room.userStore.addOrMerge(user);
-                    userResolve();
-                  },
-                  (error) => {
-                    this.instance.logger.verbose(`Unable to fetch information about user ${userId}`);
-                    userReject();
-                  }
-                )
-              });
+              const userPromise = new Promise<any>(
+                (userResolve, userReject) => {
+                  this.userStore.user(
+                    userId,
+                    user => {
+                      room.userStore.addOrMerge(user);
+                      userResolve();
+                    },
+                    error => {
+                      this.instance.logger.verbose(
+                        `Unable to fetch information about user ${userId}`,
+                      );
+                      userReject();
+                    },
+                  );
+                },
+              );
               roomUsersPromises.push(userPromise);
             });
 
             allPromisesSettled(roomUsersPromises).then(() => {
               if (room.subscription === undefined) {
-                this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
+                this.instance.logger.verbose(
+                  `Room ${room.name} has no subscription object set`,
+                );
               } else {
-                if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
+                if (
+                  room.subscription.delegate &&
+                  room.subscription.delegate.usersUpdated
+                ) {
                   room.subscription.delegate.usersUpdated();
                 }
               }
 
-              this.instance.logger.verbose(`Users updated in room ${room.name}"`);
+              this.instance.logger.verbose(
+                `Users updated in room ${room.name}"`,
+              );
               roomResolve();
-            })
+            });
           });
 
           combinedRoomUsersPromises.push(roomPromise);
@@ -181,25 +204,35 @@ export default class UserSubscription {
 
         allPromisesSettled(combinedRoomUsersPromises).then(() => {
           this.currentUser.setupPresenceSubscription(this.delegate);
-        })
+        });
       },
-      (error) => {
-        this.instance.logger.debug(`Unable to fetch user information after successful connection: ${error}`);
-        return
-      }
-    )
+      error => {
+        this.instance.logger.debug(
+          `Unable to fetch user information after successful connection: ${
+            error
+          }`,
+        );
+        return;
+      },
+    );
   }
 
-  reconcileExistingRoomStoreWithRoomsReceivedOnConnection(roomsFromConnection: Room[]) {
+  reconcileExistingRoomStoreWithRoomsReceivedOnConnection(
+    roomsFromConnection: Room[],
+  ) {
     if (!this.currentUser) {
-      this.instance.logger.verbose('currentUser property of UserSubscription unset after successful connection');
+      this.instance.logger.verbose(
+        'currentUser property of UserSubscription unset after successful connection',
+      );
       return;
     }
 
     const roomStoreRooms = this.currentUser.roomStore.rooms;
     const mostRecentConnectionRoomsSet = new Set<Room>(roomsFromConnection);
 
-    const noLongerAMemberOfRooms = roomStoreRooms.filter(room => !mostRecentConnectionRoomsSet.has(room));
+    const noLongerAMemberOfRooms = roomStoreRooms.filter(
+      room => !mostRecentConnectionRoomsSet.has(room),
+    );
 
     noLongerAMemberOfRooms.forEach(room => {
       // TODO: Not sure if this is the best way of communicating that while the subscription
@@ -215,8 +248,10 @@ export default class UserSubscription {
   parseAddedToRoomPayload(eventName: string, data: any) {
     const roomPayload = data.room;
 
-    if (roomPayload === undefined || (typeof roomPayload) !== 'object') {
-      this.instance.logger.verbose(`\`room\` key missing or invalid in \`added_to_room\` payload: ${data}`);
+    if (roomPayload === undefined || typeof roomPayload !== 'object') {
+      this.instance.logger.verbose(
+        `\`room\` key missing or invalid in \`added_to_room\` payload: ${data}`,
+      );
       return;
     }
 
@@ -235,38 +270,53 @@ export default class UserSubscription {
       const userPromise = new Promise<any>((resolve, reject) => {
         this.userStore.user(
           userId,
-          (user) => {
-            this.instance.logger.verbose(`Added user id ${userId} to room ${room.name}`);
+          user => {
+            this.instance.logger.verbose(
+              `Added user id ${userId} to room ${room.name}`,
+            );
             room.userStore.addOrMerge(user);
             resolve();
           },
-          (error) => {
-            this.instance.logger.debug(`Unable to add user with id ${userId} to room ${room.name}: ${error}`);
+          error => {
+            this.instance.logger.debug(
+              `Unable to add user with id ${userId} to room ${room.name}: ${
+                error
+              }`,
+            );
             reject();
-          }
-        )
+          },
+        );
       });
       roomUsersPromises.push(userPromise);
     });
 
     allPromisesSettled(roomUsersPromises).then(() => {
       if (room.subscription === undefined) {
-        this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
+        this.instance.logger.verbose(
+          `Room ${room.name} has no subscription object set`,
+        );
       } else {
-        if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
+        if (
+          room.subscription.delegate &&
+          room.subscription.delegate.usersUpdated
+        ) {
           room.subscription.delegate.usersUpdated();
         }
       }
 
       this.instance.logger.verbose(`Users updated in room ${room.name}`);
-    })
+    });
   }
 
   parseRemovedFromRoomPayload(eventName: string, data: any) {
     const roomId = data.room_id;
 
-    if (roomId === undefined || (typeof roomId) !== 'number') {
-      this.instance.logger.verbose(`\`room_id\` key missing or invalid in \`removed_from_room\` payload: ${data}`);
+    if (roomId === undefined || typeof roomId !== 'number') {
+      this.instance.logger.verbose(
+        `\`room_id\` key missing or invalid in \`removed_from_room\` payload: ${
+          data
+        }`,
+      );
       return;
     }
 
@@ -278,7 +328,11 @@ export default class UserSubscription {
       }
       this.instance.logger.verbose(`Removed from room: ${roomRemoved.name}`);
     } else {
-      this.instance.logger.verbose(`Received \`removed_from_room\` API event but room with ID ${roomId} not found in local store of joined rooms`);
+      this.instance.logger.verbose(
+        `Received \`removed_from_room\` API event but room with ID ${
+          roomId
+        } not found in local store of joined rooms`,
+      );
       return;
     }
   }
@@ -286,8 +340,10 @@ export default class UserSubscription {
   parseRoomUpdatedPayload(eventName: string, data: any) {
     const roomPayload = data.room;
 
-    if (roomPayload === undefined || (typeof roomPayload) !== 'object') {
-      this.instance.logger.verbose(`\`room\` key missing or invalid in \`room_updated\` payload: ${data}`);
+    if (roomPayload === undefined || typeof roomPayload !== 'object') {
+      this.instance.logger.verbose(
+        `\`room\` key missing or invalid in \`room_updated\` payload: ${data}`,
+      );
       return;
     }
 
@@ -295,7 +351,7 @@ export default class UserSubscription {
 
     this.currentUser.roomStore.room(
       room.id,
-      (roomToUpdate) => {
+      roomToUpdate => {
         roomToUpdate.updateWithPropertiesOfRoom(room);
 
         if (this.delegate.roomUpdated) {
@@ -304,17 +360,21 @@ export default class UserSubscription {
 
         this.instance.logger.verbose(`Room updated: ${room.name}`);
       },
-      (error) => {
+      error => {
         this.instance.logger.debug(`Error updating room ${room.id}: ${error}`);
-      }
-    )
+      },
+    );
   }
 
   parseRoomDeletedPayload(eventName: string, data: any) {
     const roomId = data.room_id;
 
-    if (roomId === undefined || (typeof roomId) !== 'number') {
-      this.instance.logger.verbose(`\`room_id\` key missing or invalid in \`room_deleted\` payload: ${data}`);
+    if (roomId === undefined || typeof roomId !== 'number') {
+      this.instance.logger.verbose(
+        `\`room_id\` key missing or invalid in \`room_deleted\` payload: ${
+          data
+        }`,
+      );
       return;
     }
 
@@ -327,7 +387,11 @@ export default class UserSubscription {
 
       this.instance.logger.verbose(`Room deleted: ${deletedRoom.name}`);
     } else {
-      this.instance.logger.verbose(`Received \`room_deleted\` API event but room with ID ${roomId} not found in local store of joined rooms`);
+      this.instance.logger.verbose(
+        `Received \`room_deleted\` API event but room with ID ${
+          roomId
+        } not found in local store of joined rooms`,
+      );
       return;
     }
   }
@@ -335,24 +399,32 @@ export default class UserSubscription {
   parseUserJoinedPayload(eventName: string, data: any) {
     const roomId = data.room_id;
 
-    if (roomId === undefined || (typeof roomId) !== 'number') {
-      this.instance.logger.verbose(`\`room_id\` key missing or invalid in \`user_joined\` payload: ${data}`);
+    if (roomId === undefined || typeof roomId !== 'number') {
+      this.instance.logger.verbose(
+        `\`room_id\` key missing or invalid in \`user_joined\` payload: ${
+          data
+        }`,
+      );
       return;
     }
 
     const userId = data.user_id;
 
-    if (userId === undefined || (typeof userId) !== 'string') {
-      this.instance.logger.verbose(`\`user_id\` key missing or invalid in \`user_joined\` payload: ${data}`);
+    if (userId === undefined || typeof userId !== 'string') {
+      this.instance.logger.verbose(
+        `\`user_id\` key missing or invalid in \`user_joined\` payload: ${
+          data
+        }`,
+      );
       return;
     }
 
     this.currentUser.roomStore.room(
       roomId,
-      (room) => {
+      room => {
         this.currentUser.userStore.user(
           userId,
-          (user) => {
+          user => {
             const addedOrMergedUser = room.userStore.addOrMerge(user);
             if (room.userIds.indexOf(addedOrMergedUser.id) === -1) {
               room.userIds.push(addedOrMergedUser.id);
@@ -363,54 +435,71 @@ export default class UserSubscription {
             }
 
             if (room.subscription === undefined) {
-              this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
+              this.instance.logger.verbose(
+                `Room ${room.name} has no subscription object set`,
+              );
             } else {
-              if (room.subscription.delegate && room.subscription.delegate.userJoined) {
+              if (
+                room.subscription.delegate &&
+                room.subscription.delegate.userJoined
+              ) {
                 room.subscription.delegate.userJoined(addedOrMergedUser);
               }
             }
 
-            this.instance.logger.verbose(`User ${user.id} joined room: ${room.name}`);
+            this.instance.logger.verbose(
+              `User ${user.id} joined room: ${room.name}`,
+            );
           },
-          (error) => {
-            this.instance.logger.verbose(`Error fetching user ${userId}: ${error}`);
+          error => {
+            this.instance.logger.verbose(
+              `Error fetching user ${userId}: ${error}`,
+            );
             // TODO: Delegate question again
             // strongSelf.delegate.error(error: err!)
             return;
-          }
-        )
-
-
+          },
+        );
       },
-      (error) => {
-        this.instance.logger.verbose(`User with id ${userId} joined room with id ${roomId} but no information about the room could be retrieved. Error was: ${error}`);
+      error => {
+        this.instance.logger.verbose(
+          `User with id ${userId} joined room with id ${
+            roomId
+          } but no information about the room could be retrieved. Error was: ${
+            error
+          }`,
+        );
         // self.delegate.error(error: err!)
         return;
-      }
-    )
+      },
+    );
   }
 
   parseUserLeftPayload(eventName: string, data: any) {
     const roomId = data.room_id;
 
-    if (roomId === undefined || (typeof roomId) !== 'number') {
-      this.instance.logger.verbose(`\`room_id\` key missing or invalid in \`user_left\` payload: ${data}`);
+    if (roomId === undefined || typeof roomId !== 'number') {
+      this.instance.logger.verbose(
+        `\`room_id\` key missing or invalid in \`user_left\` payload: ${data}`,
+      );
       return;
     }
 
     const userId = data.user_id;
 
-    if (userId === undefined || (typeof userId) !== 'string') {
-      this.instance.logger.verbose(`\`user_id\` key missing or invalid in \`user_left\` payload: ${data}`);
+    if (userId === undefined || typeof userId !== 'string') {
+      this.instance.logger.verbose(
+        `\`user_id\` key missing or invalid in \`user_left\` payload: ${data}`,
+      );
       return;
     }
 
     this.currentUser.roomStore.room(
       roomId,
-      (room) => {
+      room => {
         this.currentUser.userStore.user(
           userId,
-          (user) => {
+          user => {
             const roomUserIdIndex = room.userIds.indexOf(user.id);
 
             if (roomUserIdIndex > -1) {
@@ -424,115 +513,162 @@ export default class UserSubscription {
             }
 
             if (room.subscription === undefined) {
-              this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
+              this.instance.logger.verbose(
+                `Room ${room.name} has no subscription object set`,
+              );
             } else {
-              if (room.subscription.delegate && room.subscription.delegate.userLeft) {
+              if (
+                room.subscription.delegate &&
+                room.subscription.delegate.userLeft
+              ) {
                 room.subscription.delegate.userLeft(user);
               }
             }
 
-            this.instance.logger.verbose(`User ${user.id} left room ${room.name}`);
+            this.instance.logger.verbose(
+              `User ${user.id} left room ${room.name}`,
+            );
           },
-          (error) => {
-            this.instance.logger.verbose(`User with id ${userId} left room with id ${roomId} but no information about the user could be retrieved. Error was: ${error}`);
+          error => {
+            this.instance.logger.verbose(
+              `User with id ${userId} left room with id ${
+                roomId
+              } but no information about the user could be retrieved. Error was: ${
+                error
+              }`,
+            );
             // strongSelf.delegate.error(error: err!)
             return;
-          }
-        )
-
-
+          },
+        );
       },
-      (error) => {
-        this.instance.logger.verbose(`User with id ${userId} joined room with id ${roomId} but no information about the room could be retrieved. Error was: ${error}`);
+      error => {
+        this.instance.logger.verbose(
+          `User with id ${userId} joined room with id ${
+            roomId
+          } but no information about the room could be retrieved. Error was: ${
+            error
+          }`,
+        );
         // self.delegate.error(error: err!)
         return;
-      }
-    )
+      },
+    );
   }
 
   parseTypingStartPayload(eventName: string, data: any, userId: string) {
     const roomId = data.room_id;
 
-    if (roomId === undefined || (typeof roomId) !== 'number') {
-      this.instance.logger.verbose(`\`room_id\` key missing or invalid in \`typing_start\` payload: ${data}`);
+    if (roomId === undefined || typeof roomId !== 'number') {
+      this.instance.logger.verbose(
+        `\`room_id\` key missing or invalid in \`typing_start\` payload: ${
+          data
+        }`,
+      );
       return;
     }
 
     this.currentUser.roomStore.room(
       roomId,
-      (room) => {
+      room => {
         this.currentUser.userStore.user(
           userId,
-          (user) => {
+          user => {
             if (this.delegate.userStartedTyping) {
               this.delegate.userStartedTyping(room, user);
             }
 
             if (room.subscription === undefined) {
-              this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
+              this.instance.logger.verbose(
+                `Room ${room.name} has no subscription object set`,
+              );
             } else {
-              if (room.subscription.delegate && room.subscription.delegate.userStartedTyping) {
+              if (
+                room.subscription.delegate &&
+                room.subscription.delegate.userStartedTyping
+              ) {
                 room.subscription.delegate.userStartedTyping(user);
               }
             }
 
-            this.instance.logger.verbose(`User ${user.id} started typing in room ${room.name}`);
+            this.instance.logger.verbose(
+              `User ${user.id} started typing in room ${room.name}`,
+            );
           },
-          (error) => {
-            this.instance.logger.verbose(`Error fetching information for user ${userId}: ${error}`);
+          error => {
+            this.instance.logger.verbose(
+              `Error fetching information for user ${userId}: ${error}`,
+            );
             // strongSelf.delegate.error(error: err!)
             return;
-          }
-        )
+          },
+        );
       },
-      (error) => {
-        this.instance.logger.verbose(`Error fetching information for room ${roomId}: ${error}`);
+      error => {
+        this.instance.logger.verbose(
+          `Error fetching information for room ${roomId}: ${error}`,
+        );
         // self.delegate.error(error: err!)
         return;
-      }
+      },
     );
   }
 
   parseTypingStopPayload(eventName: string, data: any, userId: string) {
     const roomId = data.room_id;
 
-    if (roomId === undefined || (typeof roomId) !== 'number') {
-      this.instance.logger.verbose(`\`room_id\` key missing or invalid in \`typing_stop\` payload: ${data}`);
+    if (roomId === undefined || typeof roomId !== 'number') {
+      this.instance.logger.verbose(
+        `\`room_id\` key missing or invalid in \`typing_stop\` payload: ${
+          data
+        }`,
+      );
       return;
     }
 
     this.currentUser.roomStore.room(
       roomId,
-      (room) => {
+      room => {
         this.currentUser.userStore.user(
           userId,
-          (user) => {
+          user => {
             if (this.delegate.userStoppedTyping) {
               this.delegate.userStoppedTyping(room, user);
             }
 
             if (room.subscription === undefined) {
-              this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
+              this.instance.logger.verbose(
+                `Room ${room.name} has no subscription object set`,
+              );
             } else {
-              if (room.subscription.delegate && room.subscription.delegate.userStoppedTyping) {
+              if (
+                room.subscription.delegate &&
+                room.subscription.delegate.userStoppedTyping
+              ) {
                 room.subscription.delegate.userStoppedTyping(user);
               }
             }
 
-            this.instance.logger.verbose(`User ${user.id} stopped typing in room ${room.name}`);
+            this.instance.logger.verbose(
+              `User ${user.id} stopped typing in room ${room.name}`,
+            );
           },
-          (error) => {
-            this.instance.logger.verbose(`Error fetching information for user ${userId}: ${error}`);
+          error => {
+            this.instance.logger.verbose(
+              `Error fetching information for user ${userId}: ${error}`,
+            );
             // strongSelf.delegate.error(error: err!)
             return;
-          }
-        )
+          },
+        );
       },
-      (error) => {
-        this.instance.logger.verbose(`Error fetching information for room ${roomId}: ${error}`);
+      error => {
+        this.instance.logger.verbose(
+          `Error fetching information for room ${roomId}: ${error}`,
+        );
         // self.delegate.error(error: err!)
         return;
-      }
+      },
     );
   }
 }

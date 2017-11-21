@@ -8,7 +8,7 @@ export interface RoomOptions {
     createdAt: string;
     updatedAt: string;
     deletedAt?: string;
-    userIds?: Array<string>;
+    userIds?: string[];
 }
 export default class Room {
     id: number;
@@ -18,7 +18,7 @@ export default class Room {
     createdAt: string;
     updatedAt: string;
     deletedAt: string;
-    userIds: Array<string>;
+    userIds: string[];
     userStore: RoomUserStore;
     subscription?: RoomSubscription;
     constructor(options: RoomOptions);

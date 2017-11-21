@@ -43,9 +43,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// expose the module cache
 /******/ 	__webpack_require__.c = installedModules;
 /******/
-/******/ 	// identity function for calling harmony imports with the correct context
-/******/ 	__webpack_require__.i = function(value) { return value; };
-/******/
 /******/ 	// define getter function for harmony exports
 /******/ 	__webpack_require__.d = function(exports, name, getter) {
 /******/ 		if(!__webpack_require__.o(exports, name)) {
@@ -73,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 10);
+/******/ 	return __webpack_require__(__webpack_require__.s = 5);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -85,42 +82,42 @@ return /******/ (function(modules) { // webpackBootstrap
 Object.defineProperty(exports, "__esModule", { value: true });
 var current_user_1 = __webpack_require__(8);
 var presence_state_1 = __webpack_require__(3);
-var room_1 = __webpack_require__(12);
-var user_1 = __webpack_require__(16);
+var room_1 = __webpack_require__(13);
+var user_1 = __webpack_require__(15);
 var PayloadDeserializer = (function () {
     function PayloadDeserializer() {
     }
     PayloadDeserializer.createUserFromPayload = function (userPayload) {
         var basicUser = PayloadDeserializer.createBasicUserFromPayload(userPayload);
         return new user_1.default({
-            id: basicUser.id,
-            createdAt: basicUser.createdAt,
-            updatedAt: basicUser.updatedAt,
-            name: userPayload.name,
             avatarURL: userPayload.avatar_url,
+            createdAt: basicUser.createdAt,
             customData: userPayload.custom_data,
+            id: basicUser.id,
+            name: userPayload.name,
+            updatedAt: basicUser.updatedAt,
         });
     };
     PayloadDeserializer.createCurrentUserFromPayload = function (userPayload, instance, userStore) {
         var basicUser = PayloadDeserializer.createBasicUserFromPayload(userPayload);
         return new current_user_1.default({
-            id: basicUser.id,
-            createdAt: basicUser.createdAt,
-            updatedAt: basicUser.updatedAt,
-            name: userPayload.name,
             avatarURL: userPayload.avatar_url,
+            createdAt: basicUser.createdAt,
             customData: userPayload.custom_data,
+            id: basicUser.id,
             instance: instance,
+            name: userPayload.name,
+            updatedAt: basicUser.updatedAt,
             userStore: userStore,
         });
     };
     PayloadDeserializer.createRoomFromPayload = function (roomPayload) {
         var requiredFieldsWithTypes = {
+            created_at: 'string',
+            created_by_id: 'string',
             id: 'number',
             name: 'string',
             private: 'boolean',
-            created_by_id: 'string',
-            created_at: 'string',
             updated_at: 'string',
         };
         Object.keys(requiredFieldsWithTypes).forEach(function (key) {
@@ -138,24 +135,24 @@ var PayloadDeserializer = (function () {
             memberUserIds = roomPayload.member_user_ids;
         }
         return new room_1.default({
-            id: roomPayload.id,
-            name: roomPayload.name,
-            isPrivate: roomPayload.private,
-            createdByUserId: roomPayload.created_by_id,
             createdAt: roomPayload.created_at,
-            updatedAt: roomPayload.updated_at,
+            createdByUserId: roomPayload.created_by_id,
             deletedAt: roomPayload.deleted_at,
+            id: roomPayload.id,
+            isPrivate: roomPayload.private,
+            name: roomPayload.name,
+            updatedAt: roomPayload.updated_at,
             userIds: memberUserIds,
         });
     };
     PayloadDeserializer.createBasicMessageFromPayload = function (messagePayload) {
         var requiredFieldsWithTypes = {
+            created_at: 'string',
             id: 'number',
-            user_id: 'string',
             room_id: 'number',
             text: 'string',
-            created_at: 'string',
             updated_at: 'string',
+            user_id: 'string',
         };
         Object.keys(requiredFieldsWithTypes).forEach(function (key) {
             if (messagePayload[key] === undefined) {
@@ -168,18 +165,18 @@ var PayloadDeserializer = (function () {
             }
         });
         return {
-            id: messagePayload.id,
-            senderId: messagePayload.user_id,
-            roomId: messagePayload.id,
-            text: messagePayload.text,
             createdAt: messagePayload.created_at,
+            id: messagePayload.id,
+            roomId: messagePayload.id,
+            senderId: messagePayload.user_id,
+            text: messagePayload.text,
             updatedAt: messagePayload.updated_at,
         };
     };
     PayloadDeserializer.createPresencePayloadFromPayload = function (payload) {
         var requiredFieldsWithTypes = {
-            user_id: 'string',
             state: 'string',
+            user_id: 'string',
         };
         Object.keys(requiredFieldsWithTypes).forEach(function (key) {
             if (payload[key] === undefined) {
@@ -193,15 +190,15 @@ var PayloadDeserializer = (function () {
         });
         var state = new presence_state_1.default(payload.state);
         return {
-            userId: payload.user_id,
-            state: state,
             lastSeenAt: payload.last_seen_at,
+            state: state,
+            userId: payload.user_id,
         };
     };
     PayloadDeserializer.createBasicUserFromPayload = function (payload) {
         var requiredFieldsWithTypes = {
-            id: 'string',
             created_at: 'string',
+            id: 'string',
             updated_at: 'string',
         };
         Object.keys(requiredFieldsWithTypes).forEach(function (key) {
@@ -215,8 +212,8 @@ var PayloadDeserializer = (function () {
             }
         });
         return {
-            id: payload.id,
             createdAt: payload.created_at,
+            id: payload.id,
             updatedAt: payload.updated_at,
         };
     };
@@ -236,32 +233,32 @@ function urlEncode(data) {
     return Object.keys(data)
         .filter(function (key) { return data[key] !== undefined; })
         .map(function (key) { return key + "=" + encodeURIComponent(data[key]); })
-        .join("&");
+        .join('&');
 }
 exports.urlEncode = urlEncode;
 function queryString(data) {
     var encodedData = urlEncode(data);
-    return encodedData ? "?" + encodedData : "";
+    return encodedData ? "?" + encodedData : '';
 }
 exports.queryString = queryString;
 var querylessUrlAndQueryObjectFromFullUrl = function (urlString) {
     if (urlString.indexOf('?') === -1) {
         return {
-            querylessUrl: urlString,
             queryObject: {},
+            querylessUrl: urlString,
         };
     }
-    var splitUrl = urlString.split("?");
+    var splitUrl = urlString.split('?');
     var querylessUrl = splitUrl[0];
-    var queryString = splitUrl.slice(1).join("&");
+    var queryStr = splitUrl.slice(1).join('&');
     return {
+        queryObject: queryParamObject(queryStr),
         querylessUrl: querylessUrl,
-        queryObject: queryParamObject(queryString),
     };
 };
 var queryParamObject = function (queryParamString) {
     return queryParamString
-        .split("&")
+        .split('&')
         .map(function (str) {
         var _a = str.split('='), key = _a[0], value = _a[1];
         return _b = {}, _b[key] = decodeURI(value), _b;
@@ -276,13 +273,15 @@ exports.mergeQueryParamsIntoUrl = function (urlString, queryParams) {
     return t;
 };
 function allPromisesSettled(promises) {
-    return Promise.all(promises.map(function (p) { return Promise.resolve(p).then(function (v) { return ({
-        state: 'fulfilled',
-        value: v,
-    }); }, function (r) { return ({
-        state: 'rejected',
-        reason: r,
-    }); }); }));
+    return Promise.all(promises.map(function (p) {
+        return Promise.resolve(p).then(function (v) { return ({
+            state: 'fulfilled',
+            value: v,
+        }); }, function (r) { return ({
+            reason: r,
+            state: 'rejected',
+        }); });
+    }));
 }
 exports.allPromisesSettled = allPromisesSettled;
 
@@ -2020,45 +2019,16 @@ exports.default = UserStoreCore;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var pusher_platform_1 = __webpack_require__(2);
-var global_user_store_1 = __webpack_require__(9);
-var user_subscription_1 = __webpack_require__(17);
-var ChatManager = (function () {
-    function ChatManager(options) {
-        this.tokenProvider = options.tokenProvider;
-        this.instance = new pusher_platform_1.Instance({
-            locator: options.instanceLocator,
-            serviceName: 'chatkit',
-            serviceVersion: 'v1',
-            tokenProvider: options.tokenProvider,
-            client: options.baseClient,
-            logger: options.logger,
-        });
-        this.userStore = new global_user_store_1.default({ instance: this.instance });
-    }
-    ChatManager.prototype.connect = function (options) {
-        this.userSubscription = new user_subscription_1.default({
-            delegate: options.delegate,
-            instance: this.instance,
-            userStore: this.userStore,
-            connectCompletionHandler: function (currentUser, error) {
-                if (currentUser) {
-                    options.onSuccess(currentUser);
-                }
-                else {
-                    options.onError(error);
-                }
-            }
-        });
-        this.instance.subscribeNonResuming({
-            path: '/users',
-            listeners: {
-                onEvent: this.userSubscription.handleEvent.bind(this.userSubscription),
-            }
-        });
-    };
-    return ChatManager;
-}());
-exports.default = ChatManager;
+exports.BaseClient = pusher_platform_1.BaseClient;
+var chat_manager_1 = __webpack_require__(6);
+exports.ChatManager = chat_manager_1.default;
+var token_provider_1 = __webpack_require__(17);
+exports.TokenProvider = token_provider_1.default;
+exports.default = {
+    BaseClient: pusher_platform_1.BaseClient,
+    ChatManager: chat_manager_1.default,
+    TokenProvider: token_provider_1.default,
+};
 
 
 /***/ }),
@@ -2067,544 +2037,51 @@ exports.default = ChatManager;
 
 "use strict";
 
-var __assign = (this && this.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 var pusher_platform_1 = __webpack_require__(2);
-var utils_1 = __webpack_require__(1);
-var TokenProvider = (function () {
-    function TokenProvider(options) {
-        this.authContext = options.authContext || {};
-        this.url = options.url;
-        this.userId = options.userId;
+var global_user_store_1 = __webpack_require__(7);
+var user_subscription_1 = __webpack_require__(16);
+var ChatManager = (function () {
+    function ChatManager(options) {
+        this.tokenProvider = options.tokenProvider;
+        this.instance = new pusher_platform_1.Instance({
+            client: options.baseClient,
+            locator: options.instanceLocator,
+            logger: options.logger,
+            serviceName: 'chatkit',
+            serviceVersion: 'v1',
+            tokenProvider: options.tokenProvider,
+        });
+        this.userStore = new global_user_store_1.default({ instance: this.instance });
     }
-    Object.defineProperty(TokenProvider.prototype, "cacheIsStale", {
-        get: function () {
-            return !this.cachedAccessToken || this.unixTimeNow() > this.cachedTokenExpiresAt;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    TokenProvider.prototype.fetchToken = function (tokenParams) {
-        var _this = this;
-        if (this.cacheIsStale) {
-            return this.makeAuthRequest().then(function (responseBody) {
-                var access_token = responseBody.access_token, expires_in = responseBody.expires_in;
-                _this.cache(access_token, expires_in);
-                return access_token;
-            });
-        }
-        return new Promise(function (resolve, reject) {
-            resolve(_this.cachedAccessToken);
+    ChatManager.prototype.connect = function (options) {
+        this.userSubscription = new user_subscription_1.default({
+            connectCompletionHandler: function (currentUser, error) {
+                if (currentUser) {
+                    options.onSuccess(currentUser);
+                }
+                else {
+                    options.onError(error);
+                }
+            },
+            delegate: options.delegate,
+            instance: this.instance,
+            userStore: this.userStore,
+        });
+        this.instance.subscribeNonResuming({
+            listeners: {
+                onEvent: this.userSubscription.handleEvent.bind(this.userSubscription),
+            },
+            path: '/users',
         });
     };
-    TokenProvider.prototype.clearToken = function (token) {
-        this.cachedAccessToken = undefined;
-        this.cachedTokenExpiresAt = undefined;
-    };
-    TokenProvider.prototype.makeAuthRequest = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            var url;
-            if (_this.userId === undefined) {
-                url = utils_1.mergeQueryParamsIntoUrl(_this.url, _this.authContext.queryParams);
-            }
-            else {
-                var authContextWithUserId = __assign({ user_id: _this.userId }, _this.authContext.queryParams);
-                url = utils_1.mergeQueryParamsIntoUrl(_this.url, authContextWithUserId);
-            }
-            var headers = __assign((_a = {}, _a['Content-Type'] = 'application/x-www-form-urlencoded', _a), _this.authContext.headers);
-            var body = utils_1.urlEncode({ grant_type: 'client_credentials' });
-            pusher_platform_1.sendRawRequest({
-                method: 'POST',
-                url: url,
-                headers: headers,
-                body: body,
-            }).then(function (res) {
-                resolve(JSON.parse(res));
-            }).catch(function (error) {
-                reject(new Error("Couldn't fetch token from " + _this.url + "; error: " + error));
-            });
-            var _a;
-        });
-    };
-    TokenProvider.prototype.cache = function (accessToken, expiresIn) {
-        this.cachedAccessToken = accessToken;
-        this.cachedTokenExpiresAt = this.unixTimeNow() + expiresIn;
-    };
-    TokenProvider.prototype.unixTimeNow = function () {
-        return Math.floor(Date.now() / 1000);
-    };
-    return TokenProvider;
+    return ChatManager;
 }());
-exports.default = TokenProvider;
+exports.default = ChatManager;
 
 
 /***/ }),
 /* 7 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var BasicMessageEnricher = (function () {
-    function BasicMessageEnricher(userStore, room, logger) {
-        this.completionOrderList = [];
-        this.messageIdToCompletionHandlers = {};
-        this.enrichedMessagesAwaitingCompletionCalls = {};
-        this.userIdsBeingRetrieved = [];
-        this.userIdsToBasicMessageIds = {};
-        this.messagesAwaitingEnrichmentDependentOnUserRetrieval = {};
-        this.userStore = userStore;
-        this.room = room;
-        this.logger = logger;
-    }
-    BasicMessageEnricher.prototype.enrich = function (basicMessage, onSuccess, onError) {
-        var _this = this;
-        var basicMessageId = basicMessage.id;
-        var basicMessageSenderId = basicMessage.senderId;
-        this.completionOrderList.push(basicMessageId);
-        this.messageIdToCompletionHandlers[basicMessageId] = {
-            onSuccess: onSuccess,
-            onError: onError,
-        };
-        if (this.userIdsToBasicMessageIds[basicMessageSenderId] === undefined) {
-            this.userIdsToBasicMessageIds[basicMessageSenderId] = [basicMessageId];
-        }
-        else {
-            this.userIdsToBasicMessageIds[basicMessageSenderId].push(basicMessageId);
-        }
-        this.messagesAwaitingEnrichmentDependentOnUserRetrieval[basicMessageId] = basicMessage;
-        if (this.userIdsBeingRetrieved.indexOf(basicMessageSenderId) > -1) {
-            return;
-        }
-        else {
-            this.userIdsBeingRetrieved.push(basicMessageSenderId);
-        }
-        this.userStore.user(basicMessageSenderId, function (user) {
-            var basicMessageIds = _this.userIdsToBasicMessageIds[basicMessageSenderId];
-            if (basicMessageIds === undefined) {
-                _this.logger.verbose("Fetched user information for user with id " + user.id + " but no messages needed information for this user");
-                return;
-            }
-            var basicMessages = basicMessageIds.map(function (bmId) {
-                return _this.messagesAwaitingEnrichmentDependentOnUserRetrieval[bmId];
-            }).filter(function (el) { return el !== undefined; });
-            _this.enrichMessagesWithUser(user, basicMessages);
-            var indexToRemove = _this.userIdsBeingRetrieved.indexOf(basicMessageSenderId);
-            if (indexToRemove > -1) {
-                _this.userIdsBeingRetrieved.splice(indexToRemove, 1);
-            }
-        }, function (error) {
-            _this.logger.debug("Unable to find user with id " + basicMessage.senderId + ", associated with message " + basicMessageId + ". Error: " + error);
-            _this.callCompletionHandlersForEnrichedMessagesWithIdsLessThanOrEqualTo(basicMessageId, error);
-        });
-    };
-    BasicMessageEnricher.prototype.enrichMessagesWithUser = function (user, messages) {
-        var _this = this;
-        messages.forEach(function (basicMessage) {
-            var message = {
-                id: basicMessage.id,
-                text: basicMessage.text,
-                createdAt: basicMessage.createdAt,
-                updatedAt: basicMessage.updatedAt,
-                sender: user,
-                room: _this.room,
-            };
-            _this.callCompletionHandlersForEnrichedMessagesWithIdsLessThanOrEqualTo(basicMessage.id, message);
-        });
-    };
-    BasicMessageEnricher.prototype.callCompletionHandlersForEnrichedMessagesWithIdsLessThanOrEqualTo = function (id, result) {
-        var nextIdToComplete = this.completionOrderList[0];
-        if (nextIdToComplete === undefined) {
-            return;
-        }
-        this.enrichedMessagesAwaitingCompletionCalls[id] = result;
-        if (id !== nextIdToComplete) {
-            this.logger.verbose("Waiting to call completion handler for message id " + id + " as there are other older messages still to be enriched");
-            return;
-        }
-        do {
-            var messageId = this.completionOrderList[0];
-            var completionHandler = this.messageIdToCompletionHandlers[messageId];
-            if (completionHandler === undefined) {
-                this.logger.verbose("Completion handler not stored for message id " + messageId);
-                return;
-            }
-            var result_1 = this.enrichedMessagesAwaitingCompletionCalls[messageId];
-            if (result_1 === undefined) {
-                this.logger.verbose("Enrichment result not stored for message id " + messageId);
-                return;
-            }
-            if (result_1['sender'] !== undefined) {
-                completionHandler.onSuccess(result_1);
-            }
-            else {
-                completionHandler.onError(result_1);
-            }
-            this.completionOrderList.shift();
-            delete this.messageIdToCompletionHandlers[messageId];
-            delete this.enrichedMessagesAwaitingCompletionCalls[messageId];
-        } while (this.completionOrderList[0] !== undefined && this.enrichedMessagesAwaitingCompletionCalls[this.completionOrderList[0]] !== undefined);
-    };
-    return BasicMessageEnricher;
-}());
-exports.default = BasicMessageEnricher;
-
-
-/***/ }),
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var basic_message_enricher_1 = __webpack_require__(7);
-var payload_deserializer_1 = __webpack_require__(0);
-var presence_subscription_1 = __webpack_require__(11);
-var room_store_1 = __webpack_require__(13);
-var room_subscription_1 = __webpack_require__(14);
-var utils_1 = __webpack_require__(1);
-var CurrentUser = (function () {
-    function CurrentUser(options) {
-        var rooms = options.rooms, id = options.id, instance = options.instance;
-        var validRooms = rooms || [];
-        this.id = id;
-        this.createdAt = options.createdAt;
-        this.updatedAt = options.updatedAt;
-        this.name = options.name;
-        this.avatarURL = options.avatarURL;
-        this.customData = options.customData;
-        this.roomStore = new room_store_1.default({ instance: instance, rooms: validRooms });
-        this.instance = instance;
-        this.userStore = options.userStore;
-        this.pathFriendlyId = encodeURIComponent(id);
-    }
-    Object.defineProperty(CurrentUser.prototype, "rooms", {
-        get: function () {
-            return this.roomStore.rooms;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    CurrentUser.prototype.updateWithPropertiesOf = function (currentUser) {
-        this.updatedAt = currentUser.updatedAt;
-        this.name = currentUser.name;
-        this.customData = currentUser.customData;
-    };
-    CurrentUser.prototype.setupPresenceSubscription = function (delegate) {
-        this.presenceSubscription = new presence_subscription_1.default({
-            instance: this.instance,
-            userStore: this.userStore,
-            roomStore: this.roomStore,
-            delegate: delegate,
-        });
-        this.instance.subscribeNonResuming({
-            path: "/users/" + this.id + "/presence",
-            listeners: {
-                onEvent: this.presenceSubscription.handleEvent.bind(this.presenceSubscription),
-            }
-        });
-    };
-    CurrentUser.prototype.createRoom = function (options, onSuccess, onError) {
-        var _this = this;
-        var roomData = {
-            name: options.name,
-            created_by_id: this.id,
-            private: options.private || false,
-        };
-        if (options.addUserIds && options.addUserIds.length > 0) {
-            roomData['user_ids'] = options.addUserIds;
-        }
-        this.instance.request({
-            method: 'POST',
-            path: '/rooms',
-            body: roomData,
-        }).then(function (res) {
-            var roomPayload = JSON.parse(res);
-            var room = payload_deserializer_1.default.createRoomFromPayload(roomPayload);
-            var addedOrMergedRoom = _this.roomStore.addOrMerge(room);
-            _this.populateRoomUserStore(addedOrMergedRoom);
-            onSuccess(addedOrMergedRoom);
-        }).catch(function (error) {
-            _this.instance.logger.verbose("Error creating room: " + error);
-            onError(error);
-        });
-    };
-    CurrentUser.prototype.populateRoomUserStore = function (room) {
-        var _this = this;
-        var userPromises = new Array();
-        room.userIds.forEach(function (userId) {
-            var userPromise = new Promise(function (resolve, reject) {
-                _this.userStore.user(userId, function (user) {
-                    room.userStore.addOrMerge(user);
-                    resolve();
-                }, function (error) {
-                    _this.instance.logger.debug("Unable to add user with id " + userId + " to room (room.name):: " + error);
-                    reject();
-                });
-            });
-            userPromises.push(userPromise);
-        });
-        utils_1.allPromisesSettled(userPromises).then(function () {
-            if (room.subscription === undefined) {
-                _this.instance.logger.verbose("Room " + room.name + " has no subscription object set");
-            }
-            else {
-                if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
-                    room.subscription.delegate.usersUpdated();
-                }
-            }
-            _this.instance.logger.verbose("Users updated in room " + room.name);
-        });
-    };
-    CurrentUser.prototype.addUser = function (id, roomId, onSuccess, onError) {
-        this.addOrRemoveUsers(roomId, [id], 'add', onSuccess, onError);
-    };
-    CurrentUser.prototype.removeUser = function (id, roomId, onSuccess, onError) {
-        this.addOrRemoveUsers(roomId, [id], 'remove', onSuccess, onError);
-    };
-    CurrentUser.prototype.updateRoom = function (roomId, options, onSuccess, onError) {
-        var _this = this;
-        if (options.name === undefined && options.isPrivate === undefined) {
-            onSuccess();
-            return;
-        }
-        var roomPayload = {};
-        if (options.name) {
-            roomPayload['name'] = options.name;
-        }
-        if (options.isPrivate) {
-            roomPayload['private'] = options.isPrivate;
-        }
-        this.instance.request({
-            method: 'PUT',
-            path: "/rooms/" + roomId,
-            body: roomPayload,
-        }).then(function (res) {
-            onSuccess();
-        }).catch(function (error) {
-            _this.instance.logger.verbose("Error updating room " + roomId + ": " + error);
-            onError(error);
-        });
-    };
-    CurrentUser.prototype.deleteRoom = function (roomId, onSuccess, onError) {
-        var _this = this;
-        this.instance.request({
-            method: 'DELETE',
-            path: "/rooms/" + roomId,
-        }).then(function (res) {
-            onSuccess();
-        }).catch(function (error) {
-            _this.instance.logger.verbose("Error deleting room " + roomId + ": " + error);
-            onError(error);
-        });
-    };
-    CurrentUser.prototype.addOrRemoveUsers = function (roomId, userIds, membershipChange, onSuccess, onError) {
-        var _this = this;
-        var usersPayload = {
-            user_ids: userIds,
-        };
-        this.instance.request({
-            method: 'PUT',
-            path: "/rooms/" + roomId + "/users/" + membershipChange,
-            body: usersPayload,
-        }).then(function (res) {
-            onSuccess();
-        }).catch(function (error) {
-            _this.instance.logger.verbose("Error when attempting to " + membershipChange + " users from room " + roomId + ": " + error);
-            onError(error);
-        });
-    };
-    CurrentUser.prototype.joinRoom = function (roomId, onSuccess, onError) {
-        var _this = this;
-        this.instance.request({
-            method: 'POST',
-            path: "/users/" + this.pathFriendlyId + "/rooms/" + roomId + "/join",
-        }).then(function (res) {
-            var roomPayload = JSON.parse(res);
-            var room = payload_deserializer_1.default.createRoomFromPayload(roomPayload);
-            var addedOrMergedRoom = _this.roomStore.addOrMerge(room);
-            _this.populateRoomUserStore(addedOrMergedRoom);
-            onSuccess(addedOrMergedRoom);
-        }).catch(function (error) {
-            _this.instance.logger.verbose("Error joining room " + roomId + ": " + error);
-            onError(error);
-        });
-    };
-    CurrentUser.prototype.leaveRoom = function (roomId, onSuccess, onError) {
-        var _this = this;
-        this.instance.request({
-            method: 'POST',
-            path: "/users/" + this.pathFriendlyId + "/rooms/" + roomId + "/leave",
-        }).then(function (res) {
-            onSuccess();
-        }).catch(function (error) {
-            _this.instance.logger.verbose("Error leaving room " + roomId + ": " + error);
-            onError(error);
-        });
-    };
-    CurrentUser.prototype.getJoinedRooms = function (onSuccess, onError) {
-        this.getUserRooms(false, onSuccess, onError);
-    };
-    CurrentUser.prototype.getJoinableRooms = function (onSuccess, onError) {
-        this.getUserRooms(true, onSuccess, onError);
-    };
-    CurrentUser.prototype.getUserRooms = function (onlyJoinable, onSuccess, onError) {
-        var joinableQueryItemValue = onlyJoinable ? 'true' : 'false';
-        this.getRooms("/users/" + this.pathFriendlyId + "/rooms?joinable=" + joinableQueryItemValue, onSuccess, onError);
-    };
-    CurrentUser.prototype.getAllRooms = function (onSuccess, onError) {
-        this.getRooms('/rooms', onSuccess, onError);
-    };
-    CurrentUser.prototype.getRooms = function (path, onSuccess, onError) {
-        var _this = this;
-        this.instance.request({
-            method: 'GET',
-            path: path,
-        }).then(function (res) {
-            var roomsPayload = JSON.parse(res);
-            var rooms = roomsPayload.map(function (roomPayload) {
-                return payload_deserializer_1.default.createRoomFromPayload(roomPayload);
-            });
-            onSuccess(rooms);
-        }).catch(function (error) {
-            _this.instance.logger.verbose("Error when getting instance rooms: " + error);
-            onError(error);
-        });
-    };
-    CurrentUser.prototype.typingStateChange = function (eventPayload, roomId, onSuccess, onError) {
-        var _this = this;
-        this.instance.request({
-            method: 'POST',
-            path: "/rooms/" + roomId + "/events",
-            body: eventPayload,
-        }).then(function (res) {
-            onSuccess();
-        }).catch(function (error) {
-            _this.instance.logger.verbose("Error sending typing state change in room " + roomId + ": " + error);
-            onError(error);
-        });
-    };
-    CurrentUser.prototype.startedTypingIn = function (roomId, onSuccess, onError) {
-        var eventPayload = {
-            name: 'typing_start',
-            user_id: this.id,
-        };
-        this.typingStateChange(eventPayload, roomId, onSuccess, onError);
-    };
-    CurrentUser.prototype.stoppedTypingIn = function (roomId, onSuccess, onError) {
-        var eventPayload = {
-            name: 'typing_stop',
-            user_id: this.id,
-        };
-        this.typingStateChange(eventPayload, roomId, onSuccess, onError);
-    };
-    CurrentUser.prototype.addMessage = function (text, room, onSuccess, onError) {
-        var _this = this;
-        var messageObject = {
-            text: text,
-            user_id: this.id,
-        };
-        this.instance.request({
-            method: 'POST',
-            path: "/rooms/" + room.id + "/messages",
-            body: messageObject,
-        }).then(function (res) {
-            var messageIdPayload = JSON.parse(res);
-            var messageId = messageIdPayload.message_id;
-            onSuccess(messageId);
-        }).catch(function (error) {
-            _this.instance.logger.verbose("Error adding message to room " + room.name + ": " + error);
-            onError(error);
-        });
-    };
-    CurrentUser.prototype.subscribeToRoom = function (room, roomDelegate, messageLimit) {
-        if (messageLimit === void 0) { messageLimit = 20; }
-        room.subscription = new room_subscription_1.default({
-            delegate: roomDelegate,
-            basicMessageEnricher: new basic_message_enricher_1.default(this.userStore, room, this.instance.logger),
-            logger: this.instance.logger
-        });
-        this.instance.subscribeNonResuming({
-            path: "/rooms/" + room.id + "?message_limit=" + messageLimit,
-            listeners: {
-                onEvent: room.subscription.handleEvent.bind(room.subscription),
-            }
-        });
-    };
-    CurrentUser.prototype.fetchMessagesFromRoom = function (room, fetchOptions, onSuccess, onError) {
-        var _this = this;
-        var initialIdQueryParam = fetchOptions.initialId ? "initial_id=" + fetchOptions.initialId : '';
-        var limitQueryParam = fetchOptions.limit ? "limit=" + fetchOptions.limit : '';
-        var directionQueryParam = fetchOptions.direction ? "direction=" + fetchOptions.direction : 'direction=older';
-        var combinedQueryParams = [
-            initialIdQueryParam,
-            limitQueryParam,
-            directionQueryParam,
-        ].join('&');
-        this.instance.request({
-            method: 'GET',
-            path: "/rooms/" + room.id + "/messages",
-        }).then(function (res) {
-            var messagesPayload = JSON.parse(res);
-            var messages = new Array();
-            var basicMessages = new Array();
-            var messageUserIds = messagesPayload.map(function (messagePayload) {
-                var basicMessage = payload_deserializer_1.default.createBasicMessageFromPayload(messagePayload);
-                basicMessages.push(basicMessage);
-                return basicMessage.id;
-            });
-            var messageUserIdsSet = new Set(messageUserIds);
-            var userIdsToFetch = Array.from(messageUserIdsSet.values());
-            _this.userStore.fetchUsersWithIds(userIdsToFetch, function (users) {
-                var messageEnricher = new basic_message_enricher_1.default(_this.userStore, room, _this.instance.logger);
-                var enrichmentPromises = new Array();
-                basicMessages.forEach(function (basicMessage) {
-                    var enrichmentPromise = new Promise(function (resolve, reject) {
-                        messageEnricher.enrich(basicMessage, function (message) {
-                            messages.push(message);
-                            resolve();
-                        }, function (error) {
-                            _this.instance.logger.verbose("Unable to enrich basic mesage " + basicMessage.id + ": " + error);
-                            reject();
-                        });
-                    });
-                    enrichmentPromises.push(enrichmentPromise);
-                });
-                utils_1.allPromisesSettled(enrichmentPromises).then(function () {
-                    if (room.subscription === undefined) {
-                        _this.instance.logger.verbose("Room " + room.name + " has no subscription object set");
-                    }
-                    else {
-                        if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
-                            room.subscription.delegate.usersUpdated();
-                        }
-                    }
-                    _this.instance.logger.verbose("Users updated in room " + room.name);
-                    onSuccess(messages.sort(function (msgOne, msgTwo) { return msgOne.id - msgTwo.id; }));
-                });
-            }, function (error) {
-                _this.instance.logger.verbose("Error fetching users with ids " + userIdsToFetch + ": " + error);
-            });
-        }).catch(function (error) {
-            _this.instance.logger.verbose("Error fetching messages froom room " + room.name + ": " + error);
-            onError(error);
-        });
-    };
-    return CurrentUser;
-}());
-exports.default = CurrentUser;
-
-
-/***/ }),
-/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2637,15 +2114,18 @@ var GlobalUserStore = (function () {
     };
     GlobalUserStore.prototype.getUser = function (id, onSuccess, onError) {
         var _this = this;
-        this.instance.request({
-            method: "GET",
+        this.instance
+            .request({
+            method: 'GET',
             path: "/users/" + id,
-        }).then(function (res) {
+        })
+            .then(function (res) {
             var userPayload = JSON.parse(res);
             var user = payload_deserializer_1.default.createUserFromPayload(userPayload);
             var userToReturn = _this.addOrMerge(user);
             onSuccess(userToReturn);
-        }).catch(function (error) {
+        })
+            .catch(function (error) {
             _this.instance.logger.verbose("Error fetching user information: " + error);
             onError(error);
         });
@@ -2681,10 +2161,12 @@ var GlobalUserStore = (function () {
         }
         var userIdsString = userIds.join(',');
         var qs = utils_1.queryString({ user_ids: userIdsString });
-        this.instance.request({
-            method: "GET",
+        this.instance
+            .request({
+            method: 'GET',
             path: "/users_by_ids" + qs,
-        }).then(function (res) {
+        })
+            .then(function (res) {
             var usersPayload = JSON.parse(res);
             var users = usersPayload.map(function (userPayload) {
                 var user = payload_deserializer_1.default.createUserFromPayload(userPayload);
@@ -2692,7 +2174,8 @@ var GlobalUserStore = (function () {
                 return addedOrUpdatedUser;
             });
             onSuccess(users);
-        }).catch(function (error) {
+        })
+            .catch(function (error) {
             _this.instance.logger.verbose("Error fetching user information: " + error);
             onError(error);
         });
@@ -2706,27 +2189,505 @@ exports.default = GlobalUserStore;
 
 
 /***/ }),
-/* 10 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var pusher_platform_1 = __webpack_require__(2);
-exports.BaseClient = pusher_platform_1.BaseClient;
-var chat_manager_1 = __webpack_require__(5);
-exports.ChatManager = chat_manager_1.default;
-var token_provider_1 = __webpack_require__(6);
-exports.TokenProvider = token_provider_1.default;
-exports.default = {
-    ChatManager: chat_manager_1.default,
-    TokenProvider: token_provider_1.default,
-    BaseClient: pusher_platform_1.BaseClient,
-};
+var basic_message_enricher_1 = __webpack_require__(9);
+var payload_deserializer_1 = __webpack_require__(0);
+var presence_subscription_1 = __webpack_require__(10);
+var room_store_1 = __webpack_require__(11);
+var room_subscription_1 = __webpack_require__(12);
+var utils_1 = __webpack_require__(1);
+var CurrentUser = (function () {
+    function CurrentUser(options) {
+        var rooms = options.rooms, id = options.id, instance = options.instance;
+        var validRooms = rooms || [];
+        this.id = id;
+        this.createdAt = options.createdAt;
+        this.updatedAt = options.updatedAt;
+        this.name = options.name;
+        this.avatarURL = options.avatarURL;
+        this.customData = options.customData;
+        this.roomStore = new room_store_1.default({ instance: instance, rooms: validRooms });
+        this.instance = instance;
+        this.userStore = options.userStore;
+        this.pathFriendlyId = encodeURIComponent(id);
+    }
+    Object.defineProperty(CurrentUser.prototype, "rooms", {
+        get: function () {
+            return this.roomStore.rooms;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    CurrentUser.prototype.updateWithPropertiesOf = function (currentUser) {
+        this.updatedAt = currentUser.updatedAt;
+        this.name = currentUser.name;
+        this.customData = currentUser.customData;
+    };
+    CurrentUser.prototype.setupPresenceSubscription = function (delegate) {
+        this.presenceSubscription = new presence_subscription_1.default({
+            delegate: delegate,
+            instance: this.instance,
+            roomStore: this.roomStore,
+            userStore: this.userStore,
+        });
+        this.instance.subscribeNonResuming({
+            listeners: {
+                onEvent: this.presenceSubscription.handleEvent.bind(this.presenceSubscription),
+            },
+            path: "/users/" + this.id + "/presence",
+        });
+    };
+    CurrentUser.prototype.createRoom = function (options, onSuccess, onError) {
+        var _this = this;
+        var roomData = {
+            created_by_id: this.id,
+            name: options.name,
+            private: options.private || false,
+        };
+        if (options.addUserIds && options.addUserIds.length > 0) {
+            roomData['user_ids'] = options.addUserIds;
+        }
+        this.instance
+            .request({
+            body: roomData,
+            method: 'POST',
+            path: '/rooms',
+        })
+            .then(function (res) {
+            var roomPayload = JSON.parse(res);
+            var room = payload_deserializer_1.default.createRoomFromPayload(roomPayload);
+            var addedOrMergedRoom = _this.roomStore.addOrMerge(room);
+            _this.populateRoomUserStore(addedOrMergedRoom);
+            onSuccess(addedOrMergedRoom);
+        })
+            .catch(function (error) {
+            _this.instance.logger.verbose("Error creating room: " + error);
+            onError(error);
+        });
+    };
+    CurrentUser.prototype.populateRoomUserStore = function (room) {
+        var _this = this;
+        var userPromises = new Array();
+        room.userIds.forEach(function (userId) {
+            var userPromise = new Promise(function (resolve, reject) {
+                _this.userStore.user(userId, function (user) {
+                    room.userStore.addOrMerge(user);
+                    resolve();
+                }, function (error) {
+                    _this.instance.logger.debug("Unable to add user with id " + userId + " to room (room.name):: " + error);
+                    reject();
+                });
+            });
+            userPromises.push(userPromise);
+        });
+        utils_1.allPromisesSettled(userPromises).then(function () {
+            if (room.subscription === undefined) {
+                _this.instance.logger.verbose("Room " + room.name + " has no subscription object set");
+            }
+            else {
+                if (room.subscription.delegate &&
+                    room.subscription.delegate.usersUpdated) {
+                    room.subscription.delegate.usersUpdated();
+                }
+            }
+            _this.instance.logger.verbose("Users updated in room " + room.name);
+        });
+    };
+    CurrentUser.prototype.addUser = function (id, roomId, onSuccess, onError) {
+        this.addOrRemoveUsers(roomId, [id], 'add', onSuccess, onError);
+    };
+    CurrentUser.prototype.removeUser = function (id, roomId, onSuccess, onError) {
+        this.addOrRemoveUsers(roomId, [id], 'remove', onSuccess, onError);
+    };
+    CurrentUser.prototype.updateRoom = function (roomId, options, onSuccess, onError) {
+        var _this = this;
+        if (options.name === undefined && options.isPrivate === undefined) {
+            onSuccess();
+            return;
+        }
+        var roomPayload = {};
+        if (options.name) {
+            roomPayload['name'] = options.name;
+        }
+        if (options.isPrivate) {
+            roomPayload['private'] = options.isPrivate;
+        }
+        this.instance
+            .request({
+            body: roomPayload,
+            method: 'PUT',
+            path: "/rooms/" + roomId,
+        })
+            .then(function (res) {
+            onSuccess();
+        })
+            .catch(function (error) {
+            _this.instance.logger.verbose("Error updating room " + roomId + ": " + error);
+            onError(error);
+        });
+    };
+    CurrentUser.prototype.deleteRoom = function (roomId, onSuccess, onError) {
+        var _this = this;
+        this.instance
+            .request({
+            method: 'DELETE',
+            path: "/rooms/" + roomId,
+        })
+            .then(function (res) {
+            onSuccess();
+        })
+            .catch(function (error) {
+            _this.instance.logger.verbose("Error deleting room " + roomId + ": " + error);
+            onError(error);
+        });
+    };
+    CurrentUser.prototype.addOrRemoveUsers = function (roomId, userIds, membershipChange, onSuccess, onError) {
+        var _this = this;
+        var usersPayload = {
+            user_ids: userIds,
+        };
+        this.instance
+            .request({
+            body: usersPayload,
+            method: 'PUT',
+            path: "/rooms/" + roomId + "/users/" + membershipChange,
+        })
+            .then(function (res) {
+            onSuccess();
+        })
+            .catch(function (error) {
+            _this.instance.logger.verbose("Error when attempting to " + membershipChange + " users from room " + roomId + ": " + error);
+            onError(error);
+        });
+    };
+    CurrentUser.prototype.joinRoom = function (roomId, onSuccess, onError) {
+        var _this = this;
+        this.instance
+            .request({
+            method: 'POST',
+            path: "/users/" + this.pathFriendlyId + "/rooms/" + roomId + "/join",
+        })
+            .then(function (res) {
+            var roomPayload = JSON.parse(res);
+            var room = payload_deserializer_1.default.createRoomFromPayload(roomPayload);
+            var addedOrMergedRoom = _this.roomStore.addOrMerge(room);
+            _this.populateRoomUserStore(addedOrMergedRoom);
+            onSuccess(addedOrMergedRoom);
+        })
+            .catch(function (error) {
+            _this.instance.logger.verbose("Error joining room " + roomId + ": " + error);
+            onError(error);
+        });
+    };
+    CurrentUser.prototype.leaveRoom = function (roomId, onSuccess, onError) {
+        var _this = this;
+        this.instance
+            .request({
+            method: 'POST',
+            path: "/users/" + this.pathFriendlyId + "/rooms/" + roomId + "/leave",
+        })
+            .then(function (res) {
+            onSuccess();
+        })
+            .catch(function (error) {
+            _this.instance.logger.verbose("Error leaving room " + roomId + ": " + error);
+            onError(error);
+        });
+    };
+    CurrentUser.prototype.getJoinedRooms = function (onSuccess, onError) {
+        this.getUserRooms(false, onSuccess, onError);
+    };
+    CurrentUser.prototype.getJoinableRooms = function (onSuccess, onError) {
+        this.getUserRooms(true, onSuccess, onError);
+    };
+    CurrentUser.prototype.getUserRooms = function (onlyJoinable, onSuccess, onError) {
+        var joinableQueryItemValue = onlyJoinable ? 'true' : 'false';
+        this.getRooms("/users/" + this.pathFriendlyId + "/rooms?joinable=" + joinableQueryItemValue, onSuccess, onError);
+    };
+    CurrentUser.prototype.getAllRooms = function (onSuccess, onError) {
+        this.getRooms('/rooms', onSuccess, onError);
+    };
+    CurrentUser.prototype.startedTypingIn = function (roomId, onSuccess, onError) {
+        var eventPayload = {
+            name: 'typing_start',
+            user_id: this.id,
+        };
+        this.typingStateChange(eventPayload, roomId, onSuccess, onError);
+    };
+    CurrentUser.prototype.stoppedTypingIn = function (roomId, onSuccess, onError) {
+        var eventPayload = {
+            name: 'typing_stop',
+            user_id: this.id,
+        };
+        this.typingStateChange(eventPayload, roomId, onSuccess, onError);
+    };
+    CurrentUser.prototype.addMessage = function (text, room, onSuccess, onError) {
+        var _this = this;
+        var messageObject = {
+            text: text,
+            user_id: this.id,
+        };
+        this.instance
+            .request({
+            body: messageObject,
+            method: 'POST',
+            path: "/rooms/" + room.id + "/messages",
+        })
+            .then(function (res) {
+            var messageIdPayload = JSON.parse(res);
+            var messageId = messageIdPayload.message_id;
+            onSuccess(messageId);
+        })
+            .catch(function (error) {
+            _this.instance.logger.verbose("Error adding message to room " + room.name + ": " + error);
+            onError(error);
+        });
+    };
+    CurrentUser.prototype.subscribeToRoom = function (room, roomDelegate, messageLimit) {
+        if (messageLimit === void 0) { messageLimit = 20; }
+        room.subscription = new room_subscription_1.default({
+            basicMessageEnricher: new basic_message_enricher_1.default(this.userStore, room, this.instance.logger),
+            delegate: roomDelegate,
+            logger: this.instance.logger,
+        });
+        this.instance.subscribeNonResuming({
+            listeners: {
+                onEvent: room.subscription.handleEvent.bind(room.subscription),
+            },
+            path: "/rooms/" + room.id + "?message_limit=" + messageLimit,
+        });
+    };
+    CurrentUser.prototype.fetchMessagesFromRoom = function (room, fetchOptions, onSuccess, onError) {
+        var _this = this;
+        var initialIdQueryParam = fetchOptions.initialId
+            ? "initial_id=" + fetchOptions.initialId
+            : '';
+        var limitQueryParam = fetchOptions.limit
+            ? "limit=" + fetchOptions.limit
+            : '';
+        var directionQueryParam = fetchOptions.direction
+            ? "direction=" + fetchOptions.direction
+            : 'direction=older';
+        var combinedQueryParams = [
+            initialIdQueryParam,
+            limitQueryParam,
+            directionQueryParam,
+        ].join('&');
+        this.instance
+            .request({
+            method: 'GET',
+            path: "/rooms/" + room.id + "/messages",
+        })
+            .then(function (res) {
+            var messagesPayload = JSON.parse(res);
+            var messages = new Array();
+            var basicMessages = new Array();
+            var messageUserIds = messagesPayload.map(function (messagePayload) {
+                var basicMessage = payload_deserializer_1.default.createBasicMessageFromPayload(messagePayload);
+                basicMessages.push(basicMessage);
+                return basicMessage.id;
+            });
+            var messageUserIdsSet = new Set(messageUserIds);
+            var userIdsToFetch = Array.from(messageUserIdsSet.values());
+            _this.userStore.fetchUsersWithIds(userIdsToFetch, function (users) {
+                var messageEnricher = new basic_message_enricher_1.default(_this.userStore, room, _this.instance.logger);
+                var enrichmentPromises = new Array();
+                basicMessages.forEach(function (basicMessage) {
+                    var enrichmentPromise = new Promise(function (resolve, reject) {
+                        messageEnricher.enrich(basicMessage, function (message) {
+                            messages.push(message);
+                            resolve();
+                        }, function (error) {
+                            _this.instance.logger.verbose("Unable to enrich basic mesage " + basicMessage.id + ": " + error);
+                            reject();
+                        });
+                    });
+                    enrichmentPromises.push(enrichmentPromise);
+                });
+                utils_1.allPromisesSettled(enrichmentPromises).then(function () {
+                    if (room.subscription === undefined) {
+                        _this.instance.logger.verbose("Room " + room.name + " has no subscription object set");
+                    }
+                    else {
+                        if (room.subscription.delegate &&
+                            room.subscription.delegate.usersUpdated) {
+                            room.subscription.delegate.usersUpdated();
+                        }
+                    }
+                    _this.instance.logger.verbose("Users updated in room " + room.name);
+                    onSuccess(messages.sort(function (msgOne, msgTwo) { return msgOne.id - msgTwo.id; }));
+                });
+            }, function (error) {
+                _this.instance.logger.verbose("Error fetching users with ids " + userIdsToFetch + ": " + error);
+            });
+        })
+            .catch(function (error) {
+            _this.instance.logger.verbose("Error fetching messages froom room " + room.name + ": " + error);
+            onError(error);
+        });
+    };
+    CurrentUser.prototype.getRooms = function (path, onSuccess, onError) {
+        var _this = this;
+        this.instance
+            .request({
+            method: 'GET',
+            path: path,
+        })
+            .then(function (res) {
+            var roomsPayload = JSON.parse(res);
+            var rooms = roomsPayload.map(function (roomPayload) {
+                return payload_deserializer_1.default.createRoomFromPayload(roomPayload);
+            });
+            onSuccess(rooms);
+        })
+            .catch(function (error) {
+            _this.instance.logger.verbose("Error when getting instance rooms: " + error);
+            onError(error);
+        });
+    };
+    CurrentUser.prototype.typingStateChange = function (eventPayload, roomId, onSuccess, onError) {
+        var _this = this;
+        this.instance
+            .request({
+            body: eventPayload,
+            method: 'POST',
+            path: "/rooms/" + roomId + "/events",
+        })
+            .then(function (res) {
+            onSuccess();
+        })
+            .catch(function (error) {
+            _this.instance.logger.verbose("Error sending typing state change in room " + roomId + ": " + error);
+            onError(error);
+        });
+    };
+    return CurrentUser;
+}());
+exports.default = CurrentUser;
 
 
 /***/ }),
-/* 11 */
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var BasicMessageEnricher = (function () {
+    function BasicMessageEnricher(userStore, room, logger) {
+        this.completionOrderList = [];
+        this.messageIdToCompletionHandlers = {};
+        this.enrichedMessagesAwaitingCompletionCalls = {};
+        this.userIdsBeingRetrieved = [];
+        this.userIdsToBasicMessageIds = {};
+        this.messagesAwaitingEnrichmentDependentOnUserRetrieval = {};
+        this.userStore = userStore;
+        this.room = room;
+        this.logger = logger;
+    }
+    BasicMessageEnricher.prototype.enrich = function (basicMessage, onSuccess, onError) {
+        var _this = this;
+        var basicMessageId = basicMessage.id;
+        var basicMessageSenderId = basicMessage.senderId;
+        this.completionOrderList.push(basicMessageId);
+        this.messageIdToCompletionHandlers[basicMessageId] = {
+            onError: onError,
+            onSuccess: onSuccess,
+        };
+        if (this.userIdsToBasicMessageIds[basicMessageSenderId] === undefined) {
+            this.userIdsToBasicMessageIds[basicMessageSenderId] = [basicMessageId];
+        }
+        else {
+            this.userIdsToBasicMessageIds[basicMessageSenderId].push(basicMessageId);
+        }
+        this.messagesAwaitingEnrichmentDependentOnUserRetrieval[basicMessageId] = basicMessage;
+        if (this.userIdsBeingRetrieved.indexOf(basicMessageSenderId) > -1) {
+            return;
+        }
+        else {
+            this.userIdsBeingRetrieved.push(basicMessageSenderId);
+        }
+        this.userStore.user(basicMessageSenderId, function (user) {
+            var basicMessageIds = _this.userIdsToBasicMessageIds[basicMessageSenderId];
+            if (basicMessageIds === undefined) {
+                _this.logger.verbose("Fetched user information for user with id " + user.id + " but no messages needed information for this user");
+                return;
+            }
+            var basicMessages = basicMessageIds
+                .map(function (bmId) {
+                return _this.messagesAwaitingEnrichmentDependentOnUserRetrieval[bmId];
+            })
+                .filter(function (el) { return el !== undefined; });
+            _this.enrichMessagesWithUser(user, basicMessages);
+            var indexToRemove = _this.userIdsBeingRetrieved.indexOf(basicMessageSenderId);
+            if (indexToRemove > -1) {
+                _this.userIdsBeingRetrieved.splice(indexToRemove, 1);
+            }
+        }, function (error) {
+            _this.logger.debug("Unable to find user with id " + basicMessage.senderId + ", associated with message " + basicMessageId + ". Error: " + error);
+            _this.callCompletionHandlersForEnrichedMessagesWithIdsLessThanOrEqualTo(basicMessageId, error);
+        });
+    };
+    BasicMessageEnricher.prototype.enrichMessagesWithUser = function (user, messages) {
+        var _this = this;
+        messages.forEach(function (basicMessage) {
+            var message = {
+                createdAt: basicMessage.createdAt,
+                id: basicMessage.id,
+                room: _this.room,
+                sender: user,
+                text: basicMessage.text,
+                updatedAt: basicMessage.updatedAt,
+            };
+            _this.callCompletionHandlersForEnrichedMessagesWithIdsLessThanOrEqualTo(basicMessage.id, message);
+        });
+    };
+    BasicMessageEnricher.prototype.callCompletionHandlersForEnrichedMessagesWithIdsLessThanOrEqualTo = function (id, result) {
+        var nextIdToComplete = this.completionOrderList[0];
+        if (nextIdToComplete === undefined) {
+            return;
+        }
+        this.enrichedMessagesAwaitingCompletionCalls[id] = result;
+        if (id !== nextIdToComplete) {
+            this.logger.verbose("Waiting to call completion handler for message id " + id + " as there are other older messages still to be enriched");
+            return;
+        }
+        do {
+            var messageId = this.completionOrderList[0];
+            var completionHandler = this.messageIdToCompletionHandlers[messageId];
+            if (completionHandler === undefined) {
+                this.logger.verbose("Completion handler not stored for message id " + messageId);
+                return;
+            }
+            var res = this.enrichedMessagesAwaitingCompletionCalls[messageId];
+            if (res === undefined) {
+                this.logger.verbose("Enrichment result not stored for message id " + messageId);
+                return;
+            }
+            if (res.sender !== undefined) {
+                completionHandler.onSuccess(res);
+            }
+            else {
+                completionHandler.onError(res);
+            }
+            this.completionOrderList.shift();
+            delete this.messageIdToCompletionHandlers[messageId];
+            delete this.enrichedMessagesAwaitingCompletionCalls[messageId];
+        } while (this.completionOrderList[0] !== undefined &&
+            this.enrichedMessagesAwaitingCompletionCalls[this.completionOrderList[0]] !== undefined);
+    };
+    return BasicMessageEnricher;
+}());
+exports.default = BasicMessageEnricher;
+
+
+/***/ }),
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2765,13 +2726,16 @@ var PresenceSubscription = (function () {
     PresenceSubscription.prototype.parseInitialStatePayload = function (eventName, data, userStore) {
         var _this = this;
         var userStatesPayload = data.user_states;
-        if (userStatesPayload === undefined || userStatesPayload.constructor !== Array) {
+        if (userStatesPayload === undefined ||
+            userStatesPayload.constructor !== Array) {
             this.instance.logger.debug("'user_stats' value missing from " + eventName + " presence payload: " + data);
             return;
         }
-        var userStates = userStatesPayload.map(function (userStatePayload) {
+        var userStates = userStatesPayload
+            .map(function (userStatePayload) {
             return payload_deserializer_1.default.createPresencePayloadFromPayload(userStatePayload);
-        }).filter(function (el) { return el !== undefined; });
+        })
+            .filter(function (el) { return el !== undefined; });
         if (userStates.length === 0) {
             this.instance.logger.verbose('No presence user states to process');
             return;
@@ -2782,7 +2746,8 @@ var PresenceSubscription = (function () {
                     _this.instance.logger.verbose("Room " + room.name + " has no subscription object set");
                 }
                 else {
-                    if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
+                    if (room.subscription.delegate &&
+                        room.subscription.delegate.usersUpdated) {
                         room.subscription.delegate.usersUpdated();
                     }
                 }
@@ -2820,12 +2785,14 @@ var PresenceSubscription = (function () {
                 if (room.userIds.indexOf(user.id) > -1) {
                     switch (presencePayload.state.stringValue) {
                         case 'online':
-                            if (room.subscription.delegate && room.subscription.delegate.userCameOnlineInRoom) {
+                            if (room.subscription.delegate &&
+                                room.subscription.delegate.userCameOnlineInRoom) {
                                 room.subscription.delegate.userCameOnlineInRoom(user);
                             }
                             break;
                         case 'offline':
-                            if (room.subscription.delegate && room.subscription.delegate.userWentOfflineInRoom) {
+                            if (room.subscription.delegate &&
+                                room.subscription.delegate.userWentOfflineInRoom) {
                                 room.subscription.delegate.userWentOfflineInRoom(user);
                             }
                             break;
@@ -2842,13 +2809,16 @@ var PresenceSubscription = (function () {
     PresenceSubscription.prototype.parseJoinRoomPresenceUpdatePayload = function (eventName, data, userStore) {
         var _this = this;
         var userStatesPayload = data.user_states;
-        if (userStatesPayload === undefined || userStatesPayload.constructor !== Array) {
+        if (userStatesPayload === undefined ||
+            userStatesPayload.constructor !== Array) {
             this.instance.logger.debug("'user_stats' value missing from " + eventName + " presence payload: " + data);
             return;
         }
-        var userStates = userStatesPayload.map(function (userStatePayload) {
+        var userStates = userStatesPayload
+            .map(function (userStatePayload) {
             return payload_deserializer_1.default.createPresencePayloadFromPayload(userStatePayload);
-        }).filter(function (el) { return el !== undefined; });
+        })
+            .filter(function (el) { return el !== undefined; });
         if (userStates.length === 0) {
             this.instance.logger.verbose('No presence user states to process');
             return;
@@ -2859,7 +2829,8 @@ var PresenceSubscription = (function () {
                     _this.instance.logger.verbose("Room " + room.name + " has no subscription object set");
                 }
                 else {
-                    if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
+                    if (room.subscription.delegate &&
+                        room.subscription.delegate.usersUpdated) {
                         room.subscription.delegate.usersUpdated();
                     }
                 }
@@ -2873,39 +2844,7 @@ exports.default = PresenceSubscription;
 
 
 /***/ }),
-/* 12 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var room_user_store_1 = __webpack_require__(15);
-var Room = (function () {
-    function Room(options) {
-        this.id = options.id;
-        this.name = options.name;
-        this.isPrivate = options.isPrivate;
-        this.createdByUserId = options.createdByUserId;
-        this.createdAt = options.createdAt;
-        this.updatedAt = options.updatedAt;
-        this.deletedAt = options.deletedAt;
-        this.userIds = options.userIds;
-        this.userStore = new room_user_store_1.default();
-    }
-    Room.prototype.updateWithPropertiesOfRoom = function (room) {
-        this.name = room.name;
-        this.isPrivate = room.isPrivate;
-        this.updatedAt = room.updatedAt;
-        this.deletedAt = room.deletedAt;
-        this.userIds = room.userIds;
-    };
-    return Room;
-}());
-exports.default = Room;
-
-
-/***/ }),
-/* 13 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2951,14 +2890,17 @@ var RoomStore = (function () {
     };
     RoomStore.prototype.getRoom = function (id, onSuccess, onError) {
         var _this = this;
-        this.instance.request({
-            method: "GET",
+        this.instance
+            .request({
+            method: 'GET',
             path: "/rooms/" + id,
-        }).then(function (res) {
+        })
+            .then(function (res) {
             var roomPayload = JSON.parse(res);
             var room = payload_deserializer_1.default.createRoomFromPayload(roomPayload);
             onSuccess(room);
-        }).catch(function (error) {
+        })
+            .catch(function (error) {
             _this.instance.logger.debug("Error fetching room " + id + ": " + error);
             onError(error);
         });
@@ -2969,7 +2911,7 @@ exports.default = RoomStore;
 
 
 /***/ }),
-/* 14 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3008,7 +2950,39 @@ exports.default = RoomSubscription;
 
 
 /***/ }),
-/* 15 */
+/* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var room_user_store_1 = __webpack_require__(14);
+var Room = (function () {
+    function Room(options) {
+        this.id = options.id;
+        this.name = options.name;
+        this.isPrivate = options.isPrivate;
+        this.createdByUserId = options.createdByUserId;
+        this.createdAt = options.createdAt;
+        this.updatedAt = options.updatedAt;
+        this.deletedAt = options.deletedAt;
+        this.userIds = options.userIds;
+        this.userStore = new room_user_store_1.default();
+    }
+    Room.prototype.updateWithPropertiesOfRoom = function (room) {
+        this.name = room.name;
+        this.isPrivate = room.isPrivate;
+        this.updatedAt = room.updatedAt;
+        this.deletedAt = room.deletedAt;
+        this.userIds = room.userIds;
+    };
+    return Room;
+}());
+exports.default = Room;
+
+
+/***/ }),
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3032,7 +3006,7 @@ exports.default = RoomUserStore;
 
 
 /***/ }),
-/* 16 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3068,7 +3042,7 @@ exports.default = User;
 
 
 /***/ }),
-/* 17 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3137,7 +3111,7 @@ var UserSubscription = (function () {
         }
         var receivedRoomsConstructor = roomsPayload.constructor;
         if (receivedRoomsConstructor !== Array) {
-            throw TypeError("`rooms` key of initial_state payload was of type `${receivedRoomsConstructor}`, expected `Array`");
+            throw TypeError('`rooms` key of initial_state payload was of type `${receivedRoomsConstructor}`, expected `Array`');
         }
         if (roomsPayload.length === 0) {
             this.currentUser.setupPresenceSubscription(this.delegate);
@@ -3184,7 +3158,8 @@ var UserSubscription = (function () {
                             _this.instance.logger.verbose("Room " + room.name + " has no subscription object set");
                         }
                         else {
-                            if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
+                            if (room.subscription.delegate &&
+                                room.subscription.delegate.usersUpdated) {
                                 room.subscription.delegate.usersUpdated();
                             }
                         }
@@ -3220,7 +3195,7 @@ var UserSubscription = (function () {
     UserSubscription.prototype.parseAddedToRoomPayload = function (eventName, data) {
         var _this = this;
         var roomPayload = data.room;
-        if (roomPayload === undefined || (typeof roomPayload) !== 'object') {
+        if (roomPayload === undefined || typeof roomPayload !== 'object') {
             this.instance.logger.verbose("`room` key missing or invalid in `added_to_room` payload: " + data);
             return;
         }
@@ -3249,7 +3224,8 @@ var UserSubscription = (function () {
                 _this.instance.logger.verbose("Room " + room.name + " has no subscription object set");
             }
             else {
-                if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
+                if (room.subscription.delegate &&
+                    room.subscription.delegate.usersUpdated) {
                     room.subscription.delegate.usersUpdated();
                 }
             }
@@ -3258,7 +3234,7 @@ var UserSubscription = (function () {
     };
     UserSubscription.prototype.parseRemovedFromRoomPayload = function (eventName, data) {
         var roomId = data.room_id;
-        if (roomId === undefined || (typeof roomId) !== 'number') {
+        if (roomId === undefined || typeof roomId !== 'number') {
             this.instance.logger.verbose("`room_id` key missing or invalid in `removed_from_room` payload: " + data);
             return;
         }
@@ -3277,7 +3253,7 @@ var UserSubscription = (function () {
     UserSubscription.prototype.parseRoomUpdatedPayload = function (eventName, data) {
         var _this = this;
         var roomPayload = data.room;
-        if (roomPayload === undefined || (typeof roomPayload) !== 'object') {
+        if (roomPayload === undefined || typeof roomPayload !== 'object') {
             this.instance.logger.verbose("`room` key missing or invalid in `room_updated` payload: " + data);
             return;
         }
@@ -3294,7 +3270,7 @@ var UserSubscription = (function () {
     };
     UserSubscription.prototype.parseRoomDeletedPayload = function (eventName, data) {
         var roomId = data.room_id;
-        if (roomId === undefined || (typeof roomId) !== 'number') {
+        if (roomId === undefined || typeof roomId !== 'number') {
             this.instance.logger.verbose("`room_id` key missing or invalid in `room_deleted` payload: " + data);
             return;
         }
@@ -3313,12 +3289,12 @@ var UserSubscription = (function () {
     UserSubscription.prototype.parseUserJoinedPayload = function (eventName, data) {
         var _this = this;
         var roomId = data.room_id;
-        if (roomId === undefined || (typeof roomId) !== 'number') {
+        if (roomId === undefined || typeof roomId !== 'number') {
             this.instance.logger.verbose("`room_id` key missing or invalid in `user_joined` payload: " + data);
             return;
         }
         var userId = data.user_id;
-        if (userId === undefined || (typeof userId) !== 'string') {
+        if (userId === undefined || typeof userId !== 'string') {
             this.instance.logger.verbose("`user_id` key missing or invalid in `user_joined` payload: " + data);
             return;
         }
@@ -3335,7 +3311,8 @@ var UserSubscription = (function () {
                     _this.instance.logger.verbose("Room " + room.name + " has no subscription object set");
                 }
                 else {
-                    if (room.subscription.delegate && room.subscription.delegate.userJoined) {
+                    if (room.subscription.delegate &&
+                        room.subscription.delegate.userJoined) {
                         room.subscription.delegate.userJoined(addedOrMergedUser);
                     }
                 }
@@ -3352,12 +3329,12 @@ var UserSubscription = (function () {
     UserSubscription.prototype.parseUserLeftPayload = function (eventName, data) {
         var _this = this;
         var roomId = data.room_id;
-        if (roomId === undefined || (typeof roomId) !== 'number') {
+        if (roomId === undefined || typeof roomId !== 'number') {
             this.instance.logger.verbose("`room_id` key missing or invalid in `user_left` payload: " + data);
             return;
         }
         var userId = data.user_id;
-        if (userId === undefined || (typeof userId) !== 'string') {
+        if (userId === undefined || typeof userId !== 'string') {
             this.instance.logger.verbose("`user_id` key missing or invalid in `user_left` payload: " + data);
             return;
         }
@@ -3375,7 +3352,8 @@ var UserSubscription = (function () {
                     _this.instance.logger.verbose("Room " + room.name + " has no subscription object set");
                 }
                 else {
-                    if (room.subscription.delegate && room.subscription.delegate.userLeft) {
+                    if (room.subscription.delegate &&
+                        room.subscription.delegate.userLeft) {
                         room.subscription.delegate.userLeft(user);
                     }
                 }
@@ -3392,7 +3370,7 @@ var UserSubscription = (function () {
     UserSubscription.prototype.parseTypingStartPayload = function (eventName, data, userId) {
         var _this = this;
         var roomId = data.room_id;
-        if (roomId === undefined || (typeof roomId) !== 'number') {
+        if (roomId === undefined || typeof roomId !== 'number') {
             this.instance.logger.verbose("`room_id` key missing or invalid in `typing_start` payload: " + data);
             return;
         }
@@ -3405,7 +3383,8 @@ var UserSubscription = (function () {
                     _this.instance.logger.verbose("Room " + room.name + " has no subscription object set");
                 }
                 else {
-                    if (room.subscription.delegate && room.subscription.delegate.userStartedTyping) {
+                    if (room.subscription.delegate &&
+                        room.subscription.delegate.userStartedTyping) {
                         room.subscription.delegate.userStartedTyping(user);
                     }
                 }
@@ -3422,7 +3401,7 @@ var UserSubscription = (function () {
     UserSubscription.prototype.parseTypingStopPayload = function (eventName, data, userId) {
         var _this = this;
         var roomId = data.room_id;
-        if (roomId === undefined || (typeof roomId) !== 'number') {
+        if (roomId === undefined || typeof roomId !== 'number') {
             this.instance.logger.verbose("`room_id` key missing or invalid in `typing_stop` payload: " + data);
             return;
         }
@@ -3435,7 +3414,8 @@ var UserSubscription = (function () {
                     _this.instance.logger.verbose("Room " + room.name + " has no subscription object set");
                 }
                 else {
-                    if (room.subscription.delegate && room.subscription.delegate.userStoppedTyping) {
+                    if (room.subscription.delegate &&
+                        room.subscription.delegate.userStoppedTyping) {
                         room.subscription.delegate.userStoppedTyping(user);
                     }
                 }
@@ -3452,6 +3432,93 @@ var UserSubscription = (function () {
     return UserSubscription;
 }());
 exports.default = UserSubscription;
+
+
+/***/ }),
+/* 17 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __assign = (this && this.__assign) || Object.assign || function(t) {
+    for (var s, i = 1, n = arguments.length; i < n; i++) {
+        s = arguments[i];
+        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+    }
+    return t;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var pusher_platform_1 = __webpack_require__(2);
+var utils_1 = __webpack_require__(1);
+var TokenProvider = (function () {
+    function TokenProvider(options) {
+        this.authContext = options.authContext || {};
+        this.url = options.url;
+        this.userId = options.userId;
+    }
+    Object.defineProperty(TokenProvider.prototype, "cacheIsStale", {
+        get: function () {
+            return (!this.cachedAccessToken || this.unixTimeNow() > this.cachedTokenExpiresAt);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    TokenProvider.prototype.fetchToken = function (tokenParams) {
+        var _this = this;
+        if (this.cacheIsStale) {
+            return this.makeAuthRequest().then(function (responseBody) {
+                var access_token = responseBody.access_token, expires_in = responseBody.expires_in;
+                _this.cache(access_token, expires_in);
+                return access_token;
+            });
+        }
+        return new Promise(function (resolve, reject) {
+            resolve(_this.cachedAccessToken);
+        });
+    };
+    TokenProvider.prototype.clearToken = function (token) {
+        this.cachedAccessToken = undefined;
+        this.cachedTokenExpiresAt = undefined;
+    };
+    TokenProvider.prototype.makeAuthRequest = function () {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            var url;
+            if (_this.userId === undefined) {
+                url = utils_1.mergeQueryParamsIntoUrl(_this.url, _this.authContext.queryParams);
+            }
+            else {
+                var authContextWithUserId = __assign({ user_id: _this.userId }, _this.authContext.queryParams);
+                url = utils_1.mergeQueryParamsIntoUrl(_this.url, authContextWithUserId);
+            }
+            var headers = __assign((_a = {}, _a['Content-Type'] = 'application/x-www-form-urlencoded', _a), _this.authContext.headers);
+            var body = utils_1.urlEncode({ grant_type: 'client_credentials' });
+            pusher_platform_1.sendRawRequest({
+                body: body,
+                headers: headers,
+                method: 'POST',
+                url: url,
+            })
+                .then(function (res) {
+                resolve(JSON.parse(res));
+            })
+                .catch(function (error) {
+                reject(new Error("Couldn't fetch token from " + _this.url + "; error: " + error));
+            });
+            var _a;
+        });
+    };
+    TokenProvider.prototype.cache = function (accessToken, expiresIn) {
+        this.cachedAccessToken = accessToken;
+        this.cachedTokenExpiresAt = this.unixTimeNow() + expiresIn;
+    };
+    TokenProvider.prototype.unixTimeNow = function () {
+        return Math.floor(Date.now() / 1000);
+    };
+    return TokenProvider;
+}());
+exports.default = TokenProvider;
 
 
 /***/ })

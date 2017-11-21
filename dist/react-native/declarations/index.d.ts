@@ -1,10 +1,10 @@
 import { BaseClient } from 'pusher-platform';
 import ChatManager from './chat_manager';
 import TokenProvider from './token_provider';
-export { ChatManager, TokenProvider, BaseClient };
+export { BaseClient, ChatManager, TokenProvider };
 declare const _default: {
+    BaseClient: any;
     ChatManager: typeof ChatManager;
     TokenProvider: typeof TokenProvider;
-    BaseClient: any;
 };
 export default _default;

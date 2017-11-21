@@ -7,7 +7,6 @@ import PresencePayload from './presence_payload';
 import Room from './room';
 import User from './user';
 export default class PayloadDeserializer {
-    constructor();
     static createUserFromPayload(userPayload: any): User;
     static createCurrentUserFromPayload(userPayload: any, instance: Instance, userStore: GlobalUserStore): CurrentUser;
     static createRoomFromPayload(roomPayload: any): Room;

@@ -1,14 +1,10 @@
-import {
-  Instance,
-  SubscriptionEvent,
-} from 'pusher-platform';
+import { Instance, SubscriptionEvent } from 'pusher-platform';
 
 import ChatManagerDelegate from './chat_manager_delegate';
 import GlobalUserStore from './global_user_store';
 import PayloadDeserializer from './payload_deserializer';
 import RoomStore from './room_store';
 import User from './user';
-
 
 export interface PresenceSubscriptionOptions {
   instance: Instance;
@@ -18,11 +14,11 @@ export interface PresenceSubscriptionOptions {
 }
 
 export default class PresenceSubscription {
-  private instance: Instance;
-
   userStore: GlobalUserStore;
   roomStore: RoomStore;
   delegate: ChatManagerDelegate;
+
+  private instance: Instance;
 
   constructor(options: PresenceSubscriptionOptions) {
     this.instance = options.instance;
@@ -36,7 +32,9 @@ export default class PresenceSubscription {
     const { data } = body;
     const eventName = body.event_name;
 
-    this.instance.logger.verbose(`Received event type: ${eventName}, and data: ${data}`);
+    this.instance.logger.verbose(
+      `Received event type: ${eventName}, and data: ${data}`,
+    );
 
     switch (eventName) {
       case 'initial_state':
@@ -46,10 +44,16 @@ export default class PresenceSubscription {
         this.parsePresenceUpdatePayload(eventName, data, this.userStore);
         break;
       case 'join_room_presence_update':
-        this.parseJoinRoomPresenceUpdatePayload(eventName, data, this.userStore);
+        this.parseJoinRoomPresenceUpdatePayload(
+          eventName,
+          data,
+          this.userStore,
+        );
         break;
       default:
-        this.instance.logger.verbose(`Unsupported event type received: ${eventName}, and data: ${data}`);
+        this.instance.logger.verbose(
+          `Unsupported event type received: ${eventName}, and data: ${data}`,
+        );
         break;
     }
   }
@@ -58,49 +62,72 @@ export default class PresenceSubscription {
     // TODO: Work out how to implement
   }
 
-  parseInitialStatePayload(eventName: string, data: any, userStore: GlobalUserStore) {
+  parseInitialStatePayload(
+    eventName: string,
+    data: any,
+    userStore: GlobalUserStore,
+  ) {
     const userStatesPayload = data.user_states;
 
-    if (userStatesPayload === undefined || userStatesPayload.constructor !== Array) {
-      this.instance.logger.debug(`'user_stats' value missing from ${eventName} presence payload: ${data}`);
+    if (
+      userStatesPayload === undefined ||
+      userStatesPayload.constructor !== Array
+    ) {
+      this.instance.logger.debug(
+        `'user_stats' value missing from ${eventName} presence payload: ${
+          data
+        }`,
+      );
       // TODO: Do we want the error delegate?
       // self.delegate?.error(error: error)
       return;
     }
 
     // TODO: It will never be undefined but might throw - this is semi-aspirational code
-    const userStates = userStatesPayload.map(userStatePayload => {
-      return PayloadDeserializer.createPresencePayloadFromPayload(userStatePayload);
-    }).filter(el => el !== undefined);
+    const userStates = userStatesPayload
+      .map(userStatePayload => {
+        return PayloadDeserializer.createPresencePayloadFromPayload(
+          userStatePayload,
+        );
+      })
+      .filter(el => el !== undefined);
 
     if (userStates.length === 0) {
       this.instance.logger.verbose('No presence user states to process');
       return;
     }
 
-    this.userStore.handleInitialPresencePayloads(
-      userStates,
-      () => {
-        this.roomStore.rooms.forEach(room => {
-          if (room.subscription === undefined) {
-            this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
-          } else {
-            if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
-              room.subscription.delegate.usersUpdated();
-            }
+    this.userStore.handleInitialPresencePayloads(userStates, () => {
+      this.roomStore.rooms.forEach(room => {
+        if (room.subscription === undefined) {
+          this.instance.logger.verbose(
+            `Room ${room.name} has no subscription object set`,
+          );
+        } else {
+          if (
+            room.subscription.delegate &&
+            room.subscription.delegate.usersUpdated
+          ) {
+            room.subscription.delegate.usersUpdated();
           }
-          this.instance.logger.verbose(`Users updated in room ${room.name}`);
-        })
-      }
-    )
+        }
+        this.instance.logger.verbose(`Users updated in room ${room.name}`);
+      });
+    });
   }
 
-  parsePresenceUpdatePayload(eventName: string, data: any, userStore: GlobalUserStore) {
-    const presencePayload = PayloadDeserializer.createPresencePayloadFromPayload(data);
+  parsePresenceUpdatePayload(
+    eventName: string,
+    data: any,
+    userStore: GlobalUserStore,
+  ) {
+    const presencePayload = PayloadDeserializer.createPresencePayloadFromPayload(
+      data,
+    );
 
     userStore.user(
       presencePayload.userId,
-      (user) => {
+      user => {
         user.updatePresenceInfoIfAppropriate(presencePayload);
 
         switch (presencePayload.state.stringValue) {
@@ -118,7 +145,9 @@ export default class PresenceSubscription {
             break;
           case 'unknown':
             // This should never be the case
-            this.instance.logger.verbose(`Somehow the presence state of user ${user.id} is unknown`);
+            this.instance.logger.verbose(
+              `Somehow the presence state of user ${user.id} is unknown`,
+            );
             break;
         }
 
@@ -126,19 +155,27 @@ export default class PresenceSubscription {
         // map of user_ids to rooms
         this.roomStore.rooms.forEach(room => {
           if (room.subscription === undefined) {
-            this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
+            this.instance.logger.verbose(
+              `Room ${room.name} has no subscription object set`,
+            );
             return;
           }
 
           if (room.userIds.indexOf(user.id) > -1) {
             switch (presencePayload.state.stringValue) {
               case 'online':
-                if (room.subscription.delegate && room.subscription.delegate.userCameOnlineInRoom) {
+                if (
+                  room.subscription.delegate &&
+                  room.subscription.delegate.userCameOnlineInRoom
+                ) {
                   room.subscription.delegate.userCameOnlineInRoom(user);
                 }
                 break;
               case 'offline':
-                if (room.subscription.delegate && room.subscription.delegate.userWentOfflineInRoom) {
+                if (
+                  room.subscription.delegate &&
+                  room.subscription.delegate.userWentOfflineInRoom
+                ) {
                   room.subscription.delegate.userWentOfflineInRoom(user);
                 }
                 break;
@@ -146,52 +183,72 @@ export default class PresenceSubscription {
                 break;
             }
           }
-        })
+        });
       },
-      (error) => {
-        this.instance.logger.debug(`Error fetching user information for user with id ${presencePayload.userId}: ${error}`);
+      error => {
+        this.instance.logger.debug(
+          `Error fetching user information for user with id ${
+            presencePayload.userId
+          }: ${error}`,
+        );
         return;
-      }
-    )
+      },
+    );
   }
 
   // TODO: So much duplication
-  parseJoinRoomPresenceUpdatePayload(eventName: string, data: any, userStore: GlobalUserStore) {
+  parseJoinRoomPresenceUpdatePayload(
+    eventName: string,
+    data: any,
+    userStore: GlobalUserStore,
+  ) {
     const userStatesPayload = data.user_states;
 
-    if (userStatesPayload === undefined || userStatesPayload.constructor !== Array) {
-       this.instance.logger.debug(`'user_stats' value missing from ${eventName} presence payload: ${data}`);
+    if (
+      userStatesPayload === undefined ||
+      userStatesPayload.constructor !== Array
+    ) {
+      this.instance.logger.debug(
+        `'user_stats' value missing from ${eventName} presence payload: ${
+          data
+        }`,
+      );
       // TODO: Delegate question again
       // self.delegate?.error(error: error)
       return;
     }
 
     // TODO: It will never be undefined but might throw - this is semi-aspirational code
-    const userStates = userStatesPayload.map(userStatePayload => {
-      return PayloadDeserializer.createPresencePayloadFromPayload(userStatePayload);
-    }).filter(el => el !== undefined);
+    const userStates = userStatesPayload
+      .map(userStatePayload => {
+        return PayloadDeserializer.createPresencePayloadFromPayload(
+          userStatePayload,
+        );
+      })
+      .filter(el => el !== undefined);
 
     if (userStates.length === 0) {
       this.instance.logger.verbose('No presence user states to process');
       return;
     }
 
-    this.userStore.handleInitialPresencePayloads(
-      userStates,
-      () => {
-        this.roomStore.rooms.forEach(room => {
-          if (room.subscription === undefined) {
-            this.instance.logger.verbose(`Room ${room.name} has no subscription object set`);
-          } else {
-            if (room.subscription.delegate && room.subscription.delegate.usersUpdated) {
-              room.subscription.delegate.usersUpdated();
-            }
+    this.userStore.handleInitialPresencePayloads(userStates, () => {
+      this.roomStore.rooms.forEach(room => {
+        if (room.subscription === undefined) {
+          this.instance.logger.verbose(
+            `Room ${room.name} has no subscription object set`,
+          );
+        } else {
+          if (
+            room.subscription.delegate &&
+            room.subscription.delegate.usersUpdated
+          ) {
+            room.subscription.delegate.usersUpdated();
           }
+        }
 
-          this.instance.logger.verbose(`Users updated in room ${room.name}`);
-        })
-      }
-    )
+        this.instance.logger.verbose(`Users updated in room ${room.name}`);
+      });
+    });
   }
-
 }

@@ -1,4 +1,4 @@
-import { SubscriptionEvent, Logger } from 'pusher-platform';
+import { Logger, SubscriptionEvent } from 'pusher-platform';
 import BasicMessageEnricher from './basic_message_enricher';
 import RoomDelegate from './room_delegate';
 export interface RoomSubscriptionOptions {

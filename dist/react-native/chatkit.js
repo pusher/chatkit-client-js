@@ -588,8 +588,8 @@ var BasicMessageEnricher = (function () {
                 completionHandler.onError(result_1);
             }
             this.completionOrderList.shift();
-            this.messageIdToCompletionHandlers[messageId] = undefined;
-            this.enrichedMessagesAwaitingCompletionCalls[messageId] = undefined;
+            delete this.messageIdToCompletionHandlers[messageId];
+            delete this.enrichedMessagesAwaitingCompletionCalls[messageId];
         } while (this.completionOrderList[0] !== undefined && this.enrichedMessagesAwaitingCompletionCalls[this.completionOrderList[0]] !== undefined);
     };
     return BasicMessageEnricher;

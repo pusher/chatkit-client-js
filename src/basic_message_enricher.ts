@@ -135,6 +135,8 @@ export default class BasicMessageEnricher {
     }
 
     do {
+      // TODO: I think this could get stuck in a loop forever if there's no
+      // completion handler stored for a message with a given id
       const messageId = this.completionOrderList[0];
 
       const completionHandler = this.messageIdToCompletionHandlers[messageId];
@@ -157,8 +159,8 @@ export default class BasicMessageEnricher {
       }
 
       this.completionOrderList.shift();
-      this.messageIdToCompletionHandlers[messageId] = undefined; // TODO: Is this right?
-      this.enrichedMessagesAwaitingCompletionCalls[messageId] = undefined;
+      delete this.messageIdToCompletionHandlers[messageId];
+      delete this.enrichedMessagesAwaitingCompletionCalls[messageId];
     } while (this.completionOrderList[0] !== undefined && this.enrichedMessagesAwaitingCompletionCalls[this.completionOrderList[0]] !== undefined);
   }
 }

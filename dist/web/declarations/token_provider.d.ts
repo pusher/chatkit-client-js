@@ -1,4 +1,3 @@
-import * as PCancelable from 'p-cancelable';
 export interface TokenProviderAuthContextOptions {
     queryParams?: TokenProviderAuthContextQueryParams;
     headers?: TokenProviderAuthContextHeaders;
@@ -19,8 +18,8 @@ export default class TokenProvider {
     userId?: string;
     authContext?: TokenProviderAuthContextOptions;
     constructor(options: TokenProviderOptions);
-    fetchToken(tokenParams?: any): PCancelable<string>;
+    fetchToken(tokenParams?: any): Promise<string>;
     clearToken(token?: string): void;
-    makeAuthRequest(): PCancelable<string>;
+    makeAuthRequest(): Promise<any>;
     private unixTimeNow();
 }

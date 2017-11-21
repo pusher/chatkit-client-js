@@ -21,7 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "pusher-platform": "^0.11.1"
+    "pusher-platform": "^0.12.1"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",

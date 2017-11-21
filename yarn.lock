@@ -1492,10 +1492,6 @@ jsprim@^1.2.2:
     json-schema "0.2.3"
     verror "1.10.0"
 
-jwt-simple@^0.5.1:
-  version "0.5.1"
-  resolved "https://registry.yarnpkg.com/jwt-simple/-/jwt-simple-0.5.1.tgz#79ea01891b61de6b68e13e67c0b4b5bda937b294"
-
 kind-of@^3.0.2:
   version "3.2.2"
   resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-3.2.2.tgz#31ea21a734bab9bbb0f32466d893aea51e4a3c64"
@@ -1785,10 +1781,6 @@ osenv@^0.1.4:
     os-homedir "^1.0.0"
     os-tmpdir "^1.0.0"
 
-p-cancelable@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/p-cancelable/-/p-cancelable-0.3.0.tgz#b9e123800bcebb7ac13a479be195b507b98d30fa"
-
 p-limit@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/p-limit/-/p-limit-1.1.0.tgz#b07ff2d9a5d88bec806035895a2bab66a27988bc"
@@ -1926,12 +1918,9 @@ punycode@^1.2.4, punycode@^1.4.1:
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-1.4.1.tgz#c0d5a63b2718800ad8e1eb0fa5269c84dd41845e"
 
-pusher-platform@^0.11.1:
-  version "0.11.1"
-  resolved "https://registry.yarnpkg.com/pusher-platform/-/pusher-platform-0.11.1.tgz#a744312f60f4f828e2aeea0cd757267a52c907ac"
-  dependencies:
-    jwt-simple "^0.5.1"
-    p-cancelable "^0.3.0"
+pusher-platform@^0.12.1:
+  version "0.12.1"
+  resolved "https://registry.yarnpkg.com/pusher-platform/-/pusher-platform-0.12.1.tgz#be3c285d44da5b7d1fd19cb04c1c9e6761d53327"
 
 qs@~6.4.0:
   version "6.4.0"

@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 11);
+/******/ 	return __webpack_require__(__webpack_require__.s = 10);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -83,10 +83,10 @@ return /******/ (function(modules) { // webpackBootstrap
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var current_user_1 = __webpack_require__(9);
+var current_user_1 = __webpack_require__(8);
 var presence_state_1 = __webpack_require__(3);
-var room_1 = __webpack_require__(13);
-var user_1 = __webpack_require__(17);
+var room_1 = __webpack_require__(12);
+var user_1 = __webpack_require__(16);
 var PayloadDeserializer = (function () {
     function PayloadDeserializer() {
     }
@@ -363,7 +363,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 10);
+/******/ 	return __webpack_require__(__webpack_require__.s = 9);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -504,90 +504,6 @@ exports.EmptyLogger = EmptyLogger;
 
 "use strict";
 
-
-class CancelError extends Error {
-	constructor() {
-		super('Promise was canceled');
-		this.name = 'CancelError';
-	}
-}
-
-class PCancelable {
-	static fn(fn) {
-		return function () {
-			const args = [].slice.apply(arguments);
-			return new PCancelable((onCancel, resolve, reject) => {
-				args.unshift(onCancel);
-				fn.apply(null, args).then(resolve, reject);
-			});
-		};
-	}
-
-	constructor(executor) {
-		this._pending = true;
-		this._canceled = false;
-
-		this._promise = new Promise((resolve, reject) => {
-			this._reject = reject;
-
-			return executor(
-				fn => {
-					this._cancel = fn;
-				},
-				val => {
-					this._pending = false;
-					resolve(val);
-				},
-				err => {
-					this._pending = false;
-					reject(err);
-				}
-			);
-		});
-	}
-
-	then() {
-		return this._promise.then.apply(this._promise, arguments);
-	}
-
-	catch() {
-		return this._promise.catch.apply(this._promise, arguments);
-	}
-
-	cancel() {
-		if (!this._pending || this._canceled) {
-			return;
-		}
-
-		if (typeof this._cancel === 'function') {
-			try {
-				this._cancel();
-			} catch (err) {
-				this._reject(err);
-			}
-		}
-
-		this._canceled = true;
-		this._reject(new CancelError());
-	}
-
-	get canceled() {
-		return this._canceled;
-	}
-}
-
-Object.setPrototypeOf(PCancelable.prototype, Promise.prototype);
-
-module.exports = PCancelable;
-module.exports.CancelError = CancelError;
-
-
-/***/ }),
-/* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
 Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
 exports.createRetryStrategyOptionsOrDefault = function (options) {
@@ -698,62 +614,52 @@ exports.RetryResolution = RetryResolution;
 
 
 /***/ }),
-/* 4 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var logger_1 = __webpack_require__(1);
-var request_1 = __webpack_require__(5);
-var resuming_subscription_1 = __webpack_require__(6);
-var retrying_subscription_1 = __webpack_require__(7);
-var subscribe_strategy_1 = __webpack_require__(11);
-var subscription_1 = __webpack_require__(12);
-var token_providing_subscription_1 = __webpack_require__(8);
-var http_1 = __webpack_require__(13);
-var websocket_1 = __webpack_require__(14);
-var transports_1 = __webpack_require__(9);
-var PCancelable = __webpack_require__(2);
+var request_1 = __webpack_require__(4);
+var resuming_subscription_1 = __webpack_require__(5);
+var retrying_subscription_1 = __webpack_require__(6);
+var subscribe_strategy_1 = __webpack_require__(10);
+var subscription_1 = __webpack_require__(11);
+var token_providing_subscription_1 = __webpack_require__(7);
+var http_1 = __webpack_require__(12);
+var websocket_1 = __webpack_require__(13);
+var transports_1 = __webpack_require__(8);
 var BaseClient = (function () {
     function BaseClient(options) {
         this.options = options;
         this.host = options.host.replace(/(\/)+$/, '');
         this.logger = options.logger || new logger_1.ConsoleLogger();
         this.websocketTransport = new websocket_1.default(this.host);
-        this.httpTransport = new http_1.default(this.host);
+        this.httpTransport = new http_1.default(this.host, options.encrypted);
     }
-    BaseClient.prototype.request = function (options, tokenProvider, tokenParams) {
+    BaseClient.prototype.request = function (options, tokenParams) {
         var _this = this;
-        if (tokenProvider) {
-            return new PCancelable(function (onCancel, resolve, reject) {
-                return tokenProvider
-                    .fetchToken(tokenParams)
-                    .then(function (token) {
-                    if (options.headers !== undefined) {
-                        options.headers['Authorization'] = "Bearer " + token;
-                    }
-                    else {
-                        options.headers = (_a = {},
-                            _a['Authorization'] = "Bearer " + token,
-                            _a);
-                    }
-                    var reqPromise = request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
-                    onCancel(function () {
-                        reqPromise.cancel();
-                    });
-                    resolve(reqPromise);
-                    var _a;
-                })
-                    .catch(function (error) {
-                    _this.logger.error(error);
-                    reject(error);
-                });
+        if (options.tokenProvider) {
+            return options.tokenProvider
+                .fetchToken(tokenParams)
+                .then(function (token) {
+                if (options.headers !== undefined) {
+                    options.headers['Authorization'] = "Bearer " + token;
+                }
+                else {
+                    options.headers = (_a = {},
+                        _a['Authorization'] = "Bearer " + token,
+                        _a);
+                }
+                return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
+                var _a;
+            })
+                .catch(function (error) {
+                _this.logger.error(error);
             });
         }
-        else {
-            return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
-        }
+        return request_1.executeNetworkRequest(function () { return _this.httpTransport.request(options); }, options);
     };
     BaseClient.prototype.subscribeResuming = function (path, headers, listeners, retryStrategyOptions, initialEventId, tokenProvider) {
         var completeListeners = subscription_1.replaceMissingListenersWithNoOps(listeners);
@@ -799,6 +705,54 @@ exports.BaseClient = BaseClient;
 
 
 /***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var network_1 = __webpack_require__(0);
+function executeNetworkRequest(createXhr, options) {
+    return new Promise(function (resolve, reject) {
+        var xhr = attachOnReadyStateChangeHandler(createXhr(), resolve, reject);
+        xhr.send(JSON.stringify(options.body));
+    });
+}
+exports.executeNetworkRequest = executeNetworkRequest;
+function sendRawRequest(options) {
+    return new Promise(function (resolve, reject) {
+        var xhr = attachOnReadyStateChangeHandler(new window.XMLHttpRequest(), resolve, reject);
+        xhr.open(options.method.toUpperCase(), options.url, true);
+        if (options.headers) {
+            for (var key in options.headers) {
+                if (options.headers.hasOwnProperty(key)) {
+                    xhr.setRequestHeader(key, options.headers[key]);
+                }
+            }
+        }
+        xhr.send(options.body);
+    });
+}
+exports.sendRawRequest = sendRawRequest;
+function attachOnReadyStateChangeHandler(xhr, resolve, reject) {
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(xhr.response);
+            }
+            else if (xhr.status !== 0) {
+                reject(network_1.ErrorResponse.fromXHR(xhr));
+            }
+            else {
+                reject(new network_1.NetworkError('No Connection'));
+            }
+        }
+    };
+    return xhr;
+}
+
+
+/***/ }),
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -806,42 +760,7 @@ exports.BaseClient = BaseClient;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
-var PCancelable = __webpack_require__(2);
-function executeNetworkRequest(createXhr, options) {
-    var cancelablePromise = new PCancelable(function (onCancel, resolve, reject) {
-        var xhr = createXhr();
-        onCancel(function () {
-            xhr.abort();
-        });
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    resolve(xhr.response);
-                }
-                else if (xhr.status !== 0) {
-                    reject(network_1.ErrorResponse.fromXHR(xhr));
-                }
-                else {
-                    reject(new network_1.NetworkError('No Connection'));
-                }
-            }
-        };
-        xhr.send(JSON.stringify(options.body));
-    });
-    return cancelablePromise;
-}
-exports.executeNetworkRequest = executeNetworkRequest;
-
-
-/***/ }),
-/* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var network_1 = __webpack_require__(0);
-var retry_strategy_1 = __webpack_require__(3);
+var retry_strategy_1 = __webpack_require__(2);
 exports.createResumingStrategy = function (retryOptions, nextSubscribeStrategy, logger, initialEventId) {
     var completeRetryOptions = retry_strategy_1.createRetryStrategyOptionsOrDefault(retryOptions);
     var retryResolution = new retry_strategy_1.RetryResolution(completeRetryOptions, logger);
@@ -993,14 +912,14 @@ exports.createResumingStrategy = function (retryOptions, nextSubscribeStrategy, 
 
 
 /***/ }),
-/* 7 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
-var retry_strategy_1 = __webpack_require__(3);
+var retry_strategy_1 = __webpack_require__(2);
 exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, logger) {
     var enrichedRetryOptions = retry_strategy_1.createRetryStrategyOptionsOrDefault(retryOptions);
     var retryResolution = new retry_strategy_1.RetryResolution(enrichedRetryOptions, logger);
@@ -1120,133 +1039,126 @@ exports.createRetryingStrategy = function (retryOptions, nextSubscribeStrategy, 
 
 
 /***/ }),
-/* 8 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var network_1 = __webpack_require__(0);
-var PCancelable = __webpack_require__(2);
 exports.createTokenProvidingStrategy = function (nextSubscribeStrategy, logger, tokenProvider) {
     if (tokenProvider) {
         return function (listeners, headers) {
-            return new TokenProvidingSubscription(tokenProvider, logger, nextSubscribeStrategy, listeners, headers);
+            return new TokenProvidingSubscription(logger, listeners, headers, tokenProvider, nextSubscribeStrategy);
         };
     }
-    else {
-        return function (listeners, headers) { return nextSubscribeStrategy(listeners, headers); };
-    }
+    return nextSubscribeStrategy;
 };
 var TokenProvidingSubscription = (function () {
-    function TokenProvidingSubscription(tokenProvider, logger, nextSubscribeStrategy, listeners, headers) {
+    function TokenProvidingSubscription(logger, listeners, headers, tokenProvider, nextSubscribeStrategy) {
         var _this = this;
+        this.logger = logger;
+        this.listeners = listeners;
+        this.headers = headers;
+        this.tokenProvider = tokenProvider;
+        this.nextSubscribeStrategy = nextSubscribeStrategy;
         this.unsubscribe = function () {
             _this.state.unsubscribe();
+            _this.state = new InactiveState(_this.logger);
         };
-        this.onTransition = function (newState) {
-            _this.state = newState;
-        };
-        var TokenProvidingState = (function () {
-            function TokenProvidingState(onTransition) {
-                var _this = this;
-                this.onTransition = onTransition;
-                logger.verbose("TokenProvidingSubscription: transitioning to TokenProvidingState");
-                var isTokenExpiredError = function (error) {
-                    return (error instanceof network_1.ErrorResponse &&
-                        error.statusCode === 401 &&
-                        error.info === 'authentication/expired');
-                };
-                var fetchTokenAndExecuteSubscription = function () {
-                    _this.tokenPromise = new PCancelable(function (onCancel, resolve, reject) {
-                        return tokenProvider
-                            .fetchToken()
-                            .then(function (token) {
-                            _this.putTokenIntoHeader(token);
-                            _this.underlyingSubscription = nextSubscribeStrategy({
-                                onEnd: function (error) {
-                                    onTransition(new EndedSubscriptionState(error));
-                                },
-                                onError: function (error) {
-                                    if (isTokenExpiredError(error)) {
-                                        tokenProvider.clearToken(token);
-                                        fetchTokenAndExecuteSubscription();
-                                    }
-                                    else {
-                                        onTransition(new FailedSubscriptionState(error));
-                                    }
-                                },
-                                onEvent: listeners.onEvent,
-                                onOpen: function (headers) {
-                                    onTransition(new OpenSubscriptionState(headers, _this.underlyingSubscription, onTransition));
-                                },
-                                onRetrying: listeners.onRetrying,
-                            }, headers);
-                        })
-                            .catch(function (error) {
-                            onTransition(new FailedSubscriptionState(error));
-                        });
-                    });
-                };
-                fetchTokenAndExecuteSubscription();
-            }
-            TokenProvidingState.prototype.unsubscribe = function () {
-                if (this.tokenPromise) {
-                    this.tokenPromise.cancel();
-                }
-                this.underlyingSubscription.unsubscribe();
-                this.onTransition(new EndedSubscriptionState());
-            };
-            TokenProvidingState.prototype.putTokenIntoHeader = function (token) {
-                if (token) {
-                    headers['Authorization'] = "Bearer " + token;
-                    logger.verbose("TokenProvidingSubscription: token fetched: " + token);
-                }
-            };
-            return TokenProvidingState;
-        }());
-        var OpenSubscriptionState = (function () {
-            function OpenSubscriptionState(headers, underlyingSubscription, onTransition) {
-                this.headers = headers;
-                this.underlyingSubscription = underlyingSubscription;
-                this.onTransition = onTransition;
-                logger.verbose("TokenProvidingSubscription: transitioning to OpenSubscriptionState");
-                listeners.onOpen(headers);
-            }
-            OpenSubscriptionState.prototype.unsubscribe = function () {
-                this.underlyingSubscription.unsubscribe();
-                this.onTransition(new EndedSubscriptionState());
-            };
-            return OpenSubscriptionState;
-        }());
-        var FailedSubscriptionState = (function () {
-            function FailedSubscriptionState(error) {
-                logger.verbose("TokenProvidingSubscription: transitioning to FailedSubscriptionState", error);
-                listeners.onError(error);
-            }
-            FailedSubscriptionState.prototype.unsubscribe = function () {
-                throw new Error('Subscription has already ended');
-            };
-            return FailedSubscriptionState;
-        }());
-        var EndedSubscriptionState = (function () {
-            function EndedSubscriptionState(error) {
-                logger.verbose("TokenProvidingSubscription: transitioning to EndedSubscriptionState");
-                listeners.onEnd(error);
-            }
-            EndedSubscriptionState.prototype.unsubscribe = function () {
-                throw new Error('Subscription has already ended');
-            };
-            return EndedSubscriptionState;
-        }());
-        this.state = new TokenProvidingState(this.onTransition);
+        this.state = new ActiveState(logger, headers, nextSubscribeStrategy);
+        this.subscribe();
     }
+    TokenProvidingSubscription.prototype.subscribe = function () {
+        var _this = this;
+        this.tokenProvider
+            .fetchToken()
+            .then(function (token) {
+            var existingListeners = Object.assign({}, _this.listeners);
+            _this.state.subscribe(token, {
+                onEnd: function (error) {
+                    _this.state = new InactiveState(_this.logger);
+                    existingListeners.onEnd(error);
+                },
+                onError: function (error) {
+                    if (_this.isTokenExpiredError(error)) {
+                        _this.tokenProvider.clearToken(token);
+                        _this.subscribe();
+                    }
+                    else {
+                        _this.state = new InactiveState(_this.logger);
+                        existingListeners.onError(error);
+                    }
+                },
+                onEvent: _this.listeners.onEvent,
+                onOpen: _this.listeners.onOpen,
+            });
+        })
+            .catch(function (error) {
+            _this.logger.debug("TokenProvidingSubscription: error when fetching token: " + error);
+            _this.state = new InactiveState(_this.logger);
+        });
+    };
+    TokenProvidingSubscription.prototype.isTokenExpiredError = function (error) {
+        return (error instanceof network_1.ErrorResponse &&
+            error.statusCode === 401 &&
+            error.info === 'authentication/expired');
+    };
     return TokenProvidingSubscription;
+}());
+var ActiveState = (function () {
+    function ActiveState(logger, headers, nextSubscribeStrategy) {
+        this.logger = logger;
+        this.headers = headers;
+        this.nextSubscribeStrategy = nextSubscribeStrategy;
+        logger.verbose("TokenProvidingSubscription: transitioning to TokenProvidingState");
+    }
+    ActiveState.prototype.subscribe = function (token, listeners) {
+        var _this = this;
+        this.putTokenIntoHeader(token);
+        this.underlyingSubscription = this.nextSubscribeStrategy({
+            onEnd: function (error) {
+                _this.logger.verbose("TokenProvidingSubscription: subscription ended");
+                listeners.onEnd(error);
+            },
+            onError: function (error) {
+                _this.logger.verbose("TokenProvidingSubscription: subscription errored: " + error);
+                listeners.onError(error);
+            },
+            onEvent: listeners.onEvent,
+            onOpen: function (headers) {
+                _this.logger.verbose("TokenProvidingSubscription: subscription opened");
+                listeners.onOpen(headers);
+            },
+            onRetrying: listeners.onRetrying,
+        }, this.headers);
+    };
+    ActiveState.prototype.unsubscribe = function () {
+        this.underlyingSubscription.unsubscribe();
+    };
+    ActiveState.prototype.putTokenIntoHeader = function (token) {
+        this.headers['Authorization'] = "Bearer " + token;
+        this.logger.verbose("TokenProvidingSubscription: token fetched: " + token);
+    };
+    return ActiveState;
+}());
+var InactiveState = (function () {
+    function InactiveState(logger) {
+        this.logger = logger;
+        logger.verbose("TokenProvidingSubscription: transitioning to OpenTokenProvidingSubscriptionState");
+    }
+    InactiveState.prototype.subscribe = function (token, listeners) {
+        this.logger.verbose('TokenProvidingSubscription: subscribe called in Inactive state; doing nothing');
+    };
+    InactiveState.prototype.unsubscribe = function () {
+        this.logger.verbose('TokenProvidingSubscription: unsubscribe called in Inactive state; doing nothing');
+    };
+    return InactiveState;
 }());
 
 
 /***/ }),
-/* 9 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1258,15 +1170,15 @@ exports.createTransportStrategy = function (path, transport, logger) {
 
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var base_client_1 = __webpack_require__(4);
+var base_client_1 = __webpack_require__(3);
 exports.BaseClient = base_client_1.BaseClient;
-var instance_1 = __webpack_require__(15);
+var instance_1 = __webpack_require__(14);
 exports.Instance = instance_1.default;
 var logger_1 = __webpack_require__(1);
 exports.ConsoleLogger = logger_1.ConsoleLogger;
@@ -1276,20 +1188,21 @@ exports.ErrorResponse = network_1.ErrorResponse;
 exports.NetworkError = network_1.NetworkError;
 exports.responseToHeadersObject = network_1.responseToHeadersObject;
 exports.XhrReadyState = network_1.XhrReadyState;
-var request_1 = __webpack_require__(5);
+var request_1 = __webpack_require__(4);
 exports.executeNetworkRequest = request_1.executeNetworkRequest;
-var resuming_subscription_1 = __webpack_require__(6);
+exports.sendRawRequest = request_1.sendRawRequest;
+var resuming_subscription_1 = __webpack_require__(5);
 exports.createResumingStrategy = resuming_subscription_1.createResumingStrategy;
-var retry_strategy_1 = __webpack_require__(3);
+var retry_strategy_1 = __webpack_require__(2);
 exports.createRetryStrategyOptionsOrDefault = retry_strategy_1.createRetryStrategyOptionsOrDefault;
 exports.DoNotRetry = retry_strategy_1.DoNotRetry;
 exports.Retry = retry_strategy_1.Retry;
 exports.RetryResolution = retry_strategy_1.RetryResolution;
-var retrying_subscription_1 = __webpack_require__(7);
+var retrying_subscription_1 = __webpack_require__(6);
 exports.createRetryingStrategy = retrying_subscription_1.createRetryingStrategy;
-var token_providing_subscription_1 = __webpack_require__(8);
+var token_providing_subscription_1 = __webpack_require__(7);
 exports.createTokenProvidingStrategy = token_providing_subscription_1.createTokenProvidingStrategy;
-var transports_1 = __webpack_require__(9);
+var transports_1 = __webpack_require__(8);
 exports.createTransportStrategy = transports_1.createTransportStrategy;
 exports.default = {
     BaseClient: base_client_1.BaseClient,
@@ -1300,7 +1213,7 @@ exports.default = {
 
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1318,7 +1231,7 @@ exports.subscribeStrategyListenersFromSubscriptionListeners = function (subListe
 
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1349,7 +1262,7 @@ exports.replaceMissingListenersWithNoOps = function (listeners) {
 
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1572,7 +1485,8 @@ var HttpSubscription = (function () {
 }());
 var HttpTransport = (function () {
     function HttpTransport(host, encrypted) {
-        this.baseURL = (encrypted !== false ? 'https' : 'http') + "://" + host;
+        if (encrypted === void 0) { encrypted = true; }
+        this.baseURL = (encrypted ? 'https' : 'http') + "://" + host;
     }
     HttpTransport.prototype.request = function (requestOptions) {
         return this.createXHR(this.baseURL, requestOptions);
@@ -1611,7 +1525,7 @@ exports.default = HttpTransport;
 
 
 /***/ }),
-/* 14 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1958,13 +1872,13 @@ exports.default = WebSocketTransport;
 
 
 /***/ }),
-/* 15 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var base_client_1 = __webpack_require__(4);
+var base_client_1 = __webpack_require__(3);
 var logger_1 = __webpack_require__(1);
 var HOST_BASE = 'pusherplatform.io';
 var Instance = (function () {
@@ -1973,7 +1887,7 @@ var Instance = (function () {
             throw new Error('Expected `locator` property in Instance options!');
         }
         if (options.locator.split(':').length !== 3) {
-            throw new Error('The locator property is in the wrong format!');
+            throw new Error('The instance locator property is in the wrong format!');
         }
         if (!options.serviceName) {
             throw new Error('Expected `serviceName` property in Instance options!');
@@ -1998,13 +1912,13 @@ var Instance = (function () {
                 });
         this.tokenProvider = options.tokenProvider;
     }
-    Instance.prototype.request = function (options, tokenProvider, tokenParams) {
+    Instance.prototype.request = function (options, tokenParams) {
         options.path = this.absPath(options.path);
         if (options.headers == null || options.headers === undefined) {
             options.headers = {};
         }
-        var tokenProviderToUse = tokenProvider || this.tokenProvider;
-        return this.client.request(options, tokenProviderToUse, tokenParams);
+        options.tokenProvider = options.tokenProvider || this.tokenProvider;
+        return this.client.request(options, tokenParams);
     };
     Instance.prototype.subscribeNonResuming = function (options) {
         var headers = options.headers || {};
@@ -2106,8 +2020,8 @@ exports.default = UserStoreCore;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var pusher_platform_1 = __webpack_require__(2);
-var global_user_store_1 = __webpack_require__(10);
-var user_subscription_1 = __webpack_require__(18);
+var global_user_store_1 = __webpack_require__(9);
+var user_subscription_1 = __webpack_require__(17);
 var ChatManager = (function () {
     function ChatManager(options) {
         this.tokenProvider = options.tokenProvider;
@@ -2154,7 +2068,6 @@ exports.default = ChatManager;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var PCancelable = __webpack_require__(7);
 var utils_1 = __webpack_require__(1);
 var TokenProvider = (function () {
     function TokenProvider(options) {
@@ -2171,7 +2084,7 @@ var TokenProvider = (function () {
     };
     TokenProvider.prototype.makeAuthRequest = function () {
         var _this = this;
-        return new PCancelable(function (onCancel, resolve, reject) {
+        return new Promise(function (resolve, reject) {
             var xhr = new window.XMLHttpRequest();
             var url;
             if (_this.userId === undefined) {
@@ -2218,90 +2131,6 @@ exports.default = TokenProvider;
 
 /***/ }),
 /* 7 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-class CancelError extends Error {
-	constructor() {
-		super('Promise was canceled');
-		this.name = 'CancelError';
-	}
-}
-
-class PCancelable {
-	static fn(fn) {
-		return function () {
-			const args = [].slice.apply(arguments);
-			return new PCancelable((onCancel, resolve, reject) => {
-				args.unshift(onCancel);
-				fn.apply(null, args).then(resolve, reject);
-			});
-		};
-	}
-
-	constructor(executor) {
-		this._pending = true;
-		this._canceled = false;
-
-		this._promise = new Promise((resolve, reject) => {
-			this._reject = reject;
-
-			return executor(
-				fn => {
-					this._cancel = fn;
-				},
-				val => {
-					this._pending = false;
-					resolve(val);
-				},
-				err => {
-					this._pending = false;
-					reject(err);
-				}
-			);
-		});
-	}
-
-	then() {
-		return this._promise.then.apply(this._promise, arguments);
-	}
-
-	catch() {
-		return this._promise.catch.apply(this._promise, arguments);
-	}
-
-	cancel() {
-		if (!this._pending || this._canceled) {
-			return;
-		}
-
-		if (typeof this._cancel === 'function') {
-			try {
-				this._cancel();
-			} catch (err) {
-				this._reject(err);
-			}
-		}
-
-		this._canceled = true;
-		this._reject(new CancelError());
-	}
-
-	get canceled() {
-		return this._canceled;
-	}
-}
-
-Object.setPrototypeOf(PCancelable.prototype, Promise.prototype);
-
-module.exports = PCancelable;
-module.exports.CancelError = CancelError;
-
-
-/***/ }),
-/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2413,17 +2242,17 @@ exports.default = BasicMessageEnricher;
 
 
 /***/ }),
-/* 9 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var basic_message_enricher_1 = __webpack_require__(8);
+var basic_message_enricher_1 = __webpack_require__(7);
 var payload_deserializer_1 = __webpack_require__(0);
-var presence_subscription_1 = __webpack_require__(12);
-var room_store_1 = __webpack_require__(14);
-var room_subscription_1 = __webpack_require__(15);
+var presence_subscription_1 = __webpack_require__(11);
+var room_store_1 = __webpack_require__(13);
+var room_subscription_1 = __webpack_require__(14);
 var utils_1 = __webpack_require__(1);
 var CurrentUser = (function () {
     function CurrentUser(options) {
@@ -2758,7 +2587,7 @@ exports.default = CurrentUser;
 
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2860,7 +2689,7 @@ exports.default = GlobalUserStore;
 
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2880,7 +2709,7 @@ exports.default = {
 
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3027,13 +2856,13 @@ exports.default = PresenceSubscription;
 
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var room_user_store_1 = __webpack_require__(16);
+var room_user_store_1 = __webpack_require__(15);
 var Room = (function () {
     function Room(options) {
         this.id = options.id;
@@ -3059,7 +2888,7 @@ exports.default = Room;
 
 
 /***/ }),
-/* 14 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3123,7 +2952,7 @@ exports.default = RoomStore;
 
 
 /***/ }),
-/* 15 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3162,7 +2991,7 @@ exports.default = RoomSubscription;
 
 
 /***/ }),
-/* 16 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3186,7 +3015,7 @@ exports.default = RoomUserStore;
 
 
 /***/ }),
-/* 17 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3222,7 +3051,7 @@ exports.default = User;
 
 
 /***/ }),
-/* 18 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

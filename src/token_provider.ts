@@ -1,5 +1,3 @@
-import * as PCancelable from 'p-cancelable';
-
 import { urlEncode, mergeQueryParamsIntoUrl } from './utils';
 
 export interface TokenProviderAuthContextOptions {
@@ -39,7 +37,7 @@ export default class TokenProvider {
     return !this.cachedAccessToken || this.unixTimeNow() > this.cachedTokenExpiresAt;
   }
 
-  fetchToken(tokenParams?: any): PCancelable<string> {
+  fetchToken(tokenParams?: any): Promise<string> {
     if (this.cacheIsStale) {
       return this.makeAuthRequest().then(responseBody => {
         const { access_token, expires_in } = responseBody;
@@ -47,9 +45,9 @@ export default class TokenProvider {
         return access_token;
       });
     }
-    return new PCancelable<string>((onCancel, resolve, reject) => {
+    return new Promise<string>((onCancel, resolve, reject) => {
       resolve(this.cachedAccessToken);
-    });
+    })
   }
 
   clearToken(token?: string) {
@@ -57,8 +55,8 @@ export default class TokenProvider {
     this.cachedTokenExpiresAt = undefined;
   }
 
-  makeAuthRequest(): PCancelable<string> {
-    return new PCancelable<string>((onCancel, resolve, reject) => {
+  makeAuthRequest(): Promise<any> {
+    return new Promise<any>((resolve, reject) => {
       const xhr = new global.XMLHttpRequest();
       var url;
       if (this.userId === undefined) {

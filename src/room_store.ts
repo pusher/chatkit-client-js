@@ -71,12 +71,12 @@ export default class RoomStore {
         method: 'GET',
         path: `/rooms/${id}`,
       })
-      .then(res => {
+      .then((res: any) => {
         const roomPayload = JSON.parse(res);
         const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
         onSuccess(room);
       })
-      .catch(error => {
+      .catch((error: any) => {
         this.instance.logger.debug(`Error fetching room ${id}: ${error}`);
         onError(error);
       });

@@ -12,9 +12,9 @@ export default class GlobalUserStore {
     constructor(options: GlobalUserStoreOptions);
     addOrMerge(user: User): User;
     remove(id: string): User | undefined;
-    user(id: string, onSuccess: (User) => void, onError: (Error) => void): void;
-    findOrGetUser(id: string, onSuccess: (User) => void, onError: (Error) => void): void;
-    getUser(id: string, onSuccess: (User) => void, onError: (Error) => void): void;
+    user(id: string, onSuccess: (user: User) => void, onError: (error: any) => void): void;
+    findOrGetUser(id: string, onSuccess: (user: User) => void, onError: (error: any) => void): void;
+    getUser(id: string, onSuccess: (user: User) => void, onError: (error: any) => void): void;
     handleInitialPresencePayloadsAfterRoomJoin(payloads: PresencePayload[], onComplete: () => void): void;
     handleInitialPresencePayloads(payloads: PresencePayload[], onComplete: () => void): void;
     fetchUsersWithIds(userIds: string[], onSuccess: (users: User[]) => void, onError: (error: Error) => void): void;

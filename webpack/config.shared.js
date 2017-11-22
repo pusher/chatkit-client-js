@@ -12,7 +12,7 @@ module.exports = {
       {
         test: /\.ts$/,
         loader: `ts-loader?${ JSON.stringify({ logInfoToStdOut: true }) }`,
-        exclude: [/node_modules/, /target/ ]
+        exclude: [/node_modules/, /dist/, /example/]
       }
     ],
   },

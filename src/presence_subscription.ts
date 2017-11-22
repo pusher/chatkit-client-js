@@ -16,7 +16,7 @@ export interface PresenceSubscriptionOptions {
 export default class PresenceSubscription {
   userStore: GlobalUserStore;
   roomStore: RoomStore;
-  delegate: ChatManagerDelegate;
+  delegate?: ChatManagerDelegate;
 
   private instance: Instance;
 
@@ -85,12 +85,12 @@ export default class PresenceSubscription {
 
     // TODO: It will never be undefined but might throw - this is semi-aspirational code
     const userStates = userStatesPayload
-      .map(userStatePayload => {
+      .map((userStatePayload: any) => {
         return PayloadDeserializer.createPresencePayloadFromPayload(
           userStatePayload,
         );
       })
-      .filter(el => el !== undefined);
+      .filter((el: any) => el !== undefined);
 
     if (userStates.length === 0) {
       this.instance.logger.verbose('No presence user states to process');
@@ -132,13 +132,13 @@ export default class PresenceSubscription {
 
         switch (presencePayload.state.stringValue) {
           case 'online':
-            if (this.delegate.userCameOnline) {
+            if (this.delegate && this.delegate.userCameOnline) {
               this.delegate.userCameOnline(user);
             }
             this.instance.logger.verbose(`${user.id} came online`);
             break;
           case 'offline':
-            if (this.delegate.userWentOffline) {
+            if (this.delegate && this.delegate.userWentOffline) {
               this.delegate.userWentOffline(user);
             }
             this.instance.logger.verbose(`${user.id} went offline`);
@@ -220,12 +220,12 @@ export default class PresenceSubscription {
 
     // TODO: It will never be undefined but might throw - this is semi-aspirational code
     const userStates = userStatesPayload
-      .map(userStatePayload => {
+      .map((userStatePayload: any) => {
         return PayloadDeserializer.createPresencePayloadFromPayload(
           userStatePayload,
         );
       })
-      .filter(el => el !== undefined);
+      .filter((el: any) => el !== undefined);
 
     if (userStates.length === 0) {
       this.instance.logger.verbose('No presence user states to process');

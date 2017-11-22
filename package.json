@@ -1,7 +1,8 @@
 {
   "name": "pusher-chatkit-client",
-  "description": "Pusher Chatkit client library for web browsers",
+  "description": "Pusher Chatkit client library for browsers and react native",
   "main": "dist/web/chatkit.js",
+  "types": "dist/web/declarations/index.d.ts",
   "version": "0.1.2",
   "author": "Pusher",
   "license": "MIT",
@@ -24,7 +25,7 @@
     "prettier": "prettier 'src/**/*.ts'"
   },
   "dependencies": {
-    "pusher-platform": "^0.12.1"
+    "pusher-platform": "^0.12.2"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",

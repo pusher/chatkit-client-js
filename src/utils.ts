@@ -1,16 +1,16 @@
-export function urlEncode(data) {
+export function urlEncode(data: any) {
   return Object.keys(data)
     .filter(key => data[key] !== undefined)
     .map(key => `${key}=${encodeURIComponent(data[key])}`)
     .join('&');
 }
 
-export function queryString(data) {
+export function queryString(data: any): string {
   const encodedData = urlEncode(data);
   return encodedData ? `?${encodedData}` : '';
 }
 
-const querylessUrlAndQueryObjectFromFullUrl = urlString => {
+function querylessUrlAndQueryObjectFromFullUrl(urlString: string): any {
   if (urlString.indexOf('?') === -1) {
     return {
       queryObject: {},
@@ -28,7 +28,7 @@ const querylessUrlAndQueryObjectFromFullUrl = urlString => {
   };
 };
 
-const queryParamObject = queryParamString => {
+function queryParamObject(queryParamString: string): any {
   return queryParamString
     .split('&')
     .map(str => {
@@ -38,7 +38,7 @@ const queryParamObject = queryParamString => {
     .reduce((prev, curr) => Object.assign(prev, curr));
 };
 
-export const mergeQueryParamsIntoUrl = (urlString, queryParams) => {
+export function mergeQueryParamsIntoUrl(urlString: string, queryParams: any): string {
   const { querylessUrl, queryObject } = querylessUrlAndQueryObjectFromFullUrl(
     urlString,
   );
@@ -47,9 +47,9 @@ export const mergeQueryParamsIntoUrl = (urlString, queryParams) => {
   return t;
 };
 
-export function allPromisesSettled(promises) {
+export function allPromisesSettled(promises: Promise<any>[]): Promise<any> {
   return Promise.all(
-    promises.map(p =>
+    promises.map((p: Promise<any>) =>
       Promise.resolve(p).then(
         v => ({
           state: 'fulfilled',

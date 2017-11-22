@@ -47,7 +47,7 @@ export default class PayloadDeserializer {
   }
 
   static createRoomFromPayload(roomPayload: any): Room {
-    const requiredFieldsWithTypes: { [key: string]: string; } = {
+    const requiredFieldsWithTypes: { [key: string]: string } = {
       created_at: 'string',
       created_by_id: 'string',
       id: 'number',
@@ -94,7 +94,7 @@ export default class PayloadDeserializer {
   // This returns a PCBasicMessage mainly to signal that it needs to be enriched with
   // information about its associated sender and the room it belongs to
   static createBasicMessageFromPayload(messagePayload: any): BasicMessage {
-    const requiredFieldsWithTypes: { [key: string]: string; } = {
+    const requiredFieldsWithTypes: { [key: string]: string } = {
       created_at: 'string',
       id: 'number',
       room_id: 'number',
@@ -131,7 +131,7 @@ export default class PayloadDeserializer {
   }
 
   static createPresencePayloadFromPayload(payload: any): PresencePayload {
-    const requiredFieldsWithTypes: { [key: string]: string; } = {
+    const requiredFieldsWithTypes: { [key: string]: string } = {
       state: 'string',
       user_id: 'string',
     };
@@ -163,7 +163,7 @@ export default class PayloadDeserializer {
   }
 
   static createBasicUserFromPayload(payload: any): BasicUser {
-    const requiredFieldsWithTypes: { [key: string]: string; } = {
+    const requiredFieldsWithTypes: { [key: string]: string } = {
       created_at: 'string',
       id: 'string',
       updated_at: 'string',

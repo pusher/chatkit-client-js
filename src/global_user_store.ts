@@ -29,7 +29,11 @@ export default class GlobalUserStore {
     return this.userStoreCore.remove(id);
   }
 
-  user(id: string, onSuccess: (user: User) => void, onError: (error: any) => void) {
+  user(
+    id: string,
+    onSuccess: (user: User) => void,
+    onError: (error: any) => void,
+  ) {
     this.findOrGetUser(id, onSuccess, onError);
   }
 
@@ -47,7 +51,11 @@ export default class GlobalUserStore {
     this.getUser(id, onSuccess, onError);
   }
 
-  getUser(id: string, onSuccess: (user: User) => void, onError: (error: any) => void) {
+  getUser(
+    id: string,
+    onSuccess: (user: User) => void,
+    onError: (error: any) => void,
+  ) {
     this.instance
       .request({
         method: 'GET',

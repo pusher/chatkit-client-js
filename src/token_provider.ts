@@ -37,9 +37,7 @@ export default class TokenProvider {
 
   get cacheIsStale() {
     if (this.cachedAccessToken && this.cachedTokenExpiresAt) {
-      return (
-        this.unixTimeNow() > this.cachedTokenExpiresAt
-      );
+      return this.unixTimeNow() > this.cachedTokenExpiresAt;
     }
     return true;
   }

@@ -127,7 +127,9 @@ export default class UserSubscription {
       roomsFromConnection.push(room);
 
       if (!this.currentUser) {
-        this.instance.logger.verbose('currentUser property not set on UserSubscription');
+        this.instance.logger.verbose(
+          'currentUser property not set on UserSubscription',
+        );
         return;
       }
 
@@ -159,7 +161,9 @@ export default class UserSubscription {
         const combinedRoomUsersPromises = new Array<Promise<any>>();
 
         if (!this.currentUser) {
-          this.instance.logger.verbose('currentUser property not set on UserSubscription');
+          this.instance.logger.verbose(
+            'currentUser property not set on UserSubscription',
+          );
           return;
         }
 
@@ -214,7 +218,9 @@ export default class UserSubscription {
 
         allPromisesSettled(combinedRoomUsersPromises).then(() => {
           if (!this.currentUser) {
-            this.instance.logger.verbose('currentUser property not set on UserSubscription');
+            this.instance.logger.verbose(
+              'currentUser property not set on UserSubscription',
+            );
             return;
           }
 
@@ -271,7 +277,9 @@ export default class UserSubscription {
     }
 
     if (!this.currentUser) {
-      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      this.instance.logger.verbose(
+        'currentUser property not set on UserSubscription',
+      );
       return;
     }
 
@@ -341,7 +349,9 @@ export default class UserSubscription {
     }
 
     if (!this.currentUser) {
-      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      this.instance.logger.verbose(
+        'currentUser property not set on UserSubscription',
+      );
       return;
     }
 
@@ -373,7 +383,9 @@ export default class UserSubscription {
     }
 
     if (!this.currentUser) {
-      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      this.instance.logger.verbose(
+        'currentUser property not set on UserSubscription',
+      );
       return;
     }
 
@@ -409,7 +421,9 @@ export default class UserSubscription {
     }
 
     if (!this.currentUser) {
-      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      this.instance.logger.verbose(
+        'currentUser property not set on UserSubscription',
+      );
       return;
     }
 
@@ -455,7 +469,9 @@ export default class UserSubscription {
     }
 
     if (!this.currentUser) {
-      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      this.instance.logger.verbose(
+        'currentUser property not set on UserSubscription',
+      );
       return;
     }
 
@@ -463,7 +479,9 @@ export default class UserSubscription {
       roomId,
       room => {
         if (!this.currentUser) {
-          this.instance.logger.verbose('currentUser property not set on UserSubscription');
+          this.instance.logger.verbose(
+            'currentUser property not set on UserSubscription',
+          );
           return;
         }
 
@@ -540,7 +558,9 @@ export default class UserSubscription {
     }
 
     if (!this.currentUser) {
-      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      this.instance.logger.verbose(
+        'currentUser property not set on UserSubscription',
+      );
       return;
     }
 
@@ -548,7 +568,9 @@ export default class UserSubscription {
       roomId,
       room => {
         if (!this.currentUser) {
-          this.instance.logger.verbose('currentUser property not set on UserSubscription');
+          this.instance.logger.verbose(
+            'currentUser property not set on UserSubscription',
+          );
           return;
         }
 
@@ -624,7 +646,9 @@ export default class UserSubscription {
     }
 
     if (!this.currentUser) {
-      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      this.instance.logger.verbose(
+        'currentUser property not set on UserSubscription',
+      );
       return;
     }
 
@@ -632,7 +656,9 @@ export default class UserSubscription {
       roomId,
       room => {
         if (!this.currentUser) {
-          this.instance.logger.verbose('currentUser property not set on UserSubscription');
+          this.instance.logger.verbose(
+            'currentUser property not set on UserSubscription',
+          );
           return;
         }
 
@@ -692,7 +718,9 @@ export default class UserSubscription {
     }
 
     if (!this.currentUser) {
-      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      this.instance.logger.verbose(
+        'currentUser property not set on UserSubscription',
+      );
       return;
     }
 
@@ -700,7 +728,9 @@ export default class UserSubscription {
       roomId,
       room => {
         if (!this.currentUser) {
-          this.instance.logger.verbose('currentUser property not set on UserSubscription');
+          this.instance.logger.verbose(
+            'currentUser property not set on UserSubscription',
+          );
           return;
         }
 

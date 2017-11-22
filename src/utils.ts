@@ -26,7 +26,7 @@ function querylessUrlAndQueryObjectFromFullUrl(urlString: string): any {
     queryObject: queryParamObject(queryStr),
     querylessUrl,
   };
-};
+}
 
 function queryParamObject(queryParamString: string): any {
   return queryParamString
@@ -36,18 +36,23 @@ function queryParamObject(queryParamString: string): any {
       return { [key]: decodeURI(value) };
     })
     .reduce((prev, curr) => Object.assign(prev, curr));
-};
+}
 
-export function mergeQueryParamsIntoUrl(urlString: string, queryParams: any): string {
+export function mergeQueryParamsIntoUrl(
+  urlString: string,
+  queryParams: any,
+): string {
   const { querylessUrl, queryObject } = querylessUrlAndQueryObjectFromFullUrl(
     urlString,
   );
   const fullQueryString = queryString(Object.assign(queryObject, queryParams));
   const t = `${querylessUrl}${fullQueryString}`;
   return t;
-};
+}
 
-export function allPromisesSettled(promises: Promise<any>[]): Promise<any> {
+export function allPromisesSettled(
+  promises: Array<Promise<any>>,
+): Promise<any> {
   return Promise.all(
     promises.map((p: Promise<any>) =>
       Promise.resolve(p).then(

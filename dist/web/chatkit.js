@@ -256,7 +256,6 @@ function querylessUrlAndQueryObjectFromFullUrl(urlString) {
         querylessUrl: querylessUrl,
     };
 }
-;
 function queryParamObject(queryParamString) {
     return queryParamString
         .split('&')
@@ -267,7 +266,6 @@ function queryParamObject(queryParamString) {
     })
         .reduce(function (prev, curr) { return Object.assign(prev, curr); });
 }
-;
 function mergeQueryParamsIntoUrl(urlString, queryParams) {
     var _a = querylessUrlAndQueryObjectFromFullUrl(urlString), querylessUrl = _a.querylessUrl, queryObject = _a.queryObject;
     var fullQueryString = queryString(Object.assign(queryObject, queryParams));
@@ -275,7 +273,6 @@ function mergeQueryParamsIntoUrl(urlString, queryParams) {
     return t;
 }
 exports.mergeQueryParamsIntoUrl = mergeQueryParamsIntoUrl;
-;
 function allPromisesSettled(promises) {
     return Promise.all(promises.map(function (p) {
         return Promise.resolve(p).then(function (v) { return ({
@@ -3524,7 +3521,7 @@ var TokenProvider = (function () {
     Object.defineProperty(TokenProvider.prototype, "cacheIsStale", {
         get: function () {
             if (this.cachedAccessToken && this.cachedTokenExpiresAt) {
-                return (this.unixTimeNow() > this.cachedTokenExpiresAt);
+                return this.unixTimeNow() > this.cachedTokenExpiresAt;
             }
             return true;
         },

@@ -1095,9 +1095,8 @@ var TokenProvidingSubscription = (function () {
             });
         })
             .catch(function (error) {
-            _this.logger.debug('TokenProvidingSubscription: error when fetching token:', error);
+            _this.logger.debug("TokenProvidingSubscription: error when fetching token: " + error);
             _this.state = new InactiveState(_this.logger);
-            _this.listeners.onError(error);
         });
     };
     TokenProvidingSubscription.prototype.isTokenExpiredError = function (error) {
@@ -1123,7 +1122,7 @@ var ActiveState = (function () {
                 listeners.onEnd(error);
             },
             onError: function (error) {
-                _this.logger.verbose('TokenProvidingSubscription: subscription errored:', error);
+                _this.logger.verbose("TokenProvidingSubscription: subscription errored: " + error);
                 listeners.onError(error);
             },
             onEvent: listeners.onEvent,

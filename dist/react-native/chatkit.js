@@ -121,7 +121,7 @@ var PayloadDeserializer = (function () {
                 throw new Error("Value for key: " + key + " in payload was " + receivedType + ", expected " + expectedType);
             }
         });
-        var memberUserIds;
+        var memberUserIds = [];
         if (roomPayload.member_user_ids) {
             memberUserIds = roomPayload.member_user_ids;
         }
@@ -232,7 +232,7 @@ function queryString(data) {
     return encodedData ? "?" + encodedData : '';
 }
 exports.queryString = queryString;
-var querylessUrlAndQueryObjectFromFullUrl = function (urlString) {
+function querylessUrlAndQueryObjectFromFullUrl(urlString) {
     if (urlString.indexOf('?') === -1) {
         return {
             queryObject: {},
@@ -246,8 +246,9 @@ var querylessUrlAndQueryObjectFromFullUrl = function (urlString) {
         queryObject: queryParamObject(queryStr),
         querylessUrl: querylessUrl,
     };
-};
-var queryParamObject = function (queryParamString) {
+}
+;
+function queryParamObject(queryParamString) {
     return queryParamString
         .split('&')
         .map(function (str) {
@@ -256,13 +257,16 @@ var queryParamObject = function (queryParamString) {
         var _b;
     })
         .reduce(function (prev, curr) { return Object.assign(prev, curr); });
-};
-exports.mergeQueryParamsIntoUrl = function (urlString, queryParams) {
+}
+;
+function mergeQueryParamsIntoUrl(urlString, queryParams) {
     var _a = querylessUrlAndQueryObjectFromFullUrl(urlString), querylessUrl = _a.querylessUrl, queryObject = _a.queryObject;
     var fullQueryString = queryString(Object.assign(queryObject, queryParams));
     var t = "" + querylessUrl + fullQueryString;
     return t;
-};
+}
+exports.mergeQueryParamsIntoUrl = mergeQueryParamsIntoUrl;
+;
 function allPromisesSettled(promises) {
     return Promise.all(promises.map(function (p) {
         return Promise.resolve(p).then(function (v) { return ({
@@ -2783,13 +2787,13 @@ var PresenceSubscription = (function () {
             user.updatePresenceInfoIfAppropriate(presencePayload);
             switch (presencePayload.state.stringValue) {
                 case 'online':
-                    if (_this.delegate.userCameOnline) {
+                    if (_this.delegate && _this.delegate.userCameOnline) {
                         _this.delegate.userCameOnline(user);
                     }
                     _this.instance.logger.verbose(user.id + " came online");
                     break;
                 case 'offline':
-                    if (_this.delegate.userWentOffline) {
+                    if (_this.delegate && _this.delegate.userWentOffline) {
                         _this.delegate.userWentOffline(user);
                     }
                     _this.instance.logger.verbose(user.id + " went offline");
@@ -2987,7 +2991,7 @@ var Room = (function () {
         this.createdAt = options.createdAt;
         this.updatedAt = options.updatedAt;
         this.deletedAt = options.deletedAt;
-        this.userIds = options.userIds;
+        this.userIds = options.userIds || [];
         this.userStore = new room_user_store_1.default();
     }
     Room.prototype.updateWithPropertiesOfRoom = function (room) {
@@ -3146,6 +3150,10 @@ var UserSubscription = (function () {
                 combinedRoomUserIds.add(userId);
             });
             roomsFromConnection.push(room);
+            if (!_this.currentUser) {
+                _this.instance.logger.verbose('currentUser property not set on UserSubscription');
+                return;
+            }
             _this.currentUser.roomStore.addOrMerge(room);
         });
         this.callConnectCompletionHandlers(this.currentUser);
@@ -3159,6 +3167,10 @@ var UserSubscription = (function () {
         var userIdsArray = Array.from(userIds.values());
         this.userStore.initialFetchOfUsersWithIds(userIdsArray, function (users) {
             var combinedRoomUsersPromises = new Array();
+            if (!_this.currentUser) {
+                _this.instance.logger.verbose('currentUser property not set on UserSubscription');
+                return;
+            }
             _this.currentUser.roomStore.rooms.forEach(function (room) {
                 var roomPromise = new Promise(function (roomResolve, roomReject) {
                     var roomUsersPromises = new Array();
@@ -3191,6 +3203,10 @@ var UserSubscription = (function () {
                 combinedRoomUsersPromises.push(roomPromise);
             });
             utils_1.allPromisesSettled(combinedRoomUsersPromises).then(function () {
+                if (!_this.currentUser) {
+                    _this.instance.logger.verbose('currentUser property not set on UserSubscription');
+                    return;
+                }
                 _this.currentUser.setupPresenceSubscription(_this.delegate);
             });
         }, function (error) {
@@ -3218,6 +3234,10 @@ var UserSubscription = (function () {
         var roomPayload = data.room;
         if (roomPayload === undefined || typeof roomPayload !== 'object') {
             this.instance.logger.verbose("`room` key missing or invalid in `added_to_room` payload: " + data);
+            return;
+        }
+        if (!this.currentUser) {
+            this.instance.logger.verbose('currentUser property not set on UserSubscription');
             return;
         }
         var room = payload_deserializer_1.default.createRoomFromPayload(roomPayload);
@@ -3259,9 +3279,13 @@ var UserSubscription = (function () {
             this.instance.logger.verbose("`room_id` key missing or invalid in `removed_from_room` payload: " + data);
             return;
         }
+        if (!this.currentUser) {
+            this.instance.logger.verbose('currentUser property not set on UserSubscription');
+            return;
+        }
         var roomRemoved = this.currentUser.roomStore.remove(roomId);
         if (roomRemoved) {
-            if (this.delegate.removedFromRoom) {
+            if (this.delegate && this.delegate.removedFromRoom) {
                 this.delegate.removedFromRoom(roomRemoved);
             }
             this.instance.logger.verbose("Removed from room: " + roomRemoved.name);
@@ -3278,10 +3302,14 @@ var UserSubscription = (function () {
             this.instance.logger.verbose("`room` key missing or invalid in `room_updated` payload: " + data);
             return;
         }
+        if (!this.currentUser) {
+            this.instance.logger.verbose('currentUser property not set on UserSubscription');
+            return;
+        }
         var room = payload_deserializer_1.default.createRoomFromPayload(roomPayload);
         this.currentUser.roomStore.room(room.id, function (roomToUpdate) {
             roomToUpdate.updateWithPropertiesOfRoom(room);
-            if (_this.delegate.roomUpdated) {
+            if (_this.delegate && _this.delegate.roomUpdated) {
                 _this.delegate.roomUpdated(roomToUpdate);
             }
             _this.instance.logger.verbose("Room updated: " + room.name);
@@ -3295,9 +3323,13 @@ var UserSubscription = (function () {
             this.instance.logger.verbose("`room_id` key missing or invalid in `room_deleted` payload: " + data);
             return;
         }
+        if (!this.currentUser) {
+            this.instance.logger.verbose('currentUser property not set on UserSubscription');
+            return;
+        }
         var deletedRoom = this.currentUser.roomStore.remove(roomId);
         if (deletedRoom) {
-            if (this.delegate.roomDeleted) {
+            if (this.delegate && this.delegate.roomDeleted) {
                 this.delegate.roomDeleted(deletedRoom);
             }
             this.instance.logger.verbose("Room deleted: " + deletedRoom.name);
@@ -3319,13 +3351,21 @@ var UserSubscription = (function () {
             this.instance.logger.verbose("`user_id` key missing or invalid in `user_joined` payload: " + data);
             return;
         }
+        if (!this.currentUser) {
+            this.instance.logger.verbose('currentUser property not set on UserSubscription');
+            return;
+        }
         this.currentUser.roomStore.room(roomId, function (room) {
+            if (!_this.currentUser) {
+                _this.instance.logger.verbose('currentUser property not set on UserSubscription');
+                return;
+            }
             _this.currentUser.userStore.user(userId, function (user) {
                 var addedOrMergedUser = room.userStore.addOrMerge(user);
                 if (room.userIds.indexOf(addedOrMergedUser.id) === -1) {
                     room.userIds.push(addedOrMergedUser.id);
                 }
-                if (_this.delegate.userJoinedRoom) {
+                if (_this.delegate && _this.delegate.userJoinedRoom) {
                     _this.delegate.userJoinedRoom(room, addedOrMergedUser);
                 }
                 if (room.subscription === undefined) {
@@ -3359,14 +3399,22 @@ var UserSubscription = (function () {
             this.instance.logger.verbose("`user_id` key missing or invalid in `user_left` payload: " + data);
             return;
         }
+        if (!this.currentUser) {
+            this.instance.logger.verbose('currentUser property not set on UserSubscription');
+            return;
+        }
         this.currentUser.roomStore.room(roomId, function (room) {
+            if (!_this.currentUser) {
+                _this.instance.logger.verbose('currentUser property not set on UserSubscription');
+                return;
+            }
             _this.currentUser.userStore.user(userId, function (user) {
                 var roomUserIdIndex = room.userIds.indexOf(user.id);
                 if (roomUserIdIndex > -1) {
                     room.userIds.splice(roomUserIdIndex, 1);
                 }
                 room.userStore.remove(user.id);
-                if (_this.delegate.userLeftRoom) {
+                if (_this.delegate && _this.delegate.userLeftRoom) {
                     _this.delegate.userLeftRoom(room, user);
                 }
                 if (room.subscription === undefined) {
@@ -3395,9 +3443,17 @@ var UserSubscription = (function () {
             this.instance.logger.verbose("`room_id` key missing or invalid in `typing_start` payload: " + data);
             return;
         }
+        if (!this.currentUser) {
+            this.instance.logger.verbose('currentUser property not set on UserSubscription');
+            return;
+        }
         this.currentUser.roomStore.room(roomId, function (room) {
+            if (!_this.currentUser) {
+                _this.instance.logger.verbose('currentUser property not set on UserSubscription');
+                return;
+            }
             _this.currentUser.userStore.user(userId, function (user) {
-                if (_this.delegate.userStartedTyping) {
+                if (_this.delegate && _this.delegate.userStartedTyping) {
                     _this.delegate.userStartedTyping(room, user);
                 }
                 if (room.subscription === undefined) {
@@ -3426,9 +3482,17 @@ var UserSubscription = (function () {
             this.instance.logger.verbose("`room_id` key missing or invalid in `typing_stop` payload: " + data);
             return;
         }
+        if (!this.currentUser) {
+            this.instance.logger.verbose('currentUser property not set on UserSubscription');
+            return;
+        }
         this.currentUser.roomStore.room(roomId, function (room) {
+            if (!_this.currentUser) {
+                _this.instance.logger.verbose('currentUser property not set on UserSubscription');
+                return;
+            }
             _this.currentUser.userStore.user(userId, function (user) {
-                if (_this.delegate.userStoppedTyping) {
+                if (_this.delegate && _this.delegate.userStoppedTyping) {
                     _this.delegate.userStoppedTyping(room, user);
                 }
                 if (room.subscription === undefined) {
@@ -3480,7 +3544,10 @@ var TokenProvider = (function () {
     }
     Object.defineProperty(TokenProvider.prototype, "cacheIsStale", {
         get: function () {
-            return (!this.cachedAccessToken || this.unixTimeNow() > this.cachedTokenExpiresAt);
+            if (this.cachedAccessToken && this.cachedTokenExpiresAt) {
+                return (this.unixTimeNow() > this.cachedTokenExpiresAt);
+            }
+            return true;
         },
         enumerable: true,
         configurable: true
@@ -3506,14 +3573,16 @@ var TokenProvider = (function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             var url;
+            var authRequestQueryParams = (_this.authContext || {}).queryParams || {};
             if (_this.userId === undefined) {
-                url = utils_1.mergeQueryParamsIntoUrl(_this.url, _this.authContext.queryParams);
+                url = utils_1.mergeQueryParamsIntoUrl(_this.url, authRequestQueryParams);
             }
             else {
-                var authContextWithUserId = __assign({ user_id: _this.userId }, _this.authContext.queryParams);
+                var authContextWithUserId = __assign({ user_id: _this.userId }, authRequestQueryParams);
                 url = utils_1.mergeQueryParamsIntoUrl(_this.url, authContextWithUserId);
             }
-            var headers = __assign((_a = {}, _a['Content-Type'] = 'application/x-www-form-urlencoded', _a), _this.authContext.headers);
+            var authRequestHeaders = (_this.authContext || {}).headers || {};
+            var headers = __assign((_a = {}, _a['Content-Type'] = 'application/x-www-form-urlencoded', _a), authRequestHeaders);
             var body = utils_1.urlEncode({ grant_type: 'client_credentials' });
             pusher_platform_1.sendRawRequest({
                 body: body,

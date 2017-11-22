@@ -17,7 +17,7 @@ export default class Room {
     createdByUserId: string;
     createdAt: string;
     updatedAt: string;
-    deletedAt: string;
+    deletedAt?: string;
     userIds: string[];
     userStore: RoomUserStore;
     subscription?: RoomSubscription;

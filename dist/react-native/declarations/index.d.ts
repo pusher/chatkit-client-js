@@ -3,7 +3,7 @@ import ChatManager from './chat_manager';
 import TokenProvider from './token_provider';
 export { BaseClient, ChatManager, TokenProvider };
 declare const _default: {
-    BaseClient: any;
+    BaseClient: typeof BaseClient;
     ChatManager: typeof ChatManager;
     TokenProvider: typeof TokenProvider;
 };

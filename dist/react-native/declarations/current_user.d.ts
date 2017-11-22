@@ -46,7 +46,7 @@ export default class CurrentUser {
     readonly rooms: Room[];
     constructor(options: CurrentUserOptions);
     updateWithPropertiesOf(currentUser: CurrentUser): void;
-    setupPresenceSubscription(delegate: ChatManagerDelegate): void;
+    setupPresenceSubscription(delegate?: ChatManagerDelegate): void;
     createRoom(options: CreateRoomOptions, onSuccess: (room: Room) => void, onError: (error: any) => void): void;
     populateRoomUserStore(room: Room): void;
     addUser(id: string, roomId: number, onSuccess: () => void, onError: (error: any) => void): void;

@@ -36,7 +36,7 @@ export default class ChatManager {
 
   connect(options: ConnectOptions) {
     this.userSubscription = new UserSubscription({
-      connectCompletionHandler: (currentUser, error) => {
+      connectCompletionHandler: (currentUser?: CurrentUser, error?: any) => {
         if (currentUser) {
           options.onSuccess(currentUser);
         } else {

@@ -11,7 +11,7 @@ export interface PresenceSubscriptionOptions {
 export default class PresenceSubscription {
     userStore: GlobalUserStore;
     roomStore: RoomStore;
-    delegate: ChatManagerDelegate;
+    delegate?: ChatManagerDelegate;
     private instance;
     constructor(options: PresenceSubscriptionOptions);
     handleEvent(event: SubscriptionEvent): void;

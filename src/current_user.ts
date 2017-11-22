@@ -82,7 +82,7 @@ export default class CurrentUser {
     this.customData = currentUser.customData;
   }
 
-  setupPresenceSubscription(delegate: ChatManagerDelegate) {
+  setupPresenceSubscription(delegate?: ChatManagerDelegate) {
     this.presenceSubscription = new PresenceSubscription({
       delegate,
       instance: this.instance,
@@ -105,7 +105,7 @@ export default class CurrentUser {
     onSuccess: (room: Room) => void,
     onError: (error: any) => void,
   ) {
-    const roomData = {
+    const roomData: any = {
       created_by_id: this.id,
       name: options.name,
       private: options.private || false,
@@ -122,14 +122,14 @@ export default class CurrentUser {
         method: 'POST',
         path: '/rooms',
       })
-      .then(res => {
+      .then((res: any) => {
         const roomPayload = JSON.parse(res);
         const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
         const addedOrMergedRoom = this.roomStore.addOrMerge(room);
         this.populateRoomUserStore(addedOrMergedRoom);
         onSuccess(addedOrMergedRoom);
       })
-      .catch(error => {
+      .catch((error: any) => {
         this.instance.logger.verbose(`Error creating room: ${error}`);
         onError(error);
       });
@@ -217,7 +217,7 @@ export default class CurrentUser {
       return;
     }
 
-    const roomPayload = {};
+    const roomPayload: any = {};
     if (options.name) {
       // tslint:disable-next-line:no-string-literal
       roomPayload['name'] = options.name;
@@ -233,10 +233,10 @@ export default class CurrentUser {
         method: 'PUT',
         path: `/rooms/${roomId}`,
       })
-      .then(res => {
+      .then((res: any) => {
         onSuccess();
       })
-      .catch(error => {
+      .catch((error: any) => {
         this.instance.logger.verbose(`Error updating room ${roomId}: ${error}`);
         onError(error);
       });
@@ -252,10 +252,10 @@ export default class CurrentUser {
         method: 'DELETE',
         path: `/rooms/${roomId}`,
       })
-      .then(res => {
+      .then((res: any) => {
         onSuccess();
       })
-      .catch(error => {
+      .catch((error: any) => {
         this.instance.logger.verbose(`Error deleting room ${roomId}: ${error}`);
         onError(error);
       });
@@ -278,10 +278,10 @@ export default class CurrentUser {
         method: 'PUT',
         path: `/rooms/${roomId}/users/${membershipChange}`,
       })
-      .then(res => {
+      .then((res: any) => {
         onSuccess();
       })
-      .catch(error => {
+      .catch((error: any) => {
         this.instance.logger.verbose(
           `Error when attempting to ${membershipChange} users from room ${
             roomId
@@ -301,7 +301,7 @@ export default class CurrentUser {
         method: 'POST',
         path: `/users/${this.pathFriendlyId}/rooms/${roomId}/join`,
       })
-      .then(res => {
+      .then((res: any) => {
         const roomPayload = JSON.parse(res);
         const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
         const addedOrMergedRoom = this.roomStore.addOrMerge(room);
@@ -309,7 +309,7 @@ export default class CurrentUser {
         this.populateRoomUserStore(addedOrMergedRoom);
         onSuccess(addedOrMergedRoom);
       })
-      .catch(error => {
+      .catch((error: any) => {
         this.instance.logger.verbose(`Error joining room ${roomId}: ${error}`);
         onError(error);
       });
@@ -325,11 +325,11 @@ export default class CurrentUser {
         method: 'POST',
         path: `/users/${this.pathFriendlyId}/rooms/${roomId}/leave`,
       })
-      .then(res => {
+      .then((res: any) => {
         // TODO: Remove room from roomStore or is that handle by UserSubscription?
         onSuccess();
       })
-      .catch(error => {
+      .catch((error: any) => {
         this.instance.logger.verbose(`Error leaving room ${roomId}: ${error}`);
         onError(error);
       });
@@ -410,13 +410,13 @@ export default class CurrentUser {
         method: 'POST',
         path: `/rooms/${room.id}/messages`,
       })
-      .then(res => {
+      .then((res: any) => {
         const messageIdPayload = JSON.parse(res);
         const messageId = messageIdPayload.message_id;
         // TODO: Error handling
         onSuccess(messageId);
       })
-      .catch(error => {
+      .catch((error: any) => {
         this.instance.logger.verbose(
           `Error adding message to room ${room.name}: ${error}`,
         );
@@ -473,14 +473,14 @@ export default class CurrentUser {
         method: 'GET',
         path: `/rooms/${room.id}/messages`,
       })
-      .then(res => {
+      .then((res: any) => {
         const messagesPayload = JSON.parse(res);
 
         const messages = new Array<Message>();
         const basicMessages = new Array<BasicMessage>();
 
         // TODO: Error handling
-        const messageUserIds = messagesPayload.map(messagePayload => {
+        const messageUserIds = messagesPayload.map((messagePayload: any) => {
           const basicMessage = PayloadDeserializer.createBasicMessageFromPayload(
             messagePayload,
           );
@@ -553,7 +553,7 @@ export default class CurrentUser {
           },
         );
       })
-      .catch(error => {
+      .catch((error: any) => {
         this.instance.logger.verbose(
           `Error fetching messages froom room ${room.name}: ${error}`,
         );
@@ -571,15 +571,15 @@ export default class CurrentUser {
         method: 'GET',
         path,
       })
-      .then(res => {
+      .then((res: any) => {
         const roomsPayload = JSON.parse(res);
-        const rooms = roomsPayload.map(roomPayload => {
+        const rooms = roomsPayload.map((roomPayload: any) => {
           return PayloadDeserializer.createRoomFromPayload(roomPayload);
         });
         // TODO: filter if undefined returned?
         onSuccess(rooms);
       })
-      .catch(error => {
+      .catch((error: any) => {
         this.instance.logger.verbose(
           `Error when getting instance rooms: ${error}`,
         );
@@ -600,10 +600,10 @@ export default class CurrentUser {
         method: 'POST',
         path: `/rooms/${roomId}/events`,
       })
-      .then(res => {
+      .then((res: any) => {
         onSuccess();
       })
-      .catch(error => {
+      .catch((error: any) => {
         this.instance.logger.verbose(
           `Error sending typing state change in room ${roomId}: ${error}`,
         );

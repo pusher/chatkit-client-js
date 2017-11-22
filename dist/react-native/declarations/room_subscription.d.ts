@@ -7,7 +7,7 @@ export interface RoomSubscriptionOptions {
     logger: Logger;
 }
 export default class RoomSubscription {
-    delegate: RoomDelegate;
+    delegate?: RoomDelegate;
     basicMessageEnricher: BasicMessageEnricher;
     logger: Logger;
     constructor(options: RoomSubscriptionOptions);

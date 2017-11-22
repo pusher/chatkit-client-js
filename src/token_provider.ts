@@ -36,9 +36,12 @@ export default class TokenProvider {
   }
 
   get cacheIsStale() {
-    return (
-      !this.cachedAccessToken || this.unixTimeNow() > this.cachedTokenExpiresAt
-    );
+    if (this.cachedAccessToken && this.cachedTokenExpiresAt) {
+      return (
+        this.unixTimeNow() > this.cachedTokenExpiresAt
+      );
+    }
+    return true;
   }
 
   fetchToken(tokenParams?: any): Promise<string> {
@@ -63,19 +66,23 @@ export default class TokenProvider {
     return new Promise<any>((resolve, reject) => {
       let url;
 
+      const authRequestQueryParams = (this.authContext || {}).queryParams || {};
+
       if (this.userId === undefined) {
-        url = mergeQueryParamsIntoUrl(this.url, this.authContext.queryParams);
+        url = mergeQueryParamsIntoUrl(this.url, authRequestQueryParams);
       } else {
         const authContextWithUserId = {
           user_id: this.userId,
-          ...this.authContext.queryParams,
+          ...authRequestQueryParams,
         };
         url = mergeQueryParamsIntoUrl(this.url, authContextWithUserId);
       }
 
+      const authRequestHeaders = (this.authContext || {}).headers || {};
+
       const headers = {
         ['Content-Type']: 'application/x-www-form-urlencoded',
-        ...this.authContext.headers,
+        ...authRequestHeaders,
       };
 
       const body = urlEncode({ grant_type: 'client_credentials' });
@@ -86,10 +93,10 @@ export default class TokenProvider {
         method: 'POST',
         url,
       })
-        .then(res => {
+        .then((res: any) => {
           resolve(JSON.parse(res));
         })
-        .catch(error => {
+        .catch((error: any) => {
           reject(
             new Error(`Couldn't fetch token from ${this.url}; error: ${error}`),
           );

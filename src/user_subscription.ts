@@ -18,8 +18,8 @@ export interface UserSubscriptionOptions {
 
 export default class UserSubscription {
   userStore: GlobalUserStore;
-  delegate: ChatManagerDelegate;
-  connectCompletionHandlers: [(CurrentUser?, Error?) => void];
+  delegate?: ChatManagerDelegate;
+  connectCompletionHandlers: [(currentUser?: CurrentUser, error?: any) => void];
   currentUser?: CurrentUser;
 
   private instance: Instance;
@@ -118,13 +118,18 @@ export default class UserSubscription {
     const combinedRoomUserIds = new Set<string>([]);
     const roomsFromConnection: Room[] = [];
 
-    roomsPayload.forEach(roomPayload => {
+    roomsPayload.forEach((roomPayload: any) => {
       const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
 
       room.userIds.forEach(userId => {
         combinedRoomUserIds.add(userId);
       });
       roomsFromConnection.push(room);
+
+      if (!this.currentUser) {
+        this.instance.logger.verbose('currentUser property not set on UserSubscription');
+        return;
+      }
 
       this.currentUser.roomStore.addOrMerge(room);
     });
@@ -152,6 +157,11 @@ export default class UserSubscription {
       userIdsArray,
       users => {
         const combinedRoomUsersPromises = new Array<Promise<any>>();
+
+        if (!this.currentUser) {
+          this.instance.logger.verbose('currentUser property not set on UserSubscription');
+          return;
+        }
 
         this.currentUser.roomStore.rooms.forEach(room => {
           const roomPromise = new Promise<any>((roomResolve, roomReject) => {
@@ -203,6 +213,11 @@ export default class UserSubscription {
         });
 
         allPromisesSettled(combinedRoomUsersPromises).then(() => {
+          if (!this.currentUser) {
+            this.instance.logger.verbose('currentUser property not set on UserSubscription');
+            return;
+          }
+
           this.currentUser.setupPresenceSubscription(this.delegate);
         });
       },
@@ -252,6 +267,11 @@ export default class UserSubscription {
       this.instance.logger.verbose(
         `\`room\` key missing or invalid in \`added_to_room\` payload: ${data}`,
       );
+      return;
+    }
+
+    if (!this.currentUser) {
+      this.instance.logger.verbose('currentUser property not set on UserSubscription');
       return;
     }
 
@@ -320,10 +340,15 @@ export default class UserSubscription {
       return;
     }
 
+    if (!this.currentUser) {
+      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      return;
+    }
+
     const roomRemoved = this.currentUser.roomStore.remove(roomId);
 
     if (roomRemoved) {
-      if (this.delegate.removedFromRoom) {
+      if (this.delegate && this.delegate.removedFromRoom) {
         this.delegate.removedFromRoom(roomRemoved);
       }
       this.instance.logger.verbose(`Removed from room: ${roomRemoved.name}`);
@@ -347,6 +372,11 @@ export default class UserSubscription {
       return;
     }
 
+    if (!this.currentUser) {
+      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      return;
+    }
+
     const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
 
     this.currentUser.roomStore.room(
@@ -354,7 +384,7 @@ export default class UserSubscription {
       roomToUpdate => {
         roomToUpdate.updateWithPropertiesOfRoom(room);
 
-        if (this.delegate.roomUpdated) {
+        if (this.delegate && this.delegate.roomUpdated) {
           this.delegate.roomUpdated(roomToUpdate);
         }
 
@@ -378,10 +408,15 @@ export default class UserSubscription {
       return;
     }
 
+    if (!this.currentUser) {
+      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      return;
+    }
+
     const deletedRoom = this.currentUser.roomStore.remove(roomId);
 
     if (deletedRoom) {
-      if (this.delegate.roomDeleted) {
+      if (this.delegate && this.delegate.roomDeleted) {
         this.delegate.roomDeleted(deletedRoom);
       }
 
@@ -419,9 +454,19 @@ export default class UserSubscription {
       return;
     }
 
+    if (!this.currentUser) {
+      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      return;
+    }
+
     this.currentUser.roomStore.room(
       roomId,
       room => {
+        if (!this.currentUser) {
+          this.instance.logger.verbose('currentUser property not set on UserSubscription');
+          return;
+        }
+
         this.currentUser.userStore.user(
           userId,
           user => {
@@ -430,7 +475,7 @@ export default class UserSubscription {
               room.userIds.push(addedOrMergedUser.id);
             }
 
-            if (this.delegate.userJoinedRoom) {
+            if (this.delegate && this.delegate.userJoinedRoom) {
               this.delegate.userJoinedRoom(room, addedOrMergedUser);
             }
 
@@ -494,9 +539,19 @@ export default class UserSubscription {
       return;
     }
 
+    if (!this.currentUser) {
+      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      return;
+    }
+
     this.currentUser.roomStore.room(
       roomId,
       room => {
+        if (!this.currentUser) {
+          this.instance.logger.verbose('currentUser property not set on UserSubscription');
+          return;
+        }
+
         this.currentUser.userStore.user(
           userId,
           user => {
@@ -508,7 +563,7 @@ export default class UserSubscription {
 
             room.userStore.remove(user.id);
 
-            if (this.delegate.userLeftRoom) {
+            if (this.delegate && this.delegate.userLeftRoom) {
               this.delegate.userLeftRoom(room, user);
             }
 
@@ -568,13 +623,23 @@ export default class UserSubscription {
       return;
     }
 
+    if (!this.currentUser) {
+      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      return;
+    }
+
     this.currentUser.roomStore.room(
       roomId,
       room => {
+        if (!this.currentUser) {
+          this.instance.logger.verbose('currentUser property not set on UserSubscription');
+          return;
+        }
+
         this.currentUser.userStore.user(
           userId,
           user => {
-            if (this.delegate.userStartedTyping) {
+            if (this.delegate && this.delegate.userStartedTyping) {
               this.delegate.userStartedTyping(room, user);
             }
 
@@ -626,13 +691,23 @@ export default class UserSubscription {
       return;
     }
 
+    if (!this.currentUser) {
+      this.instance.logger.verbose('currentUser property not set on UserSubscription');
+      return;
+    }
+
     this.currentUser.roomStore.room(
       roomId,
       room => {
+        if (!this.currentUser) {
+          this.instance.logger.verbose('currentUser property not set on UserSubscription');
+          return;
+        }
+
         this.currentUser.userStore.user(
           userId,
           user => {
-            if (this.delegate.userStoppedTyping) {
+            if (this.delegate && this.delegate.userStoppedTyping) {
               this.delegate.userStoppedTyping(room, user);
             }
 

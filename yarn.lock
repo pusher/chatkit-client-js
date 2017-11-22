@@ -2082,9 +2082,9 @@ punycode@^1.2.4, punycode@^1.4.1:
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-1.4.1.tgz#c0d5a63b2718800ad8e1eb0fa5269c84dd41845e"
 
-pusher-platform@^0.12.1:
-  version "0.12.1"
-  resolved "https://registry.yarnpkg.com/pusher-platform/-/pusher-platform-0.12.1.tgz#be3c285d44da5b7d1fd19cb04c1c9e6761d53327"
+pusher-platform@^0.12.2:
+  version "0.12.2"
+  resolved "https://registry.yarnpkg.com/pusher-platform/-/pusher-platform-0.12.2.tgz#afdb15cf048c5f301f0fd24af8e0d51a3d68ec26"
 
 qs@~6.4.0:
   version "6.4.0"

@@ -29,14 +29,14 @@ export default class GlobalUserStore {
     return this.userStoreCore.remove(id);
   }
 
-  user(id: string, onSuccess: (User) => void, onError: (Error) => void) {
+  user(id: string, onSuccess: (user: User) => void, onError: (error: any) => void) {
     this.findOrGetUser(id, onSuccess, onError);
   }
 
   findOrGetUser(
     id: string,
-    onSuccess: (User) => void,
-    onError: (Error) => void,
+    onSuccess: (user: User) => void,
+    onError: (error: any) => void,
   ) {
     const user = this.userStoreCore.find(id);
     if (user) {
@@ -47,19 +47,19 @@ export default class GlobalUserStore {
     this.getUser(id, onSuccess, onError);
   }
 
-  getUser(id: string, onSuccess: (User) => void, onError: (Error) => void) {
+  getUser(id: string, onSuccess: (user: User) => void, onError: (error: any) => void) {
     this.instance
       .request({
         method: 'GET',
         path: `/users/${id}`,
       })
-      .then(res => {
+      .then((res: any) => {
         const userPayload = JSON.parse(res);
         const user = PayloadDeserializer.createUserFromPayload(userPayload);
         const userToReturn = this.addOrMerge(user);
         onSuccess(userToReturn);
       })
-      .catch(error => {
+      .catch((error: any) => {
         this.instance.logger.verbose(
           `Error fetching user information: ${error}`,
         );
@@ -130,11 +130,11 @@ export default class GlobalUserStore {
         method: 'GET',
         path: `/users_by_ids${qs}`,
       })
-      .then(res => {
+      .then((res: any) => {
         const usersPayload = JSON.parse(res);
 
         // TODO: Make it more like flatMap, or handle errors being thrown?
-        const users = usersPayload.map(userPayload => {
+        const users = usersPayload.map((userPayload: any) => {
           const user = PayloadDeserializer.createUserFromPayload(userPayload);
           const addedOrUpdatedUser = this.userStoreCore.addOrMerge(user);
           return addedOrUpdatedUser;
@@ -142,7 +142,7 @@ export default class GlobalUserStore {
 
         onSuccess(users);
       })
-      .catch(error => {
+      .catch((error: any) => {
         this.instance.logger.verbose(
           `Error fetching user information: ${error}`,
         );

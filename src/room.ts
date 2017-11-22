@@ -19,7 +19,7 @@ export default class Room {
   createdByUserId: string;
   createdAt: string;
   updatedAt: string;
-  deletedAt: string;
+  deletedAt?: string;
   userIds: string[];
 
   userStore: RoomUserStore;
@@ -33,7 +33,7 @@ export default class Room {
     this.createdAt = options.createdAt;
     this.updatedAt = options.updatedAt;
     this.deletedAt = options.deletedAt;
-    this.userIds = options.userIds;
+    this.userIds = options.userIds || [];
     this.userStore = new RoomUserStore();
   }
 

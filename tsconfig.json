@@ -2,15 +2,16 @@
   "compilerOptions": {
     "declaration": true,
     "declarationDir": "declarations",
-    "lib": ["ES6"],
+    "lib": ["ES6", "webworker"],
     "module": "commonjs",
     "removeComments": true,
     "sourceMap": true,
+    "strict": true,
     "target": "ES5"
-    },
-    "exclude": [
-      "node_modules",
-      "target",
-      "test"
-    ]
+  },
+  "exclude": [
+    "node_modules",
+    "target",
+    "test"
+  ]
 }

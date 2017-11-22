@@ -61,44 +61,36 @@ export default class TokenProvider {
   }
 
   makeAuthRequest(): Promise<any> {
-    return new Promise<any>((resolve, reject) => {
-      let url;
+    let url;
 
-      const authRequestQueryParams = (this.authContext || {}).queryParams || {};
+    const authRequestQueryParams = (this.authContext || {}).queryParams || {};
 
-      if (this.userId === undefined) {
-        url = mergeQueryParamsIntoUrl(this.url, authRequestQueryParams);
-      } else {
-        const authContextWithUserId = {
-          user_id: this.userId,
-          ...authRequestQueryParams,
-        };
-        url = mergeQueryParamsIntoUrl(this.url, authContextWithUserId);
-      }
-
-      const authRequestHeaders = (this.authContext || {}).headers || {};
-
-      const headers = {
-        ['Content-Type']: 'application/x-www-form-urlencoded',
-        ...authRequestHeaders,
+    if (this.userId === undefined) {
+      url = mergeQueryParamsIntoUrl(this.url, authRequestQueryParams);
+    } else {
+      const authContextWithUserId = {
+        user_id: this.userId,
+        ...authRequestQueryParams,
       };
+      url = mergeQueryParamsIntoUrl(this.url, authContextWithUserId);
+    }
 
-      const body = urlEncode({ grant_type: 'client_credentials' });
+    const authRequestHeaders = (this.authContext || {}).headers || {};
 
-      sendRawRequest({
-        body,
-        headers,
-        method: 'POST',
-        url,
-      })
-        .then((res: any) => {
-          resolve(JSON.parse(res));
-        })
-        .catch((error: any) => {
-          reject(
-            new Error(`Couldn't fetch token from ${this.url}; error: ${error}`),
-          );
-        });
+    const headers = {
+      ['Content-Type']: 'application/x-www-form-urlencoded',
+      ...authRequestHeaders,
+    };
+
+    const body = urlEncode({ grant_type: 'client_credentials' });
+
+    return sendRawRequest({
+      body,
+      headers,
+      method: 'POST',
+      url,
+    }).then((res: any) => {
+      return JSON.parse(res);
     });
   }
 

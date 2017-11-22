@@ -50,6 +50,7 @@ export default class ChatManager {
 
     this.instance.subscribeNonResuming({
       listeners: {
+        onError: options.onError,
         onEvent: this.userSubscription.handleEvent.bind(this.userSubscription),
       },
       path: '/users',

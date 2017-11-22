@@ -1201,8 +1201,9 @@ var TokenProvidingSubscription = (function () {
             });
         })
             .catch(function (error) {
-            _this.logger.debug("TokenProvidingSubscription: error when fetching token: " + error);
+            _this.logger.debug('TokenProvidingSubscription: error when fetching token:', error);
             _this.state = new InactiveState(_this.logger);
+            _this.listeners.onError(error);
         });
     };
     TokenProvidingSubscription.prototype.isTokenExpiredError = function (error) {
@@ -1228,7 +1229,7 @@ var ActiveState = (function () {
                 listeners.onEnd(error);
             },
             onError: function (error) {
-                _this.logger.verbose("TokenProvidingSubscription: subscription errored: " + error);
+                _this.logger.verbose('TokenProvidingSubscription: subscription errored:', error);
                 listeners.onError(error);
             },
             onEvent: listeners.onEvent,
@@ -2092,6 +2093,7 @@ var ChatManager = (function () {
         });
         this.instance.subscribeNonResuming({
             listeners: {
+                onError: options.onError,
                 onEvent: this.userSubscription.handleEvent.bind(this.userSubscription),
             },
             path: '/users',
@@ -3567,34 +3569,27 @@ var TokenProvider = (function () {
         this.cachedTokenExpiresAt = undefined;
     };
     TokenProvider.prototype.makeAuthRequest = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            var url;
-            var authRequestQueryParams = (_this.authContext || {}).queryParams || {};
-            if (_this.userId === undefined) {
-                url = utils_1.mergeQueryParamsIntoUrl(_this.url, authRequestQueryParams);
-            }
-            else {
-                var authContextWithUserId = __assign({ user_id: _this.userId }, authRequestQueryParams);
-                url = utils_1.mergeQueryParamsIntoUrl(_this.url, authContextWithUserId);
-            }
-            var authRequestHeaders = (_this.authContext || {}).headers || {};
-            var headers = __assign((_a = {}, _a['Content-Type'] = 'application/x-www-form-urlencoded', _a), authRequestHeaders);
-            var body = utils_1.urlEncode({ grant_type: 'client_credentials' });
-            pusher_platform_1.sendRawRequest({
-                body: body,
-                headers: headers,
-                method: 'POST',
-                url: url,
-            })
-                .then(function (res) {
-                resolve(JSON.parse(res));
-            })
-                .catch(function (error) {
-                reject(new Error("Couldn't fetch token from " + _this.url + "; error: " + error));
-            });
-            var _a;
+        var url;
+        var authRequestQueryParams = (this.authContext || {}).queryParams || {};
+        if (this.userId === undefined) {
+            url = utils_1.mergeQueryParamsIntoUrl(this.url, authRequestQueryParams);
+        }
+        else {
+            var authContextWithUserId = __assign({ user_id: this.userId }, authRequestQueryParams);
+            url = utils_1.mergeQueryParamsIntoUrl(this.url, authContextWithUserId);
+        }
+        var authRequestHeaders = (this.authContext || {}).headers || {};
+        var headers = __assign((_a = {}, _a['Content-Type'] = 'application/x-www-form-urlencoded', _a), authRequestHeaders);
+        var body = utils_1.urlEncode({ grant_type: 'client_credentials' });
+        return pusher_platform_1.sendRawRequest({
+            body: body,
+            headers: headers,
+            method: 'POST',
+            url: url,
+        }).then(function (res) {
+            return JSON.parse(res);
         });
+        var _a;
     };
     TokenProvider.prototype.cache = function (accessToken, expiresIn) {
         this.cachedAccessToken = accessToken;

@@ -52,7 +52,7 @@ export default class RoomSubscription {
         }
       },
       error => {
-        this.logger.debug(`Error receiving new message: ${error}`);
+        this.logger.debug('Error receiving new message:', error);
       },
     );
   }

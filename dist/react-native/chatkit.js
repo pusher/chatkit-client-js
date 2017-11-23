@@ -2150,7 +2150,7 @@ var GlobalUserStore = (function () {
             onSuccess(userToReturn);
         })
             .catch(function (error) {
-            _this.instance.logger.verbose("Error fetching user information: " + error);
+            _this.instance.logger.verbose('Error fetching user information:', error);
             onError(error);
         });
     };
@@ -2166,7 +2166,7 @@ var GlobalUserStore = (function () {
                     user.updatePresenceInfoIfAppropriate(payload);
                     resolve();
                 }, function (error) {
-                    _this.instance.logger.verbose("Error fetching user information: " + error);
+                    _this.instance.logger.verbose('Error fetching user information:', error);
                     reject();
                 });
             });
@@ -2200,7 +2200,7 @@ var GlobalUserStore = (function () {
             onSuccess(users);
         })
             .catch(function (error) {
-            _this.instance.logger.verbose("Error fetching user information: " + error);
+            _this.instance.logger.verbose('Error fetching user information:', error);
             onError(error);
         });
     };
@@ -2290,7 +2290,7 @@ var CurrentUser = (function () {
             onSuccess(addedOrMergedRoom);
         })
             .catch(function (error) {
-            _this.instance.logger.verbose("Error creating room: " + error);
+            _this.instance.logger.verbose('Error creating room:', error);
             onError(error);
         });
     };
@@ -2351,7 +2351,7 @@ var CurrentUser = (function () {
             onSuccess();
         })
             .catch(function (error) {
-            _this.instance.logger.verbose("Error updating room " + roomId + ": " + error);
+            _this.instance.logger.verbose("Error updating room " + roomId + ":", error);
             onError(error);
         });
     };
@@ -2366,7 +2366,7 @@ var CurrentUser = (function () {
             onSuccess();
         })
             .catch(function (error) {
-            _this.instance.logger.verbose("Error deleting room " + roomId + ": " + error);
+            _this.instance.logger.verbose("Error deleting room " + roomId + ":", error);
             onError(error);
         });
     };
@@ -2385,7 +2385,7 @@ var CurrentUser = (function () {
             onSuccess();
         })
             .catch(function (error) {
-            _this.instance.logger.verbose("Error when attempting to " + membershipChange + " users from room " + roomId + ": " + error);
+            _this.instance.logger.verbose("Error when attempting to " + membershipChange + " users from room " + roomId + ":", error);
             onError(error);
         });
     };
@@ -2404,7 +2404,7 @@ var CurrentUser = (function () {
             onSuccess(addedOrMergedRoom);
         })
             .catch(function (error) {
-            _this.instance.logger.verbose("Error joining room " + roomId + ": " + error);
+            _this.instance.logger.verbose("Error joining room " + roomId + ":", error);
             onError(error);
         });
     };
@@ -2419,7 +2419,7 @@ var CurrentUser = (function () {
             onSuccess();
         })
             .catch(function (error) {
-            _this.instance.logger.verbose("Error leaving room " + roomId + ": " + error);
+            _this.instance.logger.verbose("Error leaving room " + roomId + ":", error);
             onError(error);
         });
     };
@@ -2468,7 +2468,7 @@ var CurrentUser = (function () {
             onSuccess(messageId);
         })
             .catch(function (error) {
-            _this.instance.logger.verbose("Error adding message to room " + room.name + ": " + error);
+            _this.instance.logger.verbose("Error adding message to room " + room.name + ":", error);
             onError(error);
         });
     };
@@ -2547,11 +2547,11 @@ var CurrentUser = (function () {
                     onSuccess(messages.sort(function (msgOne, msgTwo) { return msgOne.id - msgTwo.id; }));
                 });
             }, function (error) {
-                _this.instance.logger.verbose("Error fetching users with ids " + userIdsToFetch + ": " + error);
+                _this.instance.logger.verbose("Error fetching users with ids " + userIdsToFetch + ":", error);
             });
         })
             .catch(function (error) {
-            _this.instance.logger.verbose("Error fetching messages froom room " + room.name + ": " + error);
+            _this.instance.logger.verbose("Error fetching messages froom room " + room.name + ":", error);
             onError(error);
         });
     };
@@ -2570,7 +2570,7 @@ var CurrentUser = (function () {
             onSuccess(rooms);
         })
             .catch(function (error) {
-            _this.instance.logger.verbose("Error when getting instance rooms: " + error);
+            _this.instance.logger.verbose('Error when getting instance rooms:', error);
             onError(error);
         });
     };
@@ -2586,7 +2586,7 @@ var CurrentUser = (function () {
             onSuccess();
         })
             .catch(function (error) {
-            _this.instance.logger.verbose("Error sending typing state change in room " + roomId + ": " + error);
+            _this.instance.logger.verbose("Error sending typing state change in room " + roomId + ":", error);
             onError(error);
         });
     };
@@ -2653,7 +2653,7 @@ var BasicMessageEnricher = (function () {
                 _this.userIdsBeingRetrieved.splice(indexToRemove, 1);
             }
         }, function (error) {
-            _this.logger.debug("Unable to find user with id " + basicMessage.senderId + ", associated with message " + basicMessageId + ". Error: " + error);
+            _this.logger.debug("Unable to find user with id " + basicMessage.senderId + ", associated with message " + basicMessageId + ". Error:", error);
             _this.callCompletionHandlersForEnrichedMessagesWithIdsLessThanOrEqualTo(basicMessageId, error);
         });
     };
@@ -2826,7 +2826,7 @@ var PresenceSubscription = (function () {
                 }
             });
         }, function (error) {
-            _this.instance.logger.debug("Error fetching user information for user with id " + presencePayload.userId + ": " + error);
+            _this.instance.logger.debug("Error fetching user information for user with id " + presencePayload.userId + ":", error);
             return;
         });
     };
@@ -2925,7 +2925,7 @@ var RoomStore = (function () {
             onSuccess(room);
         })
             .catch(function (error) {
-            _this.instance.logger.debug("Error fetching room " + id + ": " + error);
+            _this.instance.logger.debug("Error fetching room " + id + ":", error);
             onError(error);
         });
     };
@@ -2965,7 +2965,7 @@ var RoomSubscription = (function () {
                 _this.delegate.newMessage(message);
             }
         }, function (error) {
-            _this.logger.debug("Error receiving new message: " + error);
+            _this.logger.debug('Error receiving new message:', error);
         });
     };
     return RoomSubscription;
@@ -3313,7 +3313,7 @@ var UserSubscription = (function () {
             }
             _this.instance.logger.verbose("Room updated: " + room.name);
         }, function (error) {
-            _this.instance.logger.debug("Error updating room " + room.id + ": " + error);
+            _this.instance.logger.debug("Error updating room " + room.id + ":", error);
         });
     };
     UserSubscription.prototype.parseRoomDeletedPayload = function (eventName, data) {
@@ -3378,7 +3378,7 @@ var UserSubscription = (function () {
                 }
                 _this.instance.logger.verbose("User " + user.id + " joined room: " + room.name);
             }, function (error) {
-                _this.instance.logger.verbose("Error fetching user " + userId + ": " + error);
+                _this.instance.logger.verbose("Error fetching user " + userId + ":", error);
                 return;
             });
         }, function (error) {
@@ -3466,11 +3466,11 @@ var UserSubscription = (function () {
                 }
                 _this.instance.logger.verbose("User " + user.id + " started typing in room " + room.name);
             }, function (error) {
-                _this.instance.logger.verbose("Error fetching information for user " + userId + ": " + error);
+                _this.instance.logger.verbose("Error fetching information for user " + userId + ":", error);
                 return;
             });
         }, function (error) {
-            _this.instance.logger.verbose("Error fetching information for room " + roomId + ": " + error);
+            _this.instance.logger.verbose("Error fetching information for room " + roomId + ":", error);
             return;
         });
     };
@@ -3505,11 +3505,11 @@ var UserSubscription = (function () {
                 }
                 _this.instance.logger.verbose("User " + user.id + " stopped typing in room " + room.name);
             }, function (error) {
-                _this.instance.logger.verbose("Error fetching information for user " + userId + ": " + error);
+                _this.instance.logger.verbose("Error fetching information for user " + userId + ":", error);
                 return;
             });
         }, function (error) {
-            _this.instance.logger.verbose("Error fetching information for room " + roomId + ": " + error);
+            _this.instance.logger.verbose("Error fetching information for room " + roomId + ":", error);
             return;
         });
     };

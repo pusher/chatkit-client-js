@@ -403,7 +403,7 @@ export default class UserSubscription {
         this.instance.logger.verbose(`Room updated: ${room.name}`);
       },
       error => {
-        this.instance.logger.debug(`Error updating room ${room.id}: ${error}`);
+        this.instance.logger.debug(`Error updating room ${room.id}:`, error);
       },
     );
   }
@@ -516,7 +516,8 @@ export default class UserSubscription {
           },
           error => {
             this.instance.logger.verbose(
-              `Error fetching user ${userId}: ${error}`,
+              `Error fetching user ${userId}:`,
+              error,
             );
             // TODO: Delegate question again
             // strongSelf.delegate.error(error: err!)
@@ -688,7 +689,8 @@ export default class UserSubscription {
           },
           error => {
             this.instance.logger.verbose(
-              `Error fetching information for user ${userId}: ${error}`,
+              `Error fetching information for user ${userId}:`,
+              error,
             );
             // strongSelf.delegate.error(error: err!)
             return;
@@ -697,7 +699,8 @@ export default class UserSubscription {
       },
       error => {
         this.instance.logger.verbose(
-          `Error fetching information for room ${roomId}: ${error}`,
+          `Error fetching information for room ${roomId}:`,
+          error,
         );
         // self.delegate.error(error: err!)
         return;
@@ -760,7 +763,8 @@ export default class UserSubscription {
           },
           error => {
             this.instance.logger.verbose(
-              `Error fetching information for user ${userId}: ${error}`,
+              `Error fetching information for user ${userId}:`,
+              error,
             );
             // strongSelf.delegate.error(error: err!)
             return;
@@ -769,7 +773,8 @@ export default class UserSubscription {
       },
       error => {
         this.instance.logger.verbose(
-          `Error fetching information for room ${roomId}: ${error}`,
+          `Error fetching information for room ${roomId}:`,
+          error,
         );
         // self.delegate.error(error: err!)
         return;

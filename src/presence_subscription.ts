@@ -189,7 +189,8 @@ export default class PresenceSubscription {
         this.instance.logger.debug(
           `Error fetching user information for user with id ${
             presencePayload.userId
-          }: ${error}`,
+          }:`,
+          error,
         );
         return;
       },

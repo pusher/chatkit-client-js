@@ -68,9 +68,7 @@ export default class GlobalUserStore {
         onSuccess(userToReturn);
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(
-          `Error fetching user information: ${error}`,
-        );
+        this.instance.logger.verbose('Error fetching user information:', error);
         onError(error);
       });
   }
@@ -98,7 +96,8 @@ export default class GlobalUserStore {
           },
           error => {
             this.instance.logger.verbose(
-              `Error fetching user information: ${error}`,
+              'Error fetching user information:',
+              error,
             );
             reject();
           },
@@ -151,9 +150,7 @@ export default class GlobalUserStore {
         onSuccess(users);
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(
-          `Error fetching user information: ${error}`,
-        );
+        this.instance.logger.verbose('Error fetching user information:', error);
         onError(error);
       });
   }

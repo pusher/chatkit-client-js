@@ -77,7 +77,7 @@ export default class RoomStore {
         onSuccess(room);
       })
       .catch((error: any) => {
-        this.instance.logger.debug(`Error fetching room ${id}: ${error}`);
+        this.instance.logger.debug(`Error fetching room ${id}:`, error);
         onError(error);
       });
   }

@@ -130,7 +130,7 @@ export default class CurrentUser {
         onSuccess(addedOrMergedRoom);
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(`Error creating room: ${error}`);
+        this.instance.logger.verbose('Error creating room:', error);
         onError(error);
       });
   }
@@ -237,7 +237,7 @@ export default class CurrentUser {
         onSuccess();
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(`Error updating room ${roomId}: ${error}`);
+        this.instance.logger.verbose(`Error updating room ${roomId}:`, error);
         onError(error);
       });
   }
@@ -256,7 +256,7 @@ export default class CurrentUser {
         onSuccess();
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(`Error deleting room ${roomId}: ${error}`);
+        this.instance.logger.verbose(`Error deleting room ${roomId}:`, error);
         onError(error);
       });
   }
@@ -285,7 +285,8 @@ export default class CurrentUser {
         this.instance.logger.verbose(
           `Error when attempting to ${membershipChange} users from room ${
             roomId
-          }: ${error}`,
+          }:`,
+          error,
         );
         onError(error);
       });
@@ -310,7 +311,7 @@ export default class CurrentUser {
         onSuccess(addedOrMergedRoom);
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(`Error joining room ${roomId}: ${error}`);
+        this.instance.logger.verbose(`Error joining room ${roomId}:`, error);
         onError(error);
       });
   }
@@ -330,7 +331,7 @@ export default class CurrentUser {
         onSuccess();
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(`Error leaving room ${roomId}: ${error}`);
+        this.instance.logger.verbose(`Error leaving room ${roomId}:`, error);
         onError(error);
       });
   }
@@ -418,7 +419,8 @@ export default class CurrentUser {
       })
       .catch((error: any) => {
         this.instance.logger.verbose(
-          `Error adding message to room ${room.name}: ${error}`,
+          `Error adding message to room ${room.name}:`,
+          error,
         );
         onError(error);
       });
@@ -548,14 +550,16 @@ export default class CurrentUser {
           },
           error => {
             this.instance.logger.verbose(
-              `Error fetching users with ids ${userIdsToFetch}: ${error}`,
+              `Error fetching users with ids ${userIdsToFetch}:`,
+              error,
             );
           },
         );
       })
       .catch((error: any) => {
         this.instance.logger.verbose(
-          `Error fetching messages froom room ${room.name}: ${error}`,
+          `Error fetching messages froom room ${room.name}:`,
+          error,
         );
         onError(error);
       });
@@ -581,7 +585,8 @@ export default class CurrentUser {
       })
       .catch((error: any) => {
         this.instance.logger.verbose(
-          `Error when getting instance rooms: ${error}`,
+          'Error when getting instance rooms:',
+          error,
         );
         onError(error);
       });
@@ -605,7 +610,8 @@ export default class CurrentUser {
       })
       .catch((error: any) => {
         this.instance.logger.verbose(
-          `Error sending typing state change in room ${roomId}: ${error}`,
+          `Error sending typing state change in room ${roomId}:`,
+          error,
         );
         onError(error);
       });

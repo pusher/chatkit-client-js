@@ -116,7 +116,8 @@ export default class BasicMessageEnricher {
         this.logger.debug(
           `Unable to find user with id ${
             basicMessage.senderId
-          }, associated with message ${basicMessageId}. Error: ${error}`,
+          }, associated with message ${basicMessageId}. Error:`,
+          error,
         );
         this.callCompletionHandlersForEnrichedMessagesWithIdsLessThanOrEqualTo(
           basicMessageId,

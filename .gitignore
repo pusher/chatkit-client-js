@@ -1,5 +1,6 @@
-node_modules
+node_modules/
+dist/
 npm-debug.log
-/.vscode/
-/declarations/
-config.js
+yarn-error.log
+.DS_Store
+.vscode/

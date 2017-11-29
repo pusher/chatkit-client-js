@@ -8,16 +8,16 @@ import UserStoreCore from './user_store_core';
 import { allPromisesSettled, queryString } from './utils';
 
 export interface GlobalUserStoreOptions {
-  instance: Instance;
+  apiInstance: Instance;
   userStoreCore?: UserStoreCore;
 }
 
 export default class GlobalUserStore {
-  private instance: Instance;
+  private apiInstance: Instance;
   private userStoreCore: UserStoreCore;
 
   constructor(options: GlobalUserStoreOptions) {
-    this.instance = options.instance;
+    this.apiInstance = options.apiInstance;
     this.userStoreCore = options.userStoreCore || new UserStoreCore();
   }
 
@@ -56,7 +56,7 @@ export default class GlobalUserStore {
     onSuccess: (user: User) => void,
     onError: (error: any) => void,
   ) {
-    this.instance
+    this.apiInstance
       .request({
         method: 'GET',
         path: `/users/${id}`,
@@ -68,7 +68,10 @@ export default class GlobalUserStore {
         onSuccess(userToReturn);
       })
       .catch((error: any) => {
-        this.instance.logger.verbose('Error fetching user information:', error);
+        this.apiInstance.logger.verbose(
+          'Error fetching user information:',
+          error,
+        );
         onError(error);
       });
   }
@@ -95,7 +98,7 @@ export default class GlobalUserStore {
             resolve();
           },
           error => {
-            this.instance.logger.verbose(
+            this.apiInstance.logger.verbose(
               'Error fetching user information:',
               error,
             );
@@ -122,7 +125,7 @@ export default class GlobalUserStore {
     onError: (error: Error) => void,
   ) {
     if (userIds.length === 0) {
-      this.instance.logger.verbose(
+      this.apiInstance.logger.verbose(
         'Requested to fetch users for a list of user ids which was empty',
       );
       onSuccess([]);
@@ -132,7 +135,7 @@ export default class GlobalUserStore {
     const userIdsString = userIds.join(',');
     const qs = queryString({ user_ids: userIdsString });
 
-    this.instance
+    this.apiInstance
       .request({
         method: 'GET',
         path: `/users_by_ids${qs}`,
@@ -150,7 +153,10 @@ export default class GlobalUserStore {
         onSuccess(users);
       })
       .catch((error: any) => {
-        this.instance.logger.verbose('Error fetching user information:', error);
+        this.apiInstance.logger.verbose(
+          'Error fetching user information:',
+          error,
+        );
         onError(error);
       });
   }

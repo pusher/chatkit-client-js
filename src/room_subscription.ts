@@ -36,7 +36,7 @@ export default class RoomSubscription {
       return;
     }
 
-    this.logger.verbose(`Received event name: ${eventName}, and data: ${data}`);
+    this.logger.verbose(`Received event name: ${eventName}, and data:`, data);
 
     const basicMessage = PayloadDeserializer.createBasicMessageFromPayload(
       data,

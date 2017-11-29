@@ -1,8 +1,10 @@
-import { Instance } from 'pusher-platform';
+import { Instance, sendRawRequest } from 'pusher-platform';
 
 import BasicMessage from './basic_message';
 import BasicMessageEnricher from './basic_message_enricher';
 import ChatManagerDelegate from './chat_manager_delegate';
+import FetchedAttachment from './fetched_attachment';
+import FileResource from './file_resource';
 import GlobalUserStore from './global_user_store';
 import Message from './message';
 import PayloadDeserializer from './payload_deserializer';
@@ -39,8 +41,27 @@ export interface CurrentUserOptions {
   avatarURL?: string;
   customData?: any; // TODO: Shouldn't be any (type)
   rooms?: Room[];
-  instance: Instance;
+  apiInstance: Instance;
+  filesInstance: Instance;
   userStore: GlobalUserStore;
+}
+
+export interface Attachment {
+  file: Blob;
+  name: string;
+}
+
+export interface MessageOptions {
+  attachment?: Attachment;
+  roomId: number;
+  text?: string;
+}
+
+export interface CompleteMessageOptions {
+  attachement?: FileResource;
+  roomId: number;
+  text?: string;
+  user_id: string;
 }
 
 export default class CurrentUser {
@@ -52,7 +73,8 @@ export default class CurrentUser {
   customData?: any;
   userStore: GlobalUserStore;
   roomStore: RoomStore;
-  instance: Instance;
+  apiInstance: Instance;
+  filesInstance: Instance;
   pathFriendlyId: string;
   presenceSubscription: PresenceSubscription;
 
@@ -61,7 +83,7 @@ export default class CurrentUser {
   }
 
   constructor(options: CurrentUserOptions) {
-    const { rooms, id, instance } = options;
+    const { rooms, id, apiInstance, filesInstance } = options;
     const validRooms: Room[] = rooms || [];
 
     this.id = id;
@@ -70,8 +92,9 @@ export default class CurrentUser {
     this.name = options.name;
     this.avatarURL = options.avatarURL;
     this.customData = options.customData;
-    this.roomStore = new RoomStore({ instance, rooms: validRooms });
-    this.instance = instance;
+    this.roomStore = new RoomStore({ apiInstance, rooms: validRooms });
+    this.apiInstance = apiInstance;
+    this.filesInstance = filesInstance;
     this.userStore = options.userStore;
     this.pathFriendlyId = encodeURIComponent(id); // TODO: This is different to Swift SDK
   }
@@ -84,13 +107,13 @@ export default class CurrentUser {
 
   setupPresenceSubscription(delegate?: ChatManagerDelegate) {
     this.presenceSubscription = new PresenceSubscription({
+      apiInstance: this.apiInstance,
       delegate,
-      instance: this.instance,
       roomStore: this.roomStore,
       userStore: this.userStore,
     });
 
-    this.instance.subscribeNonResuming({
+    this.apiInstance.subscribeNonResuming({
       listeners: {
         onEvent: this.presenceSubscription.handleEvent.bind(
           this.presenceSubscription,
@@ -116,7 +139,7 @@ export default class CurrentUser {
       roomData['user_ids'] = options.addUserIds;
     }
 
-    this.instance
+    this.apiInstance
       .request({
         json: roomData,
         method: 'POST',
@@ -130,7 +153,7 @@ export default class CurrentUser {
         onSuccess(addedOrMergedRoom);
       })
       .catch((error: any) => {
-        this.instance.logger.verbose('Error creating room:', error);
+        this.apiInstance.logger.verbose('Error creating room:', error);
         onError(error);
       });
   }
@@ -149,7 +172,7 @@ export default class CurrentUser {
             resolve();
           },
           error => {
-            this.instance.logger.debug(
+            this.apiInstance.logger.debug(
               `Unable to add user with id ${userId} to room \(room.name):: ${
                 error
               }`,
@@ -164,7 +187,7 @@ export default class CurrentUser {
 
     allPromisesSettled(userPromises).then(() => {
       if (room.subscription === undefined) {
-        this.instance.logger.verbose(
+        this.apiInstance.logger.verbose(
           `Room ${room.name} has no subscription object set`,
         );
       } else {
@@ -176,7 +199,7 @@ export default class CurrentUser {
         }
       }
 
-      this.instance.logger.verbose(`Users updated in room ${room.name}`);
+      this.apiInstance.logger.verbose(`Users updated in room ${room.name}`);
     });
   }
 
@@ -227,7 +250,7 @@ export default class CurrentUser {
       roomPayload['private'] = options.isPrivate;
     }
 
-    this.instance
+    this.apiInstance
       .request({
         json: roomPayload,
         method: 'PUT',
@@ -237,7 +260,10 @@ export default class CurrentUser {
         onSuccess();
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(`Error updating room ${roomId}:`, error);
+        this.apiInstance.logger.verbose(
+          `Error updating room ${roomId}:`,
+          error,
+        );
         onError(error);
       });
   }
@@ -247,7 +273,7 @@ export default class CurrentUser {
     onSuccess: () => void,
     onError: (error: any) => void,
   ) {
-    this.instance
+    this.apiInstance
       .request({
         method: 'DELETE',
         path: `/rooms/${roomId}`,
@@ -256,7 +282,10 @@ export default class CurrentUser {
         onSuccess();
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(`Error deleting room ${roomId}:`, error);
+        this.apiInstance.logger.verbose(
+          `Error deleting room ${roomId}:`,
+          error,
+        );
         onError(error);
       });
   }
@@ -272,7 +301,7 @@ export default class CurrentUser {
       user_ids: userIds,
     };
 
-    this.instance
+    this.apiInstance
       .request({
         json: usersPayload,
         method: 'PUT',
@@ -282,7 +311,7 @@ export default class CurrentUser {
         onSuccess();
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(
+        this.apiInstance.logger.verbose(
           `Error when attempting to ${membershipChange} users from room ${
             roomId
           }:`,
@@ -297,7 +326,7 @@ export default class CurrentUser {
     onSuccess: (room: Room) => void,
     onError: (error: any) => void,
   ) {
-    this.instance
+    this.apiInstance
       .request({
         method: 'POST',
         path: `/users/${this.pathFriendlyId}/rooms/${roomId}/join`,
@@ -311,7 +340,7 @@ export default class CurrentUser {
         onSuccess(addedOrMergedRoom);
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(`Error joining room ${roomId}:`, error);
+        this.apiInstance.logger.verbose(`Error joining room ${roomId}:`, error);
         onError(error);
       });
   }
@@ -321,7 +350,7 @@ export default class CurrentUser {
     onSuccess: () => void,
     onError: (error: any) => void,
   ) {
-    this.instance
+    this.apiInstance
       .request({
         method: 'POST',
         path: `/users/${this.pathFriendlyId}/rooms/${roomId}/leave`,
@@ -331,7 +360,7 @@ export default class CurrentUser {
         onSuccess();
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(`Error leaving room ${roomId}:`, error);
+        this.apiInstance.logger.verbose(`Error leaving room ${roomId}:`, error);
         onError(error);
       });
   }
@@ -394,36 +423,37 @@ export default class CurrentUser {
     this.typingStateChange(eventPayload, roomId, onSuccess, onError);
   }
 
-  addMessage(
-    text: string,
-    room: Room,
+  sendMessage(
+    options: MessageOptions,
     onSuccess: (messageId: number) => void,
     onError: (error: any) => void,
   ) {
-    const messageObject = {
-      text,
-      user_id: this.id,
-    };
+    const { attachment, ...rest } = options;
 
-    this.instance
-      .request({
-        json: messageObject,
-        method: 'POST',
-        path: `/rooms/${room.id}/messages`,
-      })
-      .then((res: any) => {
-        const messageIdPayload = JSON.parse(res);
-        const messageId = messageIdPayload.message_id;
-        // TODO: Error handling
-        onSuccess(messageId);
-      })
-      .catch((error: any) => {
-        this.instance.logger.verbose(
-          `Error adding message to room ${room.name}:`,
-          error,
-        );
-        onError(error);
-      });
+    if (attachment !== undefined) {
+      this.uploadFile(attachment.file, attachment.name, options.roomId)
+        .then((fileRes: any) => {
+          return {
+            attachment: fileRes,
+            user_id: this.id,
+            ...rest,
+          };
+        })
+        .then((completeOptions: CompleteMessageOptions) => {
+          this.sendMessageWithCompleteOptions(
+            completeOptions,
+            onSuccess,
+            onError,
+          );
+        });
+    } else {
+      const completeOptions = {
+        user_id: this.id,
+        ...options,
+      };
+
+      this.sendMessageWithCompleteOptions(completeOptions, onSuccess, onError);
+    }
   }
 
   // TODO: Do I need to add a Last-Event-ID option here?
@@ -432,15 +462,15 @@ export default class CurrentUser {
       basicMessageEnricher: new BasicMessageEnricher(
         this.userStore,
         room,
-        this.instance.logger,
+        this.apiInstance.logger,
       ),
       delegate: roomDelegate,
-      logger: this.instance.logger,
+      logger: this.apiInstance.logger,
     });
 
     // TODO: What happens if you provide both a message_limit and a Last-Event-ID?
 
-    this.instance.subscribeNonResuming({
+    this.apiInstance.subscribeNonResuming({
       listeners: {
         onEvent: room.subscription.handleEvent.bind(room.subscription),
       },
@@ -470,7 +500,7 @@ export default class CurrentUser {
       directionQueryParam,
     ].join('&');
 
-    this.instance
+    this.apiInstance
       .request({
         method: 'GET',
         path: `/rooms/${room.id}/messages`,
@@ -499,7 +529,7 @@ export default class CurrentUser {
             const messageEnricher = new BasicMessageEnricher(
               this.userStore,
               room,
-              this.instance.logger,
+              this.apiInstance.logger,
             );
             const enrichmentPromises = new Array<Promise<any>>();
 
@@ -512,7 +542,7 @@ export default class CurrentUser {
                     resolve();
                   },
                   error => {
-                    this.instance.logger.verbose(
+                    this.apiInstance.logger.verbose(
                       `Unable to enrich basic mesage ${basicMessage.id}: ${
                         error
                       }`,
@@ -527,7 +557,7 @@ export default class CurrentUser {
 
             allPromisesSettled(enrichmentPromises).then(() => {
               if (room.subscription === undefined) {
-                this.instance.logger.verbose(
+                this.apiInstance.logger.verbose(
                   `Room ${room.name} has no subscription object set`,
                 );
               } else {
@@ -539,7 +569,7 @@ export default class CurrentUser {
                 }
               }
 
-              this.instance.logger.verbose(
+              this.apiInstance.logger.verbose(
                 `Users updated in room ${room.name}`,
               );
 
@@ -549,7 +579,7 @@ export default class CurrentUser {
             });
           },
           error => {
-            this.instance.logger.verbose(
+            this.apiInstance.logger.verbose(
               `Error fetching users with ids ${userIdsToFetch}:`,
               error,
             );
@@ -557,8 +587,78 @@ export default class CurrentUser {
         );
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(
+        this.apiInstance.logger.verbose(
           `Error fetching messages froom room ${room.name}:`,
+          error,
+        );
+        onError(error);
+      });
+  }
+
+  getAttachment(attachmentURL: string): Promise<any> {
+    if (!this.apiInstance.tokenProvider) {
+      return new Promise<any>((resolve, reject) => {
+        reject(new Error('Token provider not set on apiInstance'));
+      });
+    }
+
+    return this.apiInstance.tokenProvider.fetchToken().then((token: string) => {
+      return sendRawRequest({
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        method: 'GET',
+        url: attachmentURL,
+      }).then((res: any) => {
+        const attachmentPayload = JSON.parse(res);
+        const fetchedAttachment = PayloadDeserializer.createFetchedAttachmentFromPayload(
+          attachmentPayload,
+        );
+
+        return fetchedAttachment;
+      });
+    });
+  }
+
+  private uploadFile(
+    file: any,
+    fileName: string,
+    roomId: number,
+  ): Promise<any> {
+    const data = new FormData();
+    data.append('file', file, fileName);
+
+    return this.filesInstance
+      .request({
+        body: data,
+        method: 'POST',
+        path: `/rooms/${roomId}/files/${fileName}`,
+      })
+      .then((res: any) => {
+        return JSON.parse(res);
+      });
+  }
+
+  private sendMessageWithCompleteOptions(
+    options: CompleteMessageOptions,
+    onSuccess: (messageId: number) => void,
+    onError: (error: any) => void,
+  ) {
+    this.apiInstance
+      .request({
+        json: options,
+        method: 'POST',
+        path: `/rooms/${options.roomId}/messages`,
+      })
+      .then((res: any) => {
+        const messageIdPayload = JSON.parse(res);
+        const messageId = messageIdPayload.message_id;
+        // TODO: Error handling
+        onSuccess(messageId);
+      })
+      .catch((error: any) => {
+        this.apiInstance.logger.verbose(
+          `Error sending message to room ${options.roomId}:`,
           error,
         );
         onError(error);
@@ -570,7 +670,7 @@ export default class CurrentUser {
     onSuccess: (rooms: Room[]) => void,
     onError: (error: any) => void,
   ) {
-    this.instance
+    this.apiInstance
       .request({
         method: 'GET',
         path,
@@ -584,7 +684,7 @@ export default class CurrentUser {
         onSuccess(rooms);
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(
+        this.apiInstance.logger.verbose(
           'Error when getting instance rooms:',
           error,
         );
@@ -599,7 +699,7 @@ export default class CurrentUser {
     onSuccess: () => void,
     onError: (error: any) => void,
   ) {
-    this.instance
+    this.apiInstance
       .request({
         json: eventPayload,
         method: 'POST',
@@ -609,7 +709,7 @@ export default class CurrentUser {
         onSuccess();
       })
       .catch((error: any) => {
-        this.instance.logger.verbose(
+        this.apiInstance.logger.verbose(
           `Error sending typing state change in room ${roomId}:`,
           error,
         );

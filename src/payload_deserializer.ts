@@ -3,11 +3,35 @@ import { Instance } from 'pusher-platform';
 import BasicMessage from './basic_message';
 import BasicUser from './basic_user';
 import CurrentUser from './current_user';
+import FetchedAttachment from './fetched_attachment';
+import FileResource from './file_resource';
 import GlobalUserStore from './global_user_store';
 import PresencePayload from './presence_payload';
 import PresenceState from './presence_state';
 import Room from './room';
 import User from './user';
+
+const checkPresenceAndTypeOfFieldsInPayload = (
+  requiredFieldsWithTypes: any,
+  payload: any,
+): void => {
+  Object.keys(requiredFieldsWithTypes).forEach(key => {
+    if (payload[key] === undefined) {
+      throw new Error(`Payload missing key: ${key}`);
+    }
+
+    const receivedType = typeof payload[key];
+    const expectedType = requiredFieldsWithTypes[key];
+
+    if (receivedType !== expectedType) {
+      throw new Error(
+        `Value for key: ${key} in payload was ${receivedType}, expected ${
+          expectedType
+        }`,
+      );
+    }
+  });
+};
 
 export default class PayloadDeserializer {
   static createUserFromPayload(userPayload: any): User {
@@ -27,7 +51,8 @@ export default class PayloadDeserializer {
 
   static createCurrentUserFromPayload(
     userPayload: any,
-    instance: Instance,
+    apiInstance: Instance,
+    filesInstance: Instance,
     userStore: GlobalUserStore,
   ): CurrentUser {
     const basicUser = PayloadDeserializer.createBasicUserFromPayload(
@@ -35,11 +60,12 @@ export default class PayloadDeserializer {
     );
 
     return new CurrentUser({
+      apiInstance,
       avatarURL: userPayload.avatar_url,
       createdAt: basicUser.createdAt,
       customData: userPayload.custom_data,
+      filesInstance,
       id: basicUser.id,
-      instance,
       name: userPayload.name,
       updatedAt: basicUser.updatedAt,
       userStore,
@@ -56,22 +82,7 @@ export default class PayloadDeserializer {
       updated_at: 'string',
     };
 
-    Object.keys(requiredFieldsWithTypes).forEach(key => {
-      if (roomPayload[key] === undefined) {
-        throw new Error(`Payload missing key: ${key}`);
-      }
-
-      const receivedType = typeof roomPayload[key];
-      const expectedType = requiredFieldsWithTypes[key];
-
-      if (receivedType !== expectedType) {
-        throw new Error(
-          `Value for key: ${key} in payload was ${receivedType}, expected ${
-            expectedType
-          }`,
-        );
-      }
-    });
+    checkPresenceAndTypeOfFieldsInPayload(requiredFieldsWithTypes, roomPayload);
 
     let memberUserIds: string[] = [];
 
@@ -103,24 +114,19 @@ export default class PayloadDeserializer {
       user_id: 'string',
     };
 
-    Object.keys(requiredFieldsWithTypes).forEach(key => {
-      if (messagePayload[key] === undefined) {
-        throw new Error(`Payload missing key: ${key}`);
-      }
+    checkPresenceAndTypeOfFieldsInPayload(
+      requiredFieldsWithTypes,
+      messagePayload,
+    );
 
-      const receivedType = typeof messagePayload[key];
-      const expectedType = requiredFieldsWithTypes[key];
-
-      if (receivedType !== expectedType) {
-        throw new Error(
-          `Value for key: ${key} in payload was ${receivedType}, expected ${
-            expectedType
-          }`,
-        );
-      }
-    });
+    const attachment:
+      | FileResource
+      | undefined = this.createFileResourceFromPayload(
+      messagePayload.attachment,
+    );
 
     return {
+      attachment,
       createdAt: messagePayload.created_at,
       id: messagePayload.id,
       roomId: messagePayload.id,
@@ -136,22 +142,7 @@ export default class PayloadDeserializer {
       user_id: 'string',
     };
 
-    Object.keys(requiredFieldsWithTypes).forEach(key => {
-      if (payload[key] === undefined) {
-        throw new Error(`Payload missing key: ${key}`);
-      }
-
-      const receivedType = typeof payload[key];
-      const expectedType = requiredFieldsWithTypes[key];
-
-      if (receivedType !== expectedType) {
-        throw new Error(
-          `Value for key: ${key} in payload was ${receivedType}, expected ${
-            expectedType
-          }`,
-        );
-      }
-    });
+    checkPresenceAndTypeOfFieldsInPayload(requiredFieldsWithTypes, payload);
 
     const state = new PresenceState(payload.state);
 
@@ -169,27 +160,70 @@ export default class PayloadDeserializer {
       updated_at: 'string',
     };
 
-    Object.keys(requiredFieldsWithTypes).forEach(key => {
-      if (payload[key] === undefined) {
-        throw new Error(`Payload missing key: ${key}`);
-      }
-
-      const receivedType = typeof payload[key];
-      const expectedType = requiredFieldsWithTypes[key];
-
-      if (receivedType !== expectedType) {
-        throw new Error(
-          `Value for key: ${key} in payload was ${receivedType}, expected ${
-            expectedType
-          }`,
-        );
-      }
-    });
+    checkPresenceAndTypeOfFieldsInPayload(requiredFieldsWithTypes, payload);
 
     return {
       createdAt: payload.created_at,
       id: payload.id,
       updatedAt: payload.updated_at,
+    };
+  }
+
+  static createFileResourceFromPayload(payload: any): FileResource | undefined {
+    if (payload === undefined) {
+      return undefined;
+    }
+
+    const requiredFieldsWithTypes: { [key: string]: string } = {
+      resource_link: 'string',
+      type: 'string',
+    };
+
+    checkPresenceAndTypeOfFieldsInPayload(requiredFieldsWithTypes, payload);
+
+    return {
+      link: payload.resource_link,
+      type: payload.type,
+    };
+  }
+
+  static createFetchedAttachmentFromPayload(
+    payload: any,
+  ): FetchedAttachment | undefined {
+    if (payload === undefined) {
+      return undefined;
+    }
+
+    const requiredFieldsWithTypes: { [key: string]: string } = {
+      file: 'object',
+      resource_link: 'string',
+      ttl: 'number',
+    };
+
+    checkPresenceAndTypeOfFieldsInPayload(requiredFieldsWithTypes, payload);
+
+    const requiredFieldsWithTypesForFileField: { [key: string]: string } = {
+      bytes: 'number',
+      last_modified: 'number',
+      name: 'string',
+    };
+
+    checkPresenceAndTypeOfFieldsInPayload(
+      requiredFieldsWithTypesForFileField,
+      payload.file,
+    );
+
+    const file = payload.file;
+    const { bytes, name } = file;
+
+    return {
+      file: {
+        bytes,
+        lastModified: file.last_modified,
+        name,
+      },
+      link: payload.resource_link,
+      ttl: payload.ttl,
     };
   }
 }

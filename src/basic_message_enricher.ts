@@ -130,6 +130,7 @@ export default class BasicMessageEnricher {
   enrichMessagesWithUser(user: User, messages: BasicMessage[]) {
     messages.forEach(basicMessage => {
       const message = {
+        attachment: basicMessage.attachment,
         createdAt: basicMessage.createdAt,
         id: basicMessage.id,
         room: this.room,

@@ -113,6 +113,7 @@ export default class UserSubscription {
     if (roomsPayload.length === 0) {
       this.currentUser.setupPresenceSubscription(this.delegate);
       this.callConnectCompletionHandlers(this.currentUser);
+      return;
     }
 
     const combinedRoomUserIds = new Set<string>([]);

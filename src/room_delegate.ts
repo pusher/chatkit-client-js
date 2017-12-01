@@ -1,3 +1,4 @@
+import BasicCursor from './basic_cursor';
 import Message from './message';
 import User from './user';
 
@@ -16,6 +17,8 @@ interface RoomDelegate {
   usersUpdated?: () => void;
 
   error?: (error: any) => void;
+  // TODO enrich
+  cursorSet?: (cursor: BasicCursor) => void;
 }
 
 export default RoomDelegate;

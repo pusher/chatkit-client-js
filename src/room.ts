@@ -1,3 +1,4 @@
+import CursorSubscription from './cursor_subscription';
 import RoomSubscription from './room_subscription';
 import RoomUserStore from './room_user_store';
 
@@ -24,6 +25,7 @@ export default class Room {
 
   userStore: RoomUserStore;
   subscription?: RoomSubscription;
+  cursorSubscription?: CursorSubscription;
 
   constructor(options: RoomOptions) {
     this.id = options.id;

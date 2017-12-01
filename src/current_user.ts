@@ -3,6 +3,7 @@ import { Instance, sendRawRequest } from 'pusher-platform';
 import BasicMessage from './basic_message';
 import BasicMessageEnricher from './basic_message_enricher';
 import ChatManagerDelegate from './chat_manager_delegate';
+import CursorSubscription from './cursor_subscription';
 import FetchedAttachment from './fetched_attachment';
 import GlobalUserStore from './global_user_store';
 import Message from './message';
@@ -42,6 +43,7 @@ export interface CurrentUserOptions {
   rooms?: Room[];
   apiInstance: Instance;
   filesInstance: Instance;
+  cursorsInstance: Instance;
   userStore: GlobalUserStore;
 }
 
@@ -86,6 +88,7 @@ export default class CurrentUser {
   roomStore: RoomStore;
   apiInstance: Instance;
   filesInstance: Instance;
+  cursorsInstance: Instance;
   pathFriendlyId: string;
   presenceSubscription: PresenceSubscription;
 
@@ -94,7 +97,7 @@ export default class CurrentUser {
   }
 
   constructor(options: CurrentUserOptions) {
-    const { rooms, id, apiInstance, filesInstance } = options;
+    const { rooms, id, apiInstance, filesInstance, cursorsInstance } = options;
     const validRooms: Room[] = rooms || [];
 
     this.id = id;
@@ -106,6 +109,7 @@ export default class CurrentUser {
     this.roomStore = new RoomStore({ apiInstance, rooms: validRooms });
     this.apiInstance = apiInstance;
     this.filesInstance = filesInstance;
+    this.cursorsInstance = cursorsInstance;
     this.userStore = options.userStore;
     this.pathFriendlyId = encodeURIComponent(id); // TODO: This is different to Swift SDK
   }
@@ -431,6 +435,28 @@ export default class CurrentUser {
     this.typingStateChange(eventPayload, roomId, onSuccess, onError);
   }
 
+  setCursor(
+    position: number,
+    room: Room,
+    onSuccess: () => void,
+    onError: (error: any) => void,
+  ) {
+    this.cursorsInstance
+      .request({
+        json: { position },
+        method: 'PUT',
+        path: `/cursors/0/rooms/${room.id}/users/${this.id}`,
+      })
+      .then(onSuccess)
+      .catch(err => {
+        this.cursorsInstance.logger.verbose(
+          `Error setting cursor in room ${room.name}:`,
+          err,
+        );
+        onError(err);
+      });
+  }
+
   sendMessage(
     options: SendMessageOptions,
     onSuccess: (messageId: number) => void,
@@ -504,6 +530,10 @@ export default class CurrentUser {
       },
       path: `/rooms/${room.id}?message_limit=${messageLimit}`,
     });
+
+    if (roomDelegate.cursorSet) {
+      this.subscribeToCursors(room, roomDelegate);
+    }
   }
 
   fetchMessagesFromRoom(
@@ -704,6 +734,22 @@ export default class CurrentUser {
         );
         onError(error);
       });
+  }
+
+  private subscribeToCursors(room: Room, roomDelegate: RoomDelegate) {
+    room.cursorSubscription = new CursorSubscription({
+      delegate: roomDelegate,
+      logger: this.cursorsInstance.logger,
+    });
+
+    this.cursorsInstance.subscribeNonResuming({
+      listeners: {
+        onEvent: room.cursorSubscription.handleEvent.bind(
+          room.cursorSubscription,
+        ),
+      },
+      path: `/cursors/0/rooms/${room.id}`,
+    });
   }
 
   private getRooms(

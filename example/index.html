@@ -2,18 +2,19 @@
   <head></head>
   <body>
     <script type="text/javascript" src="../dist/web/chatkit.js"></script>
+
+    <input name="testfile" type="file">
+    <button>Upload file</button>
+
+    <ul id="messages"></ul>
+
     <script type="text/javascript">
+      let currentUser;
+      let room;
+
       const tokenProvider = new Chatkit.TokenProvider({
-        url: 'YOUR_TOKEN_PROVIDER_URL',
+        url: 'YOUR_TEST_TOKEN_PROVIDER_URL',
         userId: 'YOUR_CREATED_USER_ID',
-        // authContext: {
-        //   queryParams: {
-        //     somekey: "somevalue"
-        //   },
-        //   headers: {
-        //     SomeHeader: "some-header-value"
-        //   }
-        // }
       })
 
       const chatManager = new Chatkit.ChatManager({
@@ -22,34 +23,86 @@
       });
 
       chatManager.connect({
-        delegate: {
-          userStartedTyping: (room, user) => {
-            console.log(`User ${user.id} started typing in room ${room.name}`);
-          },
-        },
-        onSuccess: (currentUser) => {
-          console.log("Successful connection", currentUser);
-
+        delegate: {},
+        onSuccess: (cUser) => {
+          currentUser = cUser;
           const roomToSubscribeTo = currentUser.rooms[0];
 
           if (roomToSubscribeTo) {
+            room = roomToSubscribeTo;
             console.log("Going to subscribe to", roomToSubscribeTo);
             currentUser.subscribeToRoom(
               roomToSubscribeTo,
               {
                 newMessage: (message) => {
-                  console.log(`New message received from ${message.sender.name}: ${message.text}`);
+                  const messagesList = document.getElementById('messages');
+                  const messageItem = document.createElement("li");
+                  messagesList.prepend(messageItem);
+                  messageItem.appendChild(document.createTextNode(`${message.sender.name}: ${message.text}`));
+
+                  if (message.attachment) {
+                    currentUser.getAttachment(message.attachment.link)
+                      .then(fetchedAttachment => {
+                        let attachment;
+                        switch (message.attachment.type) {
+                          case 'image':
+                            attachment = document.createElement('img');
+                            break;
+                          case 'video':
+                            attachment = document.createElement('video');
+                            attachment.controls = 'controls';
+                            break;
+                          case 'audio':
+                            attachment = document.createElement('audio');
+                            attachment.controls = 'controls';
+                            break;
+                          default:
+                            break;
+                        }
+
+                        attachment.width = '400';
+                        attachment.src = fetchedAttachment.link;
+                        messageItem.appendChild(attachment);
+                      })
+                      .catch(error => {
+                        console.log("Error", error);
+                      })
+                  }
                 }
               }
             );
           } else {
-            console.log("No rooms to subscribe to");
+            console.log("No room to subscribe to");
           }
+          console.log("Successful connection", currentUser);
         },
         onError: (error) => {
           console.log('Error on connection: ', error);
         }
       });
+
+      document.querySelector("button").addEventListener('click', (ev) => {
+        const fileInput = document.querySelector("input[name=testfile]");
+
+        currentUser.sendMessage(
+          {
+            text: 'A message with an attachment!',
+            roomId: room.id,
+            attachment: {
+              file: fileInput.files[0],
+              // Split on slashes, remove whitespace
+              name: fileInput.value.split(/(\\|\/)/g).pop().replace(/\s+/g, ''),
+            },
+          },
+          (messageId) => {
+            console.log("Success!", messageId);
+          },
+          (error) => {
+            console.log("Error", error);
+          }
+        )
+      });
+
     </script>
   </body>
 </html>

@@ -16,16 +16,17 @@
   },
   "scripts": {
     "build": "yarn build:all",
-    "build:all": "yarn clean && yarn build:web && yarn build:react-native",
+    "build:all": "yarn clean && yarn build:web && yarn build:react-native && yarn build:worker",
     "build:web": "webpack --config=webpack/config.web.js",
     "build:react-native": "webpack --config=webpack/config.react-native.js",
+    "build:worker": "webpack --config=webpack/config.worker.js",
     "clean": "rm -rf dist",
     "format": "yarn prettier --write",
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
     "prettier": "prettier 'src/**/*.ts'"
   },
   "dependencies": {
-    "pusher-platform": "^0.13.0"
+    "pusher-platform": "^0.14.0"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",

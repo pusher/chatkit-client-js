@@ -1,9 +1,6 @@
 var webpack = require('webpack');
 
 module.exports = {
-  entry: {
-    'chatkit': './src/index.ts'
-  },
   resolve: {
     extensions: ['.ts', '.js'],
   },

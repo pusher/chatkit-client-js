@@ -4,6 +4,9 @@ var path = require('path');
 var sharedConfig = require('./config.shared');
 
 module.exports = _.merge(sharedConfig, {
+  entry: {
+    'chatkit': './src/index.ts'
+  },
   output: {
     library: "Chatkit",
     libraryTarget:"commonjs2",

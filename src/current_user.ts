@@ -118,7 +118,7 @@ export default class CurrentUser {
 
     this.instance
       .request({
-        body: roomData,
+        json: roomData,
         method: 'POST',
         path: '/rooms',
       })
@@ -229,7 +229,7 @@ export default class CurrentUser {
 
     this.instance
       .request({
-        body: roomPayload,
+        json: roomPayload,
         method: 'PUT',
         path: `/rooms/${roomId}`,
       })
@@ -274,7 +274,7 @@ export default class CurrentUser {
 
     this.instance
       .request({
-        body: usersPayload,
+        json: usersPayload,
         method: 'PUT',
         path: `/rooms/${roomId}/users/${membershipChange}`,
       })
@@ -407,7 +407,7 @@ export default class CurrentUser {
 
     this.instance
       .request({
-        body: messageObject,
+        json: messageObject,
         method: 'POST',
         path: `/rooms/${room.id}/messages`,
       })
@@ -601,7 +601,7 @@ export default class CurrentUser {
   ) {
     this.instance
       .request({
-        body: eventPayload,
+        json: eventPayload,
         method: 'POST',
         path: `/rooms/${roomId}/events`,
       })

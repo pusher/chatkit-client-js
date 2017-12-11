@@ -740,6 +740,8 @@ export default class CurrentUser {
     room.cursorSubscription = new CursorSubscription({
       delegate: roomDelegate,
       logger: this.cursorsInstance.logger,
+      room,
+      userStore: this.userStore,
     });
 
     this.cursorsInstance.subscribeNonResuming({

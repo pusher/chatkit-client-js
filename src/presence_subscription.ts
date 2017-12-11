@@ -74,9 +74,7 @@ export default class PresenceSubscription {
       userStatesPayload.constructor !== Array
     ) {
       this.apiInstance.logger.debug(
-        `'user_stats' value missing from ${eventName} presence payload: ${
-          data
-        }`,
+        `'user_stats' value missing from ${eventName} presence payload: ${data}`,
       );
       // TODO: Do we want the error delegate?
       // self.delegate?.error(error: error)
@@ -210,9 +208,7 @@ export default class PresenceSubscription {
       userStatesPayload.constructor !== Array
     ) {
       this.apiInstance.logger.debug(
-        `'user_stats' value missing from ${eventName} presence payload: ${
-          data
-        }`,
+        `'user_stats' value missing from ${eventName} presence payload: ${data}`,
       );
       // TODO: Delegate question again
       // self.delegate?.error(error: error)

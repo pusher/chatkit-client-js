@@ -173,9 +173,7 @@ export default class CurrentUser {
           },
           error => {
             this.apiInstance.logger.debug(
-              `Unable to add user with id ${userId} to room \(room.name):: ${
-                error
-              }`,
+              `Unable to add user with id ${userId} to room \(room.name): ${error}`,
             );
             reject();
           },
@@ -312,9 +310,7 @@ export default class CurrentUser {
       })
       .catch((error: any) => {
         this.apiInstance.logger.verbose(
-          `Error when attempting to ${membershipChange} users from room ${
-            roomId
-          }:`,
+          `Error when attempting to ${membershipChange} users from room ${roomId}:`,
           error,
         );
         onError(error);
@@ -543,9 +539,9 @@ export default class CurrentUser {
                   },
                   error => {
                     this.apiInstance.logger.verbose(
-                      `Unable to enrich basic mesage ${basicMessage.id}: ${
-                        error
-                      }`,
+                      `Unable to enrich basic mesage ${
+                        basicMessage.id
+                      }: ${error}`,
                     );
                     reject();
                   },

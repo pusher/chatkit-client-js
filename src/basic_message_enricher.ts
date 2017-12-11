@@ -162,9 +162,7 @@ export default class BasicMessageEnricher {
       // then return as we've already stored the result so it can be used later
       // TODO: Fixme
       this.logger.verbose(
-        `Waiting to call completion handler for message id ${
-          id
-        } as there are other older messages still to be enriched`,
+        `Waiting to call completion handler for message id ${id} as there are other older messages still to be enriched`,
       );
       return;
     }

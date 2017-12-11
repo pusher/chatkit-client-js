@@ -234,9 +234,7 @@ export default class UserSubscription {
       },
       error => {
         this.apiInstance.logger.debug(
-          `Unable to fetch user information after successful connection: ${
-            error
-          }`,
+          `Unable to fetch user information after successful connection: ${error}`,
         );
         return;
       },
@@ -312,9 +310,9 @@ export default class UserSubscription {
           },
           error => {
             this.apiInstance.logger.debug(
-              `Unable to add user with id ${userId} to room ${room.name}: ${
-                error
-              }`,
+              `Unable to add user with id ${userId} to room ${
+                room.name
+              }: ${error}`,
             );
             reject();
           },
@@ -346,9 +344,7 @@ export default class UserSubscription {
 
     if (roomId === undefined || typeof roomId !== 'number') {
       this.apiInstance.logger.verbose(
-        `\`room_id\` key missing or invalid in \`removed_from_room\` payload: ${
-          data
-        }`,
+        `\`room_id\` key missing or invalid in \`removed_from_room\` payload: ${data}`,
       );
       return;
     }
@@ -369,9 +365,7 @@ export default class UserSubscription {
       this.apiInstance.logger.verbose(`Removed from room: ${roomRemoved.name}`);
     } else {
       this.apiInstance.logger.verbose(
-        `Received \`removed_from_room\` API event but room with ID ${
-          roomId
-        } not found in local store of joined rooms`,
+        `Received \`removed_from_room\` API event but room with ID ${roomId} not found in local store of joined rooms`,
       );
       return;
     }
@@ -418,9 +412,7 @@ export default class UserSubscription {
 
     if (roomId === undefined || typeof roomId !== 'number') {
       this.apiInstance.logger.verbose(
-        `\`room_id\` key missing or invalid in \`room_deleted\` payload: ${
-          data
-        }`,
+        `\`room_id\` key missing or invalid in \`room_deleted\` payload: ${data}`,
       );
       return;
     }
@@ -442,9 +434,7 @@ export default class UserSubscription {
       this.apiInstance.logger.verbose(`Room deleted: ${deletedRoom.name}`);
     } else {
       this.apiInstance.logger.verbose(
-        `Received \`room_deleted\` API event but room with ID ${
-          roomId
-        } not found in local store of joined rooms`,
+        `Received \`room_deleted\` API event but room with ID ${roomId} not found in local store of joined rooms`,
       );
       return;
     }
@@ -455,9 +445,7 @@ export default class UserSubscription {
 
     if (roomId === undefined || typeof roomId !== 'number') {
       this.apiInstance.logger.verbose(
-        `\`room_id\` key missing or invalid in \`user_joined\` payload: ${
-          data
-        }`,
+        `\`room_id\` key missing or invalid in \`user_joined\` payload: ${data}`,
       );
       return;
     }
@@ -466,9 +454,7 @@ export default class UserSubscription {
 
     if (userId === undefined || typeof userId !== 'string') {
       this.apiInstance.logger.verbose(
-        `\`user_id\` key missing or invalid in \`user_joined\` payload: ${
-          data
-        }`,
+        `\`user_id\` key missing or invalid in \`user_joined\` payload: ${data}`,
       );
       return;
     }
@@ -532,11 +518,7 @@ export default class UserSubscription {
       },
       error => {
         this.apiInstance.logger.verbose(
-          `User with id ${userId} joined room with id ${
-            roomId
-          } but no information about the room could be retrieved. Error was: ${
-            error
-          }`,
+          `User with id ${userId} joined room with id ${roomId} but no information about the room could be retrieved. Error was: ${error}`,
         );
         // self.delegate.error(error: err!)
         return;
@@ -614,11 +596,7 @@ export default class UserSubscription {
           },
           error => {
             this.apiInstance.logger.verbose(
-              `User with id ${userId} left room with id ${
-                roomId
-              } but no information about the user could be retrieved. Error was: ${
-                error
-              }`,
+              `User with id ${userId} left room with id ${roomId} but no information about the user could be retrieved. Error was: ${error}`,
             );
             // strongSelf.delegate.error(error: err!)
             return;
@@ -627,11 +605,7 @@ export default class UserSubscription {
       },
       error => {
         this.apiInstance.logger.verbose(
-          `User with id ${userId} joined room with id ${
-            roomId
-          } but no information about the room could be retrieved. Error was: ${
-            error
-          }`,
+          `User with id ${userId} joined room with id ${roomId} but no information about the room could be retrieved. Error was: ${error}`,
         );
         // self.delegate.error(error: err!)
         return;
@@ -644,9 +618,7 @@ export default class UserSubscription {
 
     if (roomId === undefined || typeof roomId !== 'number') {
       this.apiInstance.logger.verbose(
-        `\`room_id\` key missing or invalid in \`typing_start\` payload: ${
-          data
-        }`,
+        `\`room_id\` key missing or invalid in \`typing_start\` payload: ${data}`,
       );
       return;
     }
@@ -718,9 +690,7 @@ export default class UserSubscription {
 
     if (roomId === undefined || typeof roomId !== 'number') {
       this.apiInstance.logger.verbose(
-        `\`room_id\` key missing or invalid in \`typing_stop\` payload: ${
-          data
-        }`,
+        `\`room_id\` key missing or invalid in \`typing_stop\` payload: ${data}`,
       );
       return;
     }

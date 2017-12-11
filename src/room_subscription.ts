@@ -29,9 +29,7 @@ export default class RoomSubscription {
 
     if (eventName !== 'new_message') {
       this.logger.verbose(
-        `Room subscription received event with type ${
-          eventName
-        }, when 'new_message' was expected`,
+        `Room subscription received event with type ${eventName}, when 'new_message' was expected`,
       );
       return;
     }

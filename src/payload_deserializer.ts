@@ -25,9 +25,7 @@ const checkPresenceAndTypeOfFieldsInPayload = (
 
     if (receivedType !== expectedType) {
       throw new Error(
-        `Value for key: ${key} in payload was ${receivedType}, expected ${
-          expectedType
-        }`,
+        `Value for key: ${key} in payload was ${receivedType}, expected ${expectedType}`,
       );
     }
   });

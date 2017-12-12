@@ -10,6 +10,17 @@ export function queryString(data: any): string {
   return encodedData ? `?${encodedData}` : '';
 }
 
+export function queryParamsFromFullUrl(url: string): any {
+  if (url.indexOf('?') === -1) {
+    return {};
+  }
+
+  const splitUrl = url.split('?');
+  const queryStr = splitUrl.slice(1).join('&');
+
+  return queryParamObject(queryStr);
+}
+
 function querylessUrlAndQueryObjectFromFullUrl(urlString: string): any {
   if (urlString.indexOf('?') === -1) {
     return {
@@ -46,8 +57,7 @@ export function mergeQueryParamsIntoUrl(
     urlString,
   );
   const fullQueryString = queryString(Object.assign(queryObject, queryParams));
-  const t = `${querylessUrl}${fullQueryString}`;
-  return t;
+  return `${querylessUrl}${fullQueryString}`;
 }
 
 export function allPromisesSettled(

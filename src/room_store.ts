@@ -5,16 +5,16 @@ import Room from './room';
 
 export interface RoomStoreOptions {
   rooms: Room[];
-  instance: Instance;
+  apiInstance: Instance;
 }
 
 export default class RoomStore {
   rooms: Room[];
-  instance: Instance;
+  apiInstance: Instance;
 
   constructor(options: RoomStoreOptions) {
     this.rooms = options.rooms;
-    this.instance = options.instance;
+    this.apiInstance = options.apiInstance;
   }
 
   room(
@@ -66,7 +66,7 @@ export default class RoomStore {
     onSuccess: (room: Room) => void,
     onError: (error: Error) => void,
   ) {
-    this.instance
+    this.apiInstance
       .request({
         method: 'GET',
         path: `/rooms/${id}`,
@@ -77,7 +77,7 @@ export default class RoomStore {
         onSuccess(room);
       })
       .catch((error: any) => {
-        this.instance.logger.debug(`Error fetching room ${id}:`, error);
+        this.apiInstance.logger.debug(`Error fetching room ${id}:`, error);
         onError(error);
       });
   }

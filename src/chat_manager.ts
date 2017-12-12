@@ -1,4 +1,10 @@
-import { BaseClient, Instance, Logger, TokenProvider } from 'pusher-platform';
+import {
+  BaseClient,
+  HOST_BASE,
+  Instance,
+  Logger,
+  TokenProvider,
+} from 'pusher-platform';
 
 import ChatManagerDelegate from './chat_manager_delegate';
 import CurrentUser from './current_user';
@@ -13,29 +19,50 @@ export interface ChatManagerOptions {
 }
 
 export default class ChatManager {
-  instance: Instance;
-  tokenProvider: TokenProvider;
+  apiInstance: Instance;
+  filesInstance: Instance;
 
   private userStore: GlobalUserStore;
   private userSubscription: UserSubscription;
 
   constructor(options: ChatManagerOptions) {
-    this.tokenProvider = options.tokenProvider;
+    const splitInstanceLocator = options.instanceLocator.split(':');
+    if (splitInstanceLocator.length !== 3) {
+      throw new Error('The instanceLocator property is in the wrong format!');
+    }
+    const cluster = splitInstanceLocator[1];
+    const baseClient =
+      options.baseClient ||
+      new BaseClient({
+        host: `${cluster}.${HOST_BASE}`,
+        logger: options.logger,
+      });
 
-    this.instance = new Instance({
-      client: options.baseClient,
+    const sharedInstanceOptions = {
+      client: baseClient,
       locator: options.instanceLocator,
       logger: options.logger,
+      tokenProvider: options.tokenProvider,
+    };
+
+    this.apiInstance = new Instance({
       serviceName: 'chatkit',
       serviceVersion: 'v1',
-      tokenProvider: options.tokenProvider,
+      ...sharedInstanceOptions,
     });
 
-    this.userStore = new GlobalUserStore({ instance: this.instance });
+    this.filesInstance = new Instance({
+      serviceName: 'chatkit_files',
+      serviceVersion: 'v1',
+      ...sharedInstanceOptions,
+    });
+
+    this.userStore = new GlobalUserStore({ apiInstance: this.apiInstance });
   }
 
   connect(options: ConnectOptions) {
     this.userSubscription = new UserSubscription({
+      apiInstance: this.apiInstance,
       connectCompletionHandler: (currentUser?: CurrentUser, error?: any) => {
         if (currentUser) {
           options.onSuccess(currentUser);
@@ -44,11 +71,11 @@ export default class ChatManager {
         }
       },
       delegate: options.delegate,
-      instance: this.instance,
+      filesInstance: this.filesInstance,
       userStore: this.userStore,
     });
 
-    this.instance.subscribeNonResuming({
+    this.apiInstance.subscribeNonResuming({
       listeners: {
         onError: options.onError,
         onEvent: this.userSubscription.handleEvent.bind(this.userSubscription),

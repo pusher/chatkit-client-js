@@ -1,3 +1,5 @@
+import FileResource from './file_resource';
+
 interface BasicMessage {
   id: number;
   senderId: string;
@@ -5,6 +7,7 @@ interface BasicMessage {
   text: string;
   createdAt: string;
   updatedAt: string;
+  attachment?: FileResource;
 }
 
 export default BasicMessage;

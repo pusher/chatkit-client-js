@@ -1,4 +1,4 @@
-import FileResource from './file_resource';
+import Attachment from './attachment';
 
 interface BasicMessage {
   id: number;
@@ -7,7 +7,7 @@ interface BasicMessage {
   text: string;
   createdAt: string;
   updatedAt: string;
-  attachment?: FileResource;
+  attachment?: Attachment;
 }
 
 export default BasicMessage;

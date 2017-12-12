@@ -1,4 +1,4 @@
-import FileResource from './file_resource';
+import Attachment from './attachment';
 import Room from './room';
 import User from './user';
 
@@ -7,7 +7,7 @@ interface Message {
   text: string;
   createdAt: string;
   updatedAt: string;
-  attachment?: FileResource;
+  attachment?: Attachment;
   sender: User;
   room: Room;
 }

@@ -1,10 +1,10 @@
 import { Instance } from 'pusher-platform';
 
+import Attachment from './attachment';
 import BasicMessage from './basic_message';
 import BasicUser from './basic_user';
 import CurrentUser from './current_user';
 import FetchedAttachment from './fetched_attachment';
-import FileResource from './file_resource';
 import GlobalUserStore from './global_user_store';
 import PresencePayload from './presence_payload';
 import PresenceState from './presence_state';
@@ -118,9 +118,7 @@ export default class PayloadDeserializer {
       messagePayload,
     );
 
-    const attachment:
-      | FileResource
-      | undefined = this.createFileResourceFromPayload(
+    const attachment: Attachment | undefined = this.createAttachmentFromPayload(
       messagePayload.attachment,
     );
 
@@ -168,7 +166,7 @@ export default class PayloadDeserializer {
     };
   }
 
-  static createFileResourceFromPayload(payload: any): FileResource | undefined {
+  static createAttachmentFromPayload(payload: any): Attachment | undefined {
     if (payload === undefined) {
       return undefined;
     }

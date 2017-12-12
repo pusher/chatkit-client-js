@@ -4,7 +4,6 @@ import BasicMessage from './basic_message';
 import BasicMessageEnricher from './basic_message_enricher';
 import ChatManagerDelegate from './chat_manager_delegate';
 import FetchedAttachment from './fetched_attachment';
-import FileResource from './file_resource';
 import GlobalUserStore from './global_user_store';
 import Message from './message';
 import PayloadDeserializer from './payload_deserializer';
@@ -46,19 +45,30 @@ export interface CurrentUserOptions {
   userStore: GlobalUserStore;
 }
 
-export interface Attachment {
+export interface DataAttachment {
   file: Blob;
   name: string;
 }
 
-export interface MessageOptions {
-  attachment?: Attachment;
+export interface LinkAttachment {
+  link: string;
+  type: string;
+}
+
+export interface AttachmentBody {
+  resource_link: string;
+  type: string;
+}
+
+export interface SendMessageOptions {
+  linkAttachment?: LinkAttachment;
+  dataAttachment?: DataAttachment;
   roomId: number;
   text?: string;
 }
 
 export interface CompleteMessageOptions {
-  attachement?: FileResource;
+  attachment?: AttachmentBody;
   roomId: number;
   text?: string;
   user_id: string;
@@ -420,33 +430,47 @@ export default class CurrentUser {
   }
 
   sendMessage(
-    options: MessageOptions,
+    options: SendMessageOptions,
     onSuccess: (messageId: number) => void,
     onError: (error: any) => void,
   ) {
-    const { attachment, ...rest } = options;
+    const { linkAttachment, dataAttachment, ...rest } = options;
 
-    if (attachment !== undefined) {
-      this.uploadFile(attachment.file, attachment.name, options.roomId)
-        .then((fileRes: any) => {
-          return {
+    if (linkAttachment !== undefined && dataAttachment !== undefined) {
+      onError(
+        new Error('You can only provide at most one attachment per message'),
+      );
+      return;
+    }
+
+    if (dataAttachment !== undefined) {
+      const { file, name } = dataAttachment;
+      this.uploadFile(file, name, options.roomId).then((fileRes: any) => {
+        this.sendMessageWithCompleteOptions(
+          {
             attachment: fileRes,
             user_id: this.id,
             ...rest,
-          };
-        })
-        .then((completeOptions: CompleteMessageOptions) => {
-          this.sendMessageWithCompleteOptions(
-            completeOptions,
-            onSuccess,
-            onError,
-          );
-        });
+          },
+          onSuccess,
+          onError,
+        );
+      });
     } else {
-      const completeOptions = {
+      // TODO: Shouldn't be an any
+      const completeOptions: any = {
         user_id: this.id,
         ...options,
       };
+
+      if (linkAttachment !== undefined) {
+        const { link, type } = linkAttachment;
+
+        completeOptions.attachment = {
+          resource_link: link,
+          type,
+        };
+      }
 
       this.sendMessageWithCompleteOptions(completeOptions, onSuccess, onError);
     }
@@ -591,7 +615,7 @@ export default class CurrentUser {
       });
   }
 
-  getAttachment(attachmentURL: string): Promise<any> {
+  fetchAttachment(attachmentURL: string): Promise<any> {
     if (!this.apiInstance.tokenProvider) {
       return new Promise<any>((resolve, reject) => {
         reject(new Error('Token provider not set on apiInstance'));

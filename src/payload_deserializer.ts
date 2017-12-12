@@ -10,6 +10,7 @@ import PresencePayload from './presence_payload';
 import PresenceState from './presence_state';
 import Room from './room';
 import User from './user';
+import { queryParamsFromFullUrl } from './utils';
 
 const checkPresenceAndTypeOfFieldsInPayload = (
   requiredFieldsWithTypes: any,
@@ -179,7 +180,13 @@ export default class PayloadDeserializer {
 
     checkPresenceAndTypeOfFieldsInPayload(requiredFieldsWithTypes, payload);
 
+    const linkQueryParams = queryParamsFromFullUrl(payload.resource_link);
+    const fetchRequired =
+      linkQueryParams.chatkit_link !== undefined &&
+      linkQueryParams.chatkit_link === 'true';
+
     return {
+      fetchRequired,
       link: payload.resource_link,
       type: payload.type,
     };

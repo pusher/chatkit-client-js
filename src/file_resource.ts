@@ -1,4 +1,5 @@
 interface FileResource {
+  fetchRequired: boolean;
   link: string;
   type: string;
 }

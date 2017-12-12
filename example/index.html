@@ -104,11 +104,11 @@
           {
             text: document.getElementById("text-input").value,
             roomId: room.id,
-            // linkAttachment: {
+            // attachment: {
             //   link: 'https://assets.zeit.co/image/upload/front/api/deployment-state.png',
             //   type: 'image',
             // },
-            dataAttachment: {
+            attachment: {
               file: fileInput.files[0],
               // Split on slashes, remove whitespace
               name: fileInput.value.split(/(\\|\/)/g).pop().replace(/\s+/g, ''),

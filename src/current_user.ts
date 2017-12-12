@@ -55,14 +55,15 @@ export interface LinkAttachment {
   type: string;
 }
 
+export type GenericAttachment = LinkAttachment | DataAttachment;
+
 export interface AttachmentBody {
   resource_link: string;
   type: string;
 }
 
 export interface SendMessageOptions {
-  linkAttachment?: LinkAttachment;
-  dataAttachment?: DataAttachment;
+  attachment?: GenericAttachment;
   roomId: number;
   text?: string;
 }
@@ -434,44 +435,49 @@ export default class CurrentUser {
     onSuccess: (messageId: number) => void,
     onError: (error: any) => void,
   ) {
-    const { linkAttachment, dataAttachment, ...rest } = options;
+    const { attachment, ...rest } = options;
+    const completeOptions: CompleteMessageOptions = {
+      user_id: this.id,
+      ...rest,
+    };
 
-    if (linkAttachment !== undefined && dataAttachment !== undefined) {
-      onError(
-        new Error('You can only provide at most one attachment per message'),
-      );
-      return;
-    }
-
-    if (dataAttachment !== undefined) {
-      const { file, name } = dataAttachment;
-      this.uploadFile(file, name, options.roomId).then((fileRes: any) => {
-        this.sendMessageWithCompleteOptions(
-          {
-            attachment: fileRes,
-            user_id: this.id,
-            ...rest,
-          },
-          onSuccess,
-          onError,
-        );
-      });
-    } else {
-      // TODO: Shouldn't be an any
-      const completeOptions: any = {
-        user_id: this.id,
-        ...options,
-      };
-
-      if (linkAttachment !== undefined) {
-        const { link, type } = linkAttachment;
-
+    if (attachment !== undefined) {
+      if (this.isDataAttachment(attachment)) {
+        const { file, name } = attachment;
+        this.uploadFile(file, name, options.roomId)
+          .then((fileRes: any) => {
+            this.sendMessageWithCompleteOptions(
+              {
+                attachment: fileRes,
+                user_id: this.id,
+                ...rest,
+              },
+              onSuccess,
+              onError,
+            );
+          })
+          .catch((error: any) => {
+            onError(error);
+            return;
+          });
+      } else if (this.isLinkAttachment(attachment)) {
+        const { link, type } = attachment;
         completeOptions.attachment = {
           resource_link: link,
           type,
         };
+        this.sendMessageWithCompleteOptions(
+          completeOptions,
+          onSuccess,
+          onError,
+        );
+      } else {
+        this.apiInstance.logger.debug(
+          'Message not sent: invalid attachment property provided: ',
+          attachment,
+        );
       }
-
+    } else {
       this.sendMessageWithCompleteOptions(completeOptions, onSuccess, onError);
     }
   }
@@ -638,6 +644,20 @@ export default class CurrentUser {
         return fetchedAttachment;
       });
     });
+  }
+
+  private isDataAttachment(attachment: any): attachment is DataAttachment {
+    return (
+      (attachment as DataAttachment).file !== undefined &&
+      (attachment as DataAttachment).name !== undefined
+    );
+  }
+
+  private isLinkAttachment(attachment: any): attachment is LinkAttachment {
+    return (
+      (attachment as LinkAttachment).link !== undefined &&
+      (attachment as LinkAttachment).type !== undefined
+    );
   }
 
   private uploadFile(

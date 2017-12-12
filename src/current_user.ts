@@ -693,7 +693,6 @@ export default class CurrentUser {
       .then((res: any) => {
         const messageIdPayload = JSON.parse(res);
         const messageId = messageIdPayload.message_id;
-        // TODO: Error handling
         onSuccess(messageId);
       })
       .catch((error: any) => {

@@ -532,9 +532,7 @@ export default class CurrentUser {
       path: `/rooms/${room.id}?message_limit=${messageLimit}`,
     });
 
-    if (roomDelegate.cursorSet) {
-      this.subscribeToCursors(room, roomDelegate);
-    }
+    this.subscribeToCursors(room, roomDelegate);
   }
 
   fetchMessagesFromRoom(

@@ -28,6 +28,9 @@ export default class CursorSubscription {
   }
 
   handleEvent(event: SubscriptionEvent) {
+    if (!this.delegate || !this.delegate.cursorSet) {
+      return
+    }
     const { body, eventId, headers } = event;
     const { data } = body;
     const eventName = body.event_name;

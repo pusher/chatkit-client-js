@@ -4,6 +4,7 @@ import BasicMessage from './basic_message';
 import BasicMessageEnricher from './basic_message_enricher';
 import ChatManagerDelegate from './chat_manager_delegate';
 import CursorSubscription from './cursor_subscription';
+import CursorType from './cursor_types';
 import FetchedAttachment from './fetched_attachment';
 import GlobalUserStore from './global_user_store';
 import Message from './message';
@@ -445,7 +446,7 @@ export default class CurrentUser {
       .request({
         json: { position },
         method: 'PUT',
-        path: `/cursors/0/rooms/${room.id}/users/${this.id}`,
+        path: `/cursors/${CursorType.Read}/rooms/${room.id}/users/${this.id}`,
       })
       .then(onSuccess)
       .catch(err => {
@@ -750,7 +751,7 @@ export default class CurrentUser {
           room.cursorSubscription,
         ),
       },
-      path: `/cursors/0/rooms/${room.id}`,
+      path: `/cursors/${CursorType.Read}/rooms/${room.id}`,
     });
   }
 

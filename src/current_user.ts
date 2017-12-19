@@ -126,6 +126,7 @@ export default class CurrentUser {
 
     this.apiInstance.subscribeNonResuming({
       listeners: {
+        onError: delegate && delegate.error,
         onEvent: this.presenceSubscription.handleEvent.bind(
           this.presenceSubscription,
         ),
@@ -498,6 +499,7 @@ export default class CurrentUser {
 
     this.apiInstance.subscribeNonResuming({
       listeners: {
+        onError: roomDelegate.error,
         onEvent: room.subscription.handleEvent.bind(room.subscription),
       },
       path: `/rooms/${room.id}?message_limit=${messageLimit}`,

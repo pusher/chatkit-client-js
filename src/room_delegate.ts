@@ -14,6 +14,8 @@ interface RoomDelegate {
 
   // TODO: This seems like it could instead be `userListUpdated`, or something similar?
   usersUpdated?: () => void;
+
+  error?: (error: any) => void;
 }
 
 export default RoomDelegate;

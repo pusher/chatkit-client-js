@@ -1,6 +1,7 @@
 import { Instance } from 'pusher-platform';
 
 import Attachment from './attachment';
+import BasicCursor from './basic_cursor';
 import BasicMessage from './basic_message';
 import BasicUser from './basic_user';
 import CurrentUser from './current_user';
@@ -52,6 +53,7 @@ export default class PayloadDeserializer {
     userPayload: any,
     apiInstance: Instance,
     filesInstance: Instance,
+    cursorsInstance: Instance,
     userStore: GlobalUserStore,
   ): CurrentUser {
     const basicUser = PayloadDeserializer.createBasicUserFromPayload(
@@ -62,6 +64,7 @@ export default class PayloadDeserializer {
       apiInstance,
       avatarURL: userPayload.avatar_url,
       createdAt: basicUser.createdAt,
+      cursorsInstance,
       customData: userPayload.custom_data,
       filesInstance,
       id: basicUser.id,
@@ -126,10 +129,30 @@ export default class PayloadDeserializer {
       attachment,
       createdAt: messagePayload.created_at,
       id: messagePayload.id,
-      roomId: messagePayload.id,
+      roomId: messagePayload.room_id,
       senderId: messagePayload.user_id,
       text: messagePayload.text,
       updatedAt: messagePayload.updated_at,
+    };
+  }
+
+  static createBasicCursorFromPayload(payload: any): BasicCursor {
+    const requiredFieldsWithTypes: { [key: string]: string } = {
+      cursor_type: 'number',
+      position: 'number',
+      room_id: 'number',
+      updated_at: 'string',
+      user_id: 'string',
+    };
+
+    checkPresenceAndTypeOfFieldsInPayload(requiredFieldsWithTypes, payload);
+
+    return {
+      cursorType: payload.cursor_type,
+      position: payload.position,
+      roomId: payload.room_id,
+      updatedAt: payload.updated_at,
+      userId: payload.user_id,
     };
   }
 

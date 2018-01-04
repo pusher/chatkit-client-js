@@ -21,6 +21,7 @@ export interface ChatManagerOptions {
 export default class ChatManager {
   apiInstance: Instance;
   filesInstance: Instance;
+  cursorsInstance: Instance;
 
   private userStore: GlobalUserStore;
   private userSubscription: UserSubscription;
@@ -57,6 +58,12 @@ export default class ChatManager {
       ...sharedInstanceOptions,
     });
 
+    this.cursorsInstance = new Instance({
+      serviceName: 'chatkit_cursors',
+      serviceVersion: 'v1',
+      ...sharedInstanceOptions,
+    });
+
     this.userStore = new GlobalUserStore({ apiInstance: this.apiInstance });
   }
 
@@ -70,6 +77,7 @@ export default class ChatManager {
           options.onError(error);
         }
       },
+      cursorsInstance: this.cursorsInstance,
       delegate: options.delegate,
       filesInstance: this.filesInstance,
       userStore: this.userStore,

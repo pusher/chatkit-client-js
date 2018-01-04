@@ -12,6 +12,7 @@ import { allPromisesSettled } from './utils';
 export interface UserSubscriptionOptions {
   apiInstance: Instance;
   filesInstance: Instance;
+  cursorsInstance: Instance;
   userStore: GlobalUserStore;
   delegate?: ChatManagerDelegate;
   connectCompletionHandler: (currentUser?: CurrentUser, error?: any) => void;
@@ -25,10 +26,12 @@ export default class UserSubscription {
 
   private apiInstance: Instance;
   private filesInstance: Instance;
+  private cursorsInstance: Instance;
 
   constructor(options: UserSubscriptionOptions) {
     this.apiInstance = options.apiInstance;
     this.filesInstance = options.filesInstance;
+    this.cursorsInstance = options.cursorsInstance;
     this.userStore = options.userStore;
     this.delegate = options.delegate;
     this.connectCompletionHandlers = [options.connectCompletionHandler];
@@ -92,6 +95,7 @@ export default class UserSubscription {
       userPayload,
       this.apiInstance,
       this.filesInstance,
+      this.cursorsInstance,
       this.userStore,
     );
 

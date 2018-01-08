@@ -12,6 +12,7 @@ export interface CursorSubscriptionOptions {
   logger: Logger;
   room: Room;
   userStore: GlobalUserStore;
+  handleCursorSetInternal: (cursor: BasicCursor) => void;
 }
 
 export default class CursorSubscription {
@@ -19,12 +20,14 @@ export default class CursorSubscription {
   logger: Logger;
   room: Room;
   userStore: GlobalUserStore;
+  handleCursorSetInternal: (cursor: BasicCursor) => void;
 
   constructor(options: CursorSubscriptionOptions) {
     this.delegate = options.delegate;
     this.logger = options.logger;
     this.room = options.room;
     this.userStore = options.userStore;
+    this.handleCursorSetInternal = options.handleCursorSetInternal;
   }
 
   handleEvent(event: SubscriptionEvent) {
@@ -43,6 +46,7 @@ export default class CursorSubscription {
     this.logger.verbose(`Received event name: ${eventName}, and data: ${data}`);
     const basicCursor = PayloadDeserializer.createBasicCursorFromPayload(data);
     this.logger.verbose(`Room received cursor for: ${basicCursor.userId}`);
+    this.handleCursorSetInternal(basicCursor);
     this.enrich(
       basicCursor,
       cursor => {

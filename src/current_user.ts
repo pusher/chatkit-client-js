@@ -740,6 +740,11 @@ export default class CurrentUser {
   private subscribeToCursors(room: Room, roomDelegate: RoomDelegate) {
     room.cursorSubscription = new CursorSubscription({
       delegate: roomDelegate,
+      handleCursorSetInternal: (cursor: BasicCursor) => {
+        if (cursor.userId === this.id && this.cursors !== undefined) {
+          this.cursors[cursor.roomId] = cursor;
+        }
+      },
       logger: this.cursorsInstance.logger,
       room,
       userStore: this.userStore,

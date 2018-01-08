@@ -1,5 +1,6 @@
 import { Instance, sendRawRequest } from 'pusher-platform';
 
+import BasicCursor from './basic_cursor';
 import BasicMessage from './basic_message';
 import BasicMessageEnricher from './basic_message_enricher';
 import ChatManagerDelegate from './chat_manager_delegate';
@@ -81,6 +82,7 @@ export interface CompleteMessageOptions {
 export default class CurrentUser {
   id: string;
   createdAt: string;
+  cursors?: { [roomId: string]: BasicCursor };
   updatedAt: string;
   name?: string;
   avatarURL?: string;

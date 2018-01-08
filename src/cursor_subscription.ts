@@ -29,7 +29,7 @@ export default class CursorSubscription {
 
   handleEvent(event: SubscriptionEvent) {
     if (!this.delegate || !this.delegate.cursorSet) {
-      return
+      return;
     }
     const { body, eventId, headers } = event;
     const { data } = body;

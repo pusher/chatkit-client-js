@@ -69,37 +69,34 @@ export default class ChatManager {
   }
 
   connect(options: ConnectOptions) {
-    if (this.userId && !options.disableCursors) {
-      this.cursorsInstance
-        .request({
-          method: 'GET',
-          path: `/cursors/0/users/${this.userId}`,
-        })
-        .then(res => {
-          const cursors = JSON.parse(res);
-          const cursorsByRoom: { [roomId: number]: BasicCursor } = {};
-          cursors.forEach((c: any): void => {
-            cursorsByRoom[
-              c.room_id
-            ] = PayloadDeserializer.createBasicCursorFromPayload(c);
-          });
-          this.connectWithCursors(options, cursorsByRoom);
-        });
-    } else {
-      this.connectWithCursors(options, {});
-    }
-  }
+    const cursorsReq: Promise<any> = this.userId
+      ? this.cursorsInstance
+          .request({
+            method: 'GET',
+            path: `/cursors/0/users/${this.userId}`,
+          })
+          .then(res => {
+            const cursors = JSON.parse(res);
+            const cursorsByRoom: { [roomId: number]: BasicCursor } = {};
+            cursors.forEach((c: any): void => {
+              cursorsByRoom[
+                c.room_id
+              ] = PayloadDeserializer.createBasicCursorFromPayload(c);
+            });
+            return cursorsByRoom;
+          })
+      : Promise.resolve({});
 
-  private connectWithCursors(
-    options: ConnectOptions,
-    cursors: { [roomId: number]: BasicCursor },
-  ) {
     this.userSubscription = new UserSubscription({
       apiInstance: this.apiInstance,
       connectCompletionHandler: (currentUser?: CurrentUser, error?: any) => {
         if (currentUser) {
-          currentUser.cursors = cursors;
-          options.onSuccess(currentUser);
+          cursorsReq
+            .then(cursors => {
+              currentUser.cursors = cursors;
+              options.onSuccess(currentUser);
+            })
+            .catch(options.onError);
         } else {
           options.onError(error);
         }
@@ -124,5 +121,4 @@ export interface ConnectOptions {
   delegate?: ChatManagerDelegate;
   onSuccess: (currentUser: CurrentUser) => void;
   onError: (error: any) => void;
-  disableCursors?: boolean;
 }

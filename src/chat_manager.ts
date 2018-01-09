@@ -1,11 +1,17 @@
-import { BaseClient, HOST_BASE, Instance, Logger } from 'pusher-platform';
+import {
+  BaseClient,
+  HOST_BASE,
+  Instance,
+  Logger,
+  TokenProvider,
+} from 'pusher-platform';
 
 import BasicCursor from './basic_cursor';
 import ChatManagerDelegate from './chat_manager_delegate';
 import CurrentUser from './current_user';
 import GlobalUserStore from './global_user_store';
 import PayloadDeserializer from './payload_deserializer';
-import TokenProvider from './token_provider';
+import CKTokenProvider from './token_provider';
 import UserSubscription from './user_subscription';
 
 export interface ChatManagerOptions {
@@ -39,7 +45,9 @@ export default class ChatManager {
         logger: options.logger,
       });
 
-    options.tokenProvider.userId = this.userId;
+    if (options.tokenProvider instanceof CKTokenProvider) {
+      options.tokenProvider.userId = this.userId;
+    }
     const sharedInstanceOptions = {
       client: baseClient,
       locator: options.instanceLocator,

@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## Unreleased (branch: get-own-cursors-on-connection)
+## 0.5.0 -- 2018-01-09
 
 ### Changes
 
@@ -24,7 +24,9 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
   before room subscriptions succeed, so e.g. `currentUser.cursors[roomId]` can
   be used upon receiving messages to determine if they have been read already.
 
-## Unreleased
+---
+
+## (this stuff is released, but the history up to this point needs sorting out)
 
 ### Changes
 

@@ -1,4 +1,7 @@
-import { sendRawRequest } from 'pusher-platform';
+import {
+  sendRawRequest,
+  TokenProvider as PlatformTokenProvider,
+} from 'pusher-platform';
 
 import { mergeQueryParamsIntoUrl, urlEncode } from './utils';
 
@@ -20,7 +23,7 @@ export interface TokenProviderOptions {
   url: string;
 }
 
-export default class TokenProvider {
+export default class TokenProvider implements PlatformTokenProvider {
   authContext?: TokenProviderAuthContextOptions;
   url: string;
   userId?: string;

@@ -514,7 +514,6 @@ export default class CurrentUser {
     }
   }
 
-  // TODO: Do I need to add a Last-Event-ID option here?
   subscribeToRoom(room: Room, roomDelegate: RoomDelegate, messageLimit = 20) {
     this.cursorsReq.then(() => {
       room.subscription = new RoomSubscription({
@@ -526,9 +525,6 @@ export default class CurrentUser {
         delegate: roomDelegate,
         logger: this.apiInstance.logger,
       });
-
-      // TODO: What happens if you provide both a message_limit and a Last-Event-ID?
-
       this.apiInstance.subscribeNonResuming({
         listeners: {
           onError: roomDelegate.error,
@@ -536,7 +532,6 @@ export default class CurrentUser {
         },
         path: `/rooms/${room.id}?message_limit=${messageLimit}`,
       });
-
       this.subscribeToCursors(room, roomDelegate);
     });
   }

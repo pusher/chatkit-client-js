@@ -4,6 +4,26 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
+## Unreleased (branch: get-own-cursors-on-connection)
+
+### Changes
+
+- `ChatManager` takes a `userId` as a required option, `TokenProvider` no
+  longer does. (`ChatManager` passes the user ID to the token provider
+  internally before requesting a token.)
+
+### Additions
+
+- `RoomDelegate` has a `cursorSet` callback, fired whenever a cursor is set in
+  the given room.
+
+- `CurrentUser` has a `setCursor` method, to set a cursor in a given room.
+
+- The `CurrentUser` object now has a `cursors` property, which contains all the
+  user's own cursors, mapped by room ID. This is guaranteed to be populated
+  before room subscriptions succeed, so e.g. `currentUser.cursors[roomId]` can
+  be used upon receiving messages to determine if they have been read already.
+
 ## Unreleased
 
 ### Changes

@@ -77,7 +77,9 @@ export default class ChatManager {
   }
 
   connect(options: ConnectOptions) {
-    const cursorsReq: Promise<any> = this.cursorsInstance
+    const cursorsReq: Promise<{
+      [roomId: number]: BasicCursor;
+    }> = this.cursorsInstance
       .request({
         method: 'GET',
         path: `/cursors/0/users/${this.userId}`,
@@ -97,12 +99,17 @@ export default class ChatManager {
       apiInstance: this.apiInstance,
       connectCompletionHandler: (currentUser?: CurrentUser, error?: any) => {
         if (currentUser) {
-          cursorsReq
+          currentUser.cursorsReq = cursorsReq
             .then(cursors => {
               currentUser.cursors = cursors;
-              options.onSuccess(currentUser);
             })
-            .catch(options.onError);
+            .catch(err => {
+              this.cursorsInstance.logger.verbose(
+                'Error getting cursors:',
+                err,
+              );
+            });
+          options.onSuccess(currentUser);
         } else {
           options.onError(error);
         }

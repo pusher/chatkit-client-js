@@ -1,4 +1,7 @@
-import { sendRawRequest } from 'pusher-platform';
+import {
+  sendRawRequest,
+  TokenProvider as PlatformTokenProvider,
+} from 'pusher-platform';
 
 import { mergeQueryParamsIntoUrl, urlEncode } from './utils';
 
@@ -18,10 +21,9 @@ export type TokenProviderAuthContextQueryParams = {
 export interface TokenProviderOptions {
   authContext?: TokenProviderAuthContextOptions;
   url: string;
-  userId?: string;
 }
 
-export default class TokenProvider {
+export default class TokenProvider implements PlatformTokenProvider {
   authContext?: TokenProviderAuthContextOptions;
   url: string;
   userId?: string;
@@ -32,7 +34,6 @@ export default class TokenProvider {
   constructor(options: TokenProviderOptions) {
     this.authContext = options.authContext || {};
     this.url = options.url;
-    this.userId = options.userId;
   }
 
   get cacheIsStale() {

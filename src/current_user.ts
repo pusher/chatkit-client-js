@@ -1,5 +1,6 @@
 import { Instance, sendRawRequest } from 'pusher-platform';
 
+import BasicCursor from './basic_cursor';
 import BasicMessage from './basic_message';
 import BasicMessageEnricher from './basic_message_enricher';
 import ChatManagerDelegate from './chat_manager_delegate';
@@ -81,6 +82,8 @@ export interface CompleteMessageOptions {
 export default class CurrentUser {
   id: string;
   createdAt: string;
+  cursors: { [roomId: string]: BasicCursor };
+  cursorsReq: Promise<void>;
   updatedAt: string;
   name?: string;
   avatarURL?: string;
@@ -103,6 +106,7 @@ export default class CurrentUser {
 
     this.id = id;
     this.createdAt = options.createdAt;
+    this.cursors = {};
     this.updatedAt = options.updatedAt;
     this.name = options.name;
     this.avatarURL = options.avatarURL;
@@ -510,29 +514,26 @@ export default class CurrentUser {
     }
   }
 
-  // TODO: Do I need to add a Last-Event-ID option here?
   subscribeToRoom(room: Room, roomDelegate: RoomDelegate, messageLimit = 20) {
-    room.subscription = new RoomSubscription({
-      basicMessageEnricher: new BasicMessageEnricher(
-        this.userStore,
-        room,
-        this.apiInstance.logger,
-      ),
-      delegate: roomDelegate,
-      logger: this.apiInstance.logger,
+    this.cursorsReq.then(() => {
+      room.subscription = new RoomSubscription({
+        basicMessageEnricher: new BasicMessageEnricher(
+          this.userStore,
+          room,
+          this.apiInstance.logger,
+        ),
+        delegate: roomDelegate,
+        logger: this.apiInstance.logger,
+      });
+      this.apiInstance.subscribeNonResuming({
+        listeners: {
+          onError: roomDelegate.error,
+          onEvent: room.subscription.handleEvent.bind(room.subscription),
+        },
+        path: `/rooms/${room.id}?message_limit=${messageLimit}`,
+      });
+      this.subscribeToCursors(room, roomDelegate);
     });
-
-    // TODO: What happens if you provide both a message_limit and a Last-Event-ID?
-
-    this.apiInstance.subscribeNonResuming({
-      listeners: {
-        onError: roomDelegate.error,
-        onEvent: room.subscription.handleEvent.bind(room.subscription),
-      },
-      path: `/rooms/${room.id}?message_limit=${messageLimit}`,
-    });
-
-    this.subscribeToCursors(room, roomDelegate);
   }
 
   fetchMessagesFromRoom(
@@ -738,6 +739,11 @@ export default class CurrentUser {
   private subscribeToCursors(room: Room, roomDelegate: RoomDelegate) {
     room.cursorSubscription = new CursorSubscription({
       delegate: roomDelegate,
+      handleCursorSetInternal: (cursor: BasicCursor) => {
+        if (cursor.userId === this.id && this.cursors !== undefined) {
+          this.cursors[cursor.roomId] = cursor;
+        }
+      },
       logger: this.cursorsInstance.logger,
       room,
       userStore: this.userStore,

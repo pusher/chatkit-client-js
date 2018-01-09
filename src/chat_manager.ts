@@ -19,14 +19,14 @@ export interface ChatManagerOptions {
   tokenProvider: TokenProvider;
   logger?: Logger;
   baseClient?: BaseClient;
-  userId?: string;
+  userId: string;
 }
 
 export default class ChatManager {
   apiInstance: Instance;
   filesInstance: Instance;
   cursorsInstance: Instance;
-  userId?: string;
+  userId: string;
 
   private userStore: GlobalUserStore;
   private userSubscription: UserSubscription;
@@ -77,23 +77,21 @@ export default class ChatManager {
   }
 
   connect(options: ConnectOptions) {
-    const cursorsReq: Promise<any> = this.userId
-      ? this.cursorsInstance
-          .request({
-            method: 'GET',
-            path: `/cursors/0/users/${this.userId}`,
-          })
-          .then(res => {
-            const cursors = JSON.parse(res);
-            const cursorsByRoom: { [roomId: number]: BasicCursor } = {};
-            cursors.forEach((c: any): void => {
-              cursorsByRoom[
-                c.room_id
-              ] = PayloadDeserializer.createBasicCursorFromPayload(c);
-            });
-            return cursorsByRoom;
-          })
-      : Promise.resolve({});
+    const cursorsReq: Promise<any> = this.cursorsInstance
+      .request({
+        method: 'GET',
+        path: `/cursors/0/users/${this.userId}`,
+      })
+      .then(res => {
+        const cursors = JSON.parse(res);
+        const cursorsByRoom: { [roomId: number]: BasicCursor } = {};
+        cursors.forEach((c: any): void => {
+          cursorsByRoom[
+            c.room_id
+          ] = PayloadDeserializer.createBasicCursorFromPayload(c);
+        });
+        return cursorsByRoom;
+      });
 
     this.userSubscription = new UserSubscription({
       apiInstance: this.apiInstance,

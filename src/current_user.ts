@@ -561,7 +561,7 @@ export default class CurrentUser {
     this.apiInstance
       .request({
         method: 'GET',
-        path: `/rooms/${room.id}/messages`,
+        path: `/rooms/${room.id}/messages?${combinedQueryParams}`,
       })
       .then((res: any) => {
         const messagesPayload = JSON.parse(res);

@@ -1,14 +1,17 @@
-# Change Log
+# Changelog
 
 This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
+
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.5.1...HEAD)
 
 ## 0.5.1 -- 2018-01-16
 
 ### Fixes
 
 - Fixed `fetchMessageFromRoom` which wasn't passing along the values provided in the `FetchRoomMessagesOptions` parameter as query params. Thanks [@apalmer0](https://github.com/apalmer0)!
+
 
 ## 0.5.0 -- 2018-01-09
 
@@ -30,9 +33,15 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
   before room subscriptions succeed, so e.g. `currentUser.cursors[roomId]` can
   be used upon receiving messages to determine if they have been read already.
 
----
 
-## (this stuff is released, but the history up to this point needs sorting out)
+## 0.4.0 -- 2018-01-04
+
+### Additions
+
+- Add initial support for receiving cursors.
+
+
+## 0.3.2 -- 2017-12-19
 
 ### Changes
 

@@ -4,6 +4,12 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
+## 0.5.1 -- 2018-01-16
+
+### Fixes
+
+- Fixed `fetchMessageFromRoom` which wasn't passing along the values provided in the `FetchRoomMessagesOptions` parameter as query params. Thanks [@apalmer0](https://github.com/apalmer0)!
+
 ## 0.5.0 -- 2018-01-09
 
 ### Changes

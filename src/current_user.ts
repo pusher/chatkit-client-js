@@ -16,6 +16,7 @@ import RoomDelegate from './room_delegate';
 import RoomStore from './room_store';
 import RoomSubscription from './room_subscription';
 
+import { TYPING_REQ_LEEWAY, TYPING_REQ_TTL } from './constants';
 import { allPromisesSettled } from './utils';
 
 export interface CreateRoomOptions {
@@ -430,8 +431,8 @@ export default class CurrentUser {
       // TODO this would ideally be is_typing or typing_heartbeat or some such
       name: 'typing_start',
       user_id: this.id,
-    }
-    if (!sent || now - sent > TYPING_DEBOUNCE_MS) {
+    };
+    if (!sent || now - sent > TYPING_REQ_TTL - TYPING_REQ_LEEWAY) {
       this.typingRequestSent[roomId] = now;
       this.apiInstance
         .request({

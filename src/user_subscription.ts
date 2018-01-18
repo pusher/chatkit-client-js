@@ -72,7 +72,8 @@ export default class UserSubscription {
         this.parseTypingStartPayload(eventName, data, data.user_id);
         break;
       case 'typing_stop':
-        this.parseTypingStopPayload(eventName, data, data.user_id);
+        // Ignored for now, using typing_start in lieu of is_typing
+        // this.parseTypingStopPayload(eventName, data, data.user_id);
         break;
     }
   }
@@ -618,6 +619,7 @@ export default class UserSubscription {
   }
 
   parseTypingStartPayload(eventName: string, data: any, userId: string) {
+    // Treating like an is_typing event for now as an experiment
     const roomId = data.room_id;
 
     if (roomId === undefined || typeof roomId !== 'number') {
@@ -680,78 +682,6 @@ export default class UserSubscription {
       },
       error => {
         this.apiInstance.logger.verbose(
-          `Error fetching information for room ${roomId}:`,
-          error,
-        );
-        // self.delegate.error(error: err!)
-        return;
-      },
-    );
-  }
-
-  parseTypingStopPayload(eventName: string, data: any, userId: string) {
-    const roomId = data.room_id;
-
-    if (roomId === undefined || typeof roomId !== 'number') {
-      this.apiInstance.logger.verbose(
-        `\`room_id\` key missing or invalid in \`typing_stop\` payload: ${data}`,
-      );
-      return;
-    }
-
-    if (!this.currentUser) {
-      this.apiInstance.logger.verbose(
-        'currentUser property not set on UserSubscription',
-      );
-      return;
-    }
-
-    this.currentUser.roomStore.room(
-      roomId,
-      room => {
-        if (!this.currentUser) {
-          this.apiInstance.logger.verbose(
-            'currentUser property not set on UserSubscription',
-          );
-          return;
-        }
-
-        this.currentUser.userStore.user(
-          userId,
-          user => {
-            if (this.delegate && this.delegate.userStoppedTyping) {
-              this.delegate.userStoppedTyping(room, user);
-            }
-
-            if (room.subscription === undefined) {
-              this.apiInstance.logger.verbose(
-                `Room ${room.name} has no subscription object set`,
-              );
-            } else {
-              if (
-                room.subscription.delegate &&
-                room.subscription.delegate.userStoppedTyping
-              ) {
-                room.subscription.delegate.userStoppedTyping(user);
-              }
-            }
-
-            this.apiInstance.logger.verbose(
-              `User ${user.id} stopped typing in room ${room.name}`,
-            );
-          },
-          error => {
-            this.apiInstance.logger.debug(
-              `Error fetching information for user ${userId}:`,
-              error,
-            );
-            // strongSelf.delegate.error(error: err!)
-            return;
-          },
-        );
-      },
-      error => {
-        this.apiInstance.logger.debug(
           `Error fetching information for room ${roomId}:`,
           error,
         );

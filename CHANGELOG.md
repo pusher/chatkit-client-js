@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.5.1...HEAD)
 
+## 0.6.0 -- 2018-01-19
+
 ### Changes
 
 - Simplify typing indicator API

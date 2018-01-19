@@ -16,6 +16,7 @@ import RoomDelegate from './room_delegate';
 import RoomStore from './room_store';
 import RoomSubscription from './room_subscription';
 
+import { TYPING_REQ_LEEWAY, TYPING_REQ_TTL } from './constants';
 import { allPromisesSettled } from './utils';
 
 export interface CreateRoomOptions {
@@ -95,6 +96,7 @@ export default class CurrentUser {
   cursorsInstance: Instance;
   pathFriendlyId: string;
   presenceSubscription: PresenceSubscription;
+  typingRequestSent: { [roomId: string]: number };
 
   get rooms(): Room[] {
     return this.roomStore.rooms;
@@ -117,6 +119,7 @@ export default class CurrentUser {
     this.cursorsInstance = cursorsInstance;
     this.userStore = options.userStore;
     this.pathFriendlyId = encodeURIComponent(id); // TODO: This is different to Swift SDK
+    this.typingRequestSent = {};
   }
 
   updateWithPropertiesOf(currentUser: CurrentUser) {
@@ -416,28 +419,41 @@ export default class CurrentUser {
     this.getRooms('/rooms', onSuccess, onError);
   }
 
-  startedTypingIn(
+  isTypingIn(
     roomId: number,
     onSuccess: () => void,
     onError: (error: any) => void,
   ) {
+    const now = Date.now();
+    const sent = this.typingRequestSent[roomId];
+    const eventName = 'typing_start';
     const eventPayload = {
+      // TODO this would ideally be is_typing or typing_heartbeat or some such
       name: 'typing_start',
       user_id: this.id,
     };
-    this.typingStateChange(eventPayload, roomId, onSuccess, onError);
-  }
-
-  stoppedTypingIn(
-    roomId: number,
-    onSuccess: () => void,
-    onError: (error: any) => void,
-  ) {
-    const eventPayload = {
-      name: 'typing_stop',
-      user_id: this.id,
-    };
-    this.typingStateChange(eventPayload, roomId, onSuccess, onError);
+    if (!sent || now - sent > TYPING_REQ_TTL - TYPING_REQ_LEEWAY) {
+      this.typingRequestSent[roomId] = now;
+      this.apiInstance
+        .request({
+          json: eventPayload,
+          method: 'POST',
+          path: `/rooms/${roomId}/events`,
+        })
+        .then((res: any) => {
+          onSuccess();
+        })
+        .catch((error: any) => {
+          delete this.typingRequestSent[roomId];
+          this.apiInstance.logger.verbose(
+            `Error sending ${eventName} event in room ${roomId}:`,
+            error,
+          );
+          onError(error);
+        });
+    } else {
+      onSuccess();
+    }
   }
 
   setCursor(
@@ -780,31 +796,6 @@ export default class CurrentUser {
       .catch((error: any) => {
         this.apiInstance.logger.verbose(
           'Error when getting instance rooms:',
-          error,
-        );
-        onError(error);
-      });
-  }
-
-  // TODO: This shouldn't be an any for eventPayload
-  private typingStateChange(
-    eventPayload: any,
-    roomId: number,
-    onSuccess: () => void,
-    onError: (error: any) => void,
-  ) {
-    this.apiInstance
-      .request({
-        json: eventPayload,
-        method: 'POST',
-        path: `/rooms/${roomId}/events`,
-      })
-      .then((res: any) => {
-        onSuccess();
-      })
-      .catch((error: any) => {
-        this.apiInstance.logger.verbose(
-          `Error sending typing state change in room ${roomId}:`,
           error,
         );
         onError(error);

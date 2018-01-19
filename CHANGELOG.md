@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.5.1...HEAD)
 
+### Changes
+
+- Simplify typing indicator API
+  - removed `startedTypingIn` and `stoppedTypingIn` methods
+  - instead call `isTypingIn` as frequently as you like (rate limited by the SDK)
+  - `startedTyping` and `stoppedTyping` are fired exactly once each per burst
+    of typing
+
 ## 0.5.1 -- 2018-01-16
 
 ### Fixes

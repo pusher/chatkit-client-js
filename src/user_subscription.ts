@@ -7,6 +7,7 @@ import PayloadDeserializer from './payload_deserializer';
 import Room from './room';
 import User from './user';
 
+import { TYPING_REQ_TTL } from './constants';
 import { allPromisesSettled } from './utils';
 
 export interface UserSubscriptionOptions {
@@ -27,6 +28,7 @@ export default class UserSubscription {
   private apiInstance: Instance;
   private filesInstance: Instance;
   private cursorsInstance: Instance;
+  private typingTimers: { [roomId: number]: { [userId: string]: number } } = {};
 
   constructor(options: UserSubscriptionOptions) {
     this.apiInstance = options.apiInstance;
@@ -68,11 +70,13 @@ export default class UserSubscription {
       case 'user_left':
         this.parseUserLeftPayload(eventName, data);
         break;
-      case 'typing_start':
-        this.parseTypingStartPayload(eventName, data, data.user_id);
+      case 'typing_start': // 'is_typing'
+        // Treating like an is_typing event for now as an experiment
+        this.parseIsTypingPayload(eventName, data, data.user_id);
         break;
       case 'typing_stop':
-        this.parseTypingStopPayload(eventName, data, data.user_id);
+        // Ignored for now, using typing_start in lieu of is_typing
+        // this.parseTypingStopPayload(eventName, data, data.user_id);
         break;
     }
   }
@@ -617,7 +621,7 @@ export default class UserSubscription {
     );
   }
 
-  parseTypingStartPayload(eventName: string, data: any, userId: string) {
+  parseIsTypingPayload(eventName: string, data: any, userId: string) {
     const roomId = data.room_id;
 
     if (roomId === undefined || typeof roomId !== 'number') {
@@ -627,6 +631,21 @@ export default class UserSubscription {
       return;
     }
 
+    if (!this.typingTimers[roomId]) {
+      this.typingTimers[roomId] = {};
+    }
+    if (this.typingTimers[roomId][userId]) {
+      clearTimeout(this.typingTimers[roomId][userId]);
+    } else {
+      this.startedTyping(roomId, userId);
+    }
+    this.typingTimers[roomId][userId] = setTimeout(() => {
+      this.stoppedTyping(roomId, userId);
+      delete this.typingTimers[roomId][userId];
+    }, TYPING_REQ_TTL);
+  }
+
+  private startedTyping(roomId: number, userId: string) {
     if (!this.currentUser) {
       this.apiInstance.logger.verbose(
         'currentUser property not set on UserSubscription',
@@ -689,16 +708,7 @@ export default class UserSubscription {
     );
   }
 
-  parseTypingStopPayload(eventName: string, data: any, userId: string) {
-    const roomId = data.room_id;
-
-    if (roomId === undefined || typeof roomId !== 'number') {
-      this.apiInstance.logger.verbose(
-        `\`room_id\` key missing or invalid in \`typing_stop\` payload: ${data}`,
-      );
-      return;
-    }
-
+  private stoppedTyping(roomId: number, userId: string) {
     if (!this.currentUser) {
       this.apiInstance.logger.verbose(
         'currentUser property not set on UserSubscription',

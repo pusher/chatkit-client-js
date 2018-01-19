@@ -119,46 +119,34 @@ export default class GlobalUserStore {
   // provided and then only makes a request to fetch the user information for the userIds
   // that aren't known about. This would be used in the creatRoom callback and the
   // addedToRoom parsing function
-  fetchUsersWithIds(
-    userIds: string[],
-    onSuccess: (users: User[]) => void,
-    onError: (error: Error) => void,
-  ) {
+  async fetchUsersWithIds(userIds: string[]): Promise<User[]> {
     if (userIds.length === 0) {
       this.apiInstance.logger.verbose(
         'Requested to fetch users for a list of user ids which was empty',
       );
-      onSuccess([]);
-      return;
+      return [];
     }
 
     const userIdsString = userIds.join(',');
     const qs = queryString({ user_ids: userIdsString });
 
-    this.apiInstance
-      .request({
+    try {
+      const res = await this.apiInstance.request({
         method: 'GET',
         path: `/users_by_ids${qs}`,
-      })
-      .then((res: any) => {
-        const usersPayload = JSON.parse(res);
-
-        // TODO: Make it more like flatMap, or handle errors being thrown?
-        const users = usersPayload.map((userPayload: any) => {
-          const user = PayloadDeserializer.createUserFromPayload(userPayload);
-          const addedOrUpdatedUser = this.userStoreCore.addOrMerge(user);
-          return addedOrUpdatedUser;
-        });
-
-        onSuccess(users);
-      })
-      .catch((error: any) => {
-        this.apiInstance.logger.verbose(
-          'Error fetching user information:',
-          error,
-        );
-        onError(error);
       });
+      const usersPayload = JSON.parse(res);
+
+      // TODO: Make it more like flatMap, or handle errors being thrown?
+      return usersPayload.map((userPayload: any) => {
+        const user = PayloadDeserializer.createUserFromPayload(userPayload);
+        const addedOrUpdatedUser = this.userStoreCore.addOrMerge(user);
+        return addedOrUpdatedUser;
+      });
+    } catch (err) {
+      this.apiInstance.logger.verbose('Error fetching user information:', err);
+      throw err;
+    }
   }
 
   initialFetchOfUsersWithIds(
@@ -166,6 +154,8 @@ export default class GlobalUserStore {
     onSuccess: (users: User[]) => void,
     onError: (error: Error) => void,
   ) {
-    this.fetchUsersWithIds(userIds, onSuccess, onError);
+    this.fetchUsersWithIds(userIds)
+      .then(onSuccess)
+      .catch(onError);
   }
 }

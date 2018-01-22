@@ -30,7 +30,7 @@ export default class CursorSubscription {
     this.handleCursorSetInternal = options.handleCursorSetInternal;
   }
 
-  handleEvent(event: SubscriptionEvent) {
+  async handleEvent(event: SubscriptionEvent) {
     if (!this.delegate || !this.delegate.cursorSet) {
       return;
     }
@@ -47,42 +47,31 @@ export default class CursorSubscription {
     const basicCursor = PayloadDeserializer.createBasicCursorFromPayload(data);
     this.logger.verbose(`Room received cursor for: ${basicCursor.userId}`);
     this.handleCursorSetInternal(basicCursor);
-    this.enrich(
-      basicCursor,
-      cursor => {
-        if (this.delegate && this.delegate.cursorSet) {
-          this.delegate.cursorSet(cursor);
-        }
-      },
-      error => {
-        this.logger.debug('Error receiving cursor:', error);
-      },
-    );
+    try {
+      const cursor = await this.enrich(basicCursor);
+      if (this.delegate && this.delegate.cursorSet) {
+        this.delegate.cursorSet(cursor);
+      }
+    } catch (err) {
+      this.logger.debug('Error receiving cursor:', err);
+    }
   }
 
-  enrich(
-    basicCursor: BasicCursor,
-    onSuccess: (cursor: Cursor) => void,
-    onError: (error: any) => void,
-  ) {
-    this.userStore.user(
-      basicCursor.userId,
-      user => {
-        onSuccess({
-          cursorType: basicCursor.cursorType,
-          position: basicCursor.position,
-          room: this.room,
-          updatedAt: basicCursor.updatedAt,
-          user,
-        });
-      },
-      error => {
-        this.logger.debug(
-          `Unable to find user with id ${basicCursor.userId}. Error:`,
-          error,
-        );
-        onError(error);
-      },
-    );
+  private async enrich(basicCursor: BasicCursor): Promise<Cursor> {
+    try {
+      return {
+        cursorType: basicCursor.cursorType,
+        position: basicCursor.position,
+        room: this.room,
+        updatedAt: basicCursor.updatedAt,
+        user: await this.userStore.user(basicCursor.userId),
+      };
+    } catch (err) {
+      this.logger.debug(
+        `Unable to find user with id ${basicCursor.userId}. Error:`,
+        err,
+      );
+      throw err;
+    }
   }
 }

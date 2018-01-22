@@ -76,7 +76,7 @@ export default class ChatManager {
     this.userStore = new GlobalUserStore({ apiInstance: this.apiInstance });
   }
 
-  connect(options: ConnectOptions) {
+  connect(delegate: ChatManagerDelegate): Promise<CurrentUser> {
     const cursorsReq: Promise<{
       [roomId: number]: BasicCursor;
     }> = this.cursorsInstance
@@ -95,43 +95,41 @@ export default class ChatManager {
         return cursorsByRoom;
       });
 
-    this.userSubscription = new UserSubscription({
-      apiInstance: this.apiInstance,
-      connectCompletionHandler: (currentUser?: CurrentUser, error?: any) => {
-        if (currentUser) {
-          currentUser.cursorsReq = cursorsReq
-            .then(cursors => {
-              currentUser.cursors = cursors;
-            })
-            .catch(err => {
-              this.cursorsInstance.logger.verbose(
-                'Error getting cursors:',
-                err,
-              );
-            });
-          options.onSuccess(currentUser);
-        } else {
-          options.onError(error);
-        }
-      },
-      cursorsInstance: this.cursorsInstance,
-      delegate: options.delegate,
-      filesInstance: this.filesInstance,
-      userStore: this.userStore,
-    });
+    return new Promise((resolve, reject) => {
+      this.userSubscription = new UserSubscription({
+        apiInstance: this.apiInstance,
+        connectCompletionHandler: (currentUser?: CurrentUser, error?: any) => {
+          if (currentUser) {
+            currentUser.cursorsReq = cursorsReq
+              .then(cursors => {
+                currentUser.cursors = cursors;
+              })
+              .catch(err => {
+                this.cursorsInstance.logger.verbose(
+                  'Error getting cursors:',
+                  err,
+                );
+              });
+            resolve(currentUser);
+          } else {
+            reject(error);
+          }
+        },
+        cursorsInstance: this.cursorsInstance,
+        delegate,
+        filesInstance: this.filesInstance,
+        userStore: this.userStore,
+      });
 
-    this.apiInstance.subscribeNonResuming({
-      listeners: {
-        onError: options.onError,
-        onEvent: this.userSubscription.handleEvent.bind(this.userSubscription),
-      },
-      path: '/users',
+      this.apiInstance.subscribeNonResuming({
+        listeners: {
+          onError: delegate.error,
+          onEvent: this.userSubscription.handleEvent.bind(
+            this.userSubscription,
+          ),
+        },
+        path: '/users',
+      });
     });
   }
-}
-
-export interface ConnectOptions {
-  delegate?: ChatManagerDelegate;
-  onSuccess: (currentUser: CurrentUser) => void;
-  onError: (error: any) => void;
 }

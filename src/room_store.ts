@@ -17,12 +17,12 @@ export default class RoomStore {
     this.apiInstance = options.apiInstance;
   }
 
-  room(
-    id: number,
-    onSuccess: (room: Room) => void,
-    onError: (error: Error) => void,
-  ) {
-    this.findOrGetRoom(id, onSuccess, onError);
+  async room(id: number): Promise<Room> {
+    const room = this.rooms.find(el => el.id === id);
+    if (room) {
+      return room;
+    }
+    return this.getRoom(id);
   }
 
   addOrMerge(room: Room): Room {
@@ -48,37 +48,17 @@ export default class RoomStore {
     return room;
   }
 
-  findOrGetRoom(
-    id: number,
-    onSuccess: (room: Room) => void,
-    onError: (error: Error) => void,
-  ) {
-    const room = this.rooms.find(el => el.id === id);
-    if (room) {
-      onSuccess(room);
-    } else {
-      this.getRoom(id, onSuccess, onError);
-    }
-  }
-
-  getRoom(
-    id: number,
-    onSuccess: (room: Room) => void,
-    onError: (error: Error) => void,
-  ) {
-    this.apiInstance
-      .request({
+  async getRoom(id: number): Promise<Room> {
+    try {
+      const res = await this.apiInstance.request({
         method: 'GET',
         path: `/rooms/${id}`,
-      })
-      .then((res: any) => {
-        const roomPayload = JSON.parse(res);
-        const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
-        onSuccess(room);
-      })
-      .catch((error: any) => {
-        this.apiInstance.logger.debug(`Error fetching room ${id}:`, error);
-        onError(error);
       });
+      const roomPayload = JSON.parse(res);
+      return PayloadDeserializer.createRoomFromPayload(roomPayload);
+    } catch (err) {
+      this.apiInstance.logger.debug(`Error fetching room ${id}:`, err);
+      throw err;
+    }
   }
 }

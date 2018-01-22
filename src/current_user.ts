@@ -147,11 +147,7 @@ export default class CurrentUser {
     });
   }
 
-  createRoom(
-    options: CreateRoomOptions,
-    onSuccess: (room: Room) => void,
-    onError: (error: any) => void,
-  ) {
+  async createRoom(options: CreateRoomOptions): Promise<Room> {
     const roomData: any = {
       created_by_id: this.id,
       name: options.name,
@@ -163,23 +159,21 @@ export default class CurrentUser {
       roomData['user_ids'] = options.addUserIds;
     }
 
-    this.apiInstance
-      .request({
+    try {
+      const res = await this.apiInstance.request({
         json: roomData,
         method: 'POST',
         path: '/rooms',
-      })
-      .then((res: any) => {
-        const roomPayload = JSON.parse(res);
-        const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
-        const addedOrMergedRoom = this.roomStore.addOrMerge(room);
-        this.populateRoomUserStore(addedOrMergedRoom);
-        onSuccess(addedOrMergedRoom);
-      })
-      .catch((error: any) => {
-        this.apiInstance.logger.verbose('Error creating room:', error);
-        onError(error);
       });
+      const roomPayload = JSON.parse(res);
+      const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
+      const addedOrMergedRoom = this.roomStore.addOrMerge(room);
+      this.populateRoomUserStore(addedOrMergedRoom);
+      return addedOrMergedRoom;
+    } catch (err) {
+      this.apiInstance.logger.verbose('Error creating room:', err);
+      throw err;
+    }
   }
 
   populateRoomUserStore(room: Room) {
@@ -189,19 +183,18 @@ export default class CurrentUser {
 
     room.userIds.forEach(userId => {
       const userPromise = new Promise<any>((resolve, reject) => {
-        this.userStore.user(
-          userId,
-          user => {
+        this.userStore
+          .user(userId)
+          .then(user => {
             room.userStore.addOrMerge(user);
             resolve();
-          },
-          error => {
+          })
+          .catch(error => {
             this.apiInstance.logger.debug(
               `Unable to add user with id ${userId} to room \(room.name): ${error}`,
             );
             reject();
-          },
-        );
+          });
       });
 
       userPromises.push(userPromise);
@@ -225,40 +218,16 @@ export default class CurrentUser {
     });
   }
 
-  addUser(
-    id: string,
-    roomId: number,
-    onSuccess: () => void,
-    onError: (error: any) => void,
-  ) {
-    this.addOrRemoveUsers(roomId, [id], 'add', onSuccess, onError);
+  addUser(id: string, roomId: number) {
+    return this.addOrRemoveUsers(roomId, [id], 'add');
   }
 
-  // addUsers(ids: [string], roomId: number, onSuccess: () => void, onError: (error: any) => void) {
-  //   this.addOrRemoveUsers(roomId, ids, 'add', onSuccess, onError);
-  // }
-
-  removeUser(
-    id: string,
-    roomId: number,
-    onSuccess: () => void,
-    onError: (error: any) => void,
-  ) {
-    this.addOrRemoveUsers(roomId, [id], 'remove', onSuccess, onError);
+  removeUser(id: string, roomId: number) {
+    return this.addOrRemoveUsers(roomId, [id], 'remove');
   }
 
-  // removeUsers(ids: string[], roomId: number, onSuccess: () => void, onError: (error: any) => void) {
-  //   this.addOrRemoveUsers(roomId, ids, 'remove', onSuccess, onError);
-  // }
-
-  updateRoom(
-    roomId: number,
-    options: UpdateRoomOptions,
-    onSuccess: () => void,
-    onError: (error: any) => void,
-  ) {
+  async updateRoom(roomId: number, options: UpdateRoomOptions): Promise<void> {
     if (options.name === undefined && options.isPrivate === undefined) {
-      onSuccess();
       return;
     }
 
@@ -272,158 +241,104 @@ export default class CurrentUser {
       roomPayload['private'] = options.isPrivate;
     }
 
-    this.apiInstance
-      .request({
+    try {
+      await this.apiInstance.request({
         json: roomPayload,
         method: 'PUT',
         path: `/rooms/${roomId}`,
-      })
-      .then((res: any) => {
-        onSuccess();
-      })
-      .catch((error: any) => {
-        this.apiInstance.logger.verbose(
-          `Error updating room ${roomId}:`,
-          error,
-        );
-        onError(error);
       });
+    } catch (err) {
+      this.apiInstance.logger.verbose(`Error updating room ${roomId}:`, err);
+      throw err;
+    }
   }
 
-  deleteRoom(
-    roomId: number,
-    onSuccess: () => void,
-    onError: (error: any) => void,
-  ) {
-    this.apiInstance
-      .request({
+  async deleteRoom(roomId: number): Promise<void> {
+    try {
+      await this.apiInstance.request({
         method: 'DELETE',
         path: `/rooms/${roomId}`,
-      })
-      .then((res: any) => {
-        onSuccess();
-      })
-      .catch((error: any) => {
-        this.apiInstance.logger.verbose(
-          `Error deleting room ${roomId}:`,
-          error,
-        );
-        onError(error);
       });
+    } catch (err) {
+      this.apiInstance.logger.verbose(`Error deleting room ${roomId}:`, err);
+      throw err;
+    }
   }
 
-  addOrRemoveUsers(
+  async addOrRemoveUsers(
     roomId: number,
     userIds: string[],
     membershipChange: string,
-    onSuccess: () => void,
-    onError: (error: any) => void,
-  ) {
+  ): Promise<void> {
     const usersPayload = {
       user_ids: userIds,
     };
 
-    this.apiInstance
-      .request({
+    try {
+      await this.apiInstance.request({
         json: usersPayload,
         method: 'PUT',
         path: `/rooms/${roomId}/users/${membershipChange}`,
-      })
-      .then((res: any) => {
-        onSuccess();
-      })
-      .catch((error: any) => {
-        this.apiInstance.logger.verbose(
-          `Error when attempting to ${membershipChange} users from room ${roomId}:`,
-          error,
-        );
-        onError(error);
       });
+    } catch (err) {
+      this.apiInstance.logger.verbose(
+        `Error when attempting to ${membershipChange} users from room ${roomId}:`,
+        err,
+      );
+      throw err;
+    }
   }
 
-  joinRoom(
-    roomId: number,
-    onSuccess: (room: Room) => void,
-    onError: (error: any) => void,
-  ) {
-    this.apiInstance
-      .request({
+  async joinRoom(roomId: number): Promise<Room> {
+    try {
+      const res = await this.apiInstance.request({
         method: 'POST',
         path: `/users/${this.pathFriendlyId}/rooms/${roomId}/join`,
-      })
-      .then((res: any) => {
-        const roomPayload = JSON.parse(res);
-        const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
-        const addedOrMergedRoom = this.roomStore.addOrMerge(room);
-        // TODO: room or addedOrMergedRoom ?
-        this.populateRoomUserStore(addedOrMergedRoom);
-        onSuccess(addedOrMergedRoom);
-      })
-      .catch((error: any) => {
-        this.apiInstance.logger.verbose(`Error joining room ${roomId}:`, error);
-        onError(error);
       });
+      const roomPayload = JSON.parse(res);
+      const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
+      const addedOrMergedRoom = this.roomStore.addOrMerge(room);
+      // TODO: room or addedOrMergedRoom ?
+      this.populateRoomUserStore(addedOrMergedRoom);
+      return addedOrMergedRoom;
+    } catch (err) {
+      this.apiInstance.logger.verbose(`Error joining room ${roomId}:`, err);
+      throw err;
+    }
   }
 
-  leaveRoom(
-    roomId: number,
-    onSuccess: () => void,
-    onError: (error: any) => void,
-  ) {
-    this.apiInstance
-      .request({
+  async leaveRoom(roomId: number): Promise<void> {
+    try {
+      await this.apiInstance.request({
         method: 'POST',
         path: `/users/${this.pathFriendlyId}/rooms/${roomId}/leave`,
-      })
-      .then((res: any) => {
-        // TODO: Remove room from roomStore or is that handle by UserSubscription?
-        onSuccess();
-      })
-      .catch((error: any) => {
-        this.apiInstance.logger.verbose(`Error leaving room ${roomId}:`, error);
-        onError(error);
       });
+    } catch (err) {
+      this.apiInstance.logger.verbose(`Error leaving room ${roomId}:`, err);
+      throw err;
+    }
   }
 
-  getJoinedRooms(
-    onSuccess: (rooms: Room[]) => void,
-    onError: (error: any) => void,
-  ) {
-    this.getUserRooms(false, onSuccess, onError);
+  getJoinedRooms(): Promise<Room[]> {
+    return this.getUserRooms(false);
   }
 
-  getJoinableRooms(
-    onSuccess: (rooms: Room[]) => void,
-    onError: (error: any) => void,
-  ) {
-    this.getUserRooms(true, onSuccess, onError);
+  getJoinableRooms(): Promise<Room[]> {
+    return this.getUserRooms(true);
   }
 
-  getUserRooms(
-    onlyJoinable: boolean,
-    onSuccess: (rooms: Room[]) => void,
-    onError: (error: any) => void,
-  ) {
+  getUserRooms(onlyJoinable: boolean): Promise<Room[]> {
     const joinableQueryItemValue = onlyJoinable ? 'true' : 'false';
-    this.getRooms(
+    return this.getRooms(
       `/users/${this.pathFriendlyId}/rooms?joinable=${joinableQueryItemValue}`,
-      onSuccess,
-      onError,
     );
   }
 
-  getAllRooms(
-    onSuccess: (rooms: Room[]) => void,
-    onError: (error: any) => void,
-  ) {
-    this.getRooms('/rooms', onSuccess, onError);
+  getAllRooms(): Promise<Room[]> {
+    return this.getRooms('/rooms');
   }
 
-  isTypingIn(
-    roomId: number,
-    onSuccess: () => void,
-    onError: (error: any) => void,
-  ) {
+  async isTypingIn(roomId: number): Promise<void> {
     const now = Date.now();
     const sent = this.typingRequestSent[roomId];
     const eventName = 'typing_start';
@@ -434,55 +349,40 @@ export default class CurrentUser {
     };
     if (!sent || now - sent > TYPING_REQ_TTL - TYPING_REQ_LEEWAY) {
       this.typingRequestSent[roomId] = now;
-      this.apiInstance
-        .request({
+      try {
+        await this.apiInstance.request({
           json: eventPayload,
           method: 'POST',
           path: `/rooms/${roomId}/events`,
-        })
-        .then((res: any) => {
-          onSuccess();
-        })
-        .catch((error: any) => {
-          delete this.typingRequestSent[roomId];
-          this.apiInstance.logger.verbose(
-            `Error sending ${eventName} event in room ${roomId}:`,
-            error,
-          );
-          onError(error);
         });
-    } else {
-      onSuccess();
+      } catch (err) {
+        delete this.typingRequestSent[roomId];
+        this.apiInstance.logger.verbose(
+          `Error sending ${eventName} event in room ${roomId}:`,
+          err,
+        );
+        throw err;
+      }
     }
   }
 
-  setCursor(
-    position: number,
-    room: Room,
-    onSuccess: () => void,
-    onError: (error: any) => void,
-  ) {
-    this.cursorsInstance
-      .request({
+  async setCursor(position: number, room: Room): Promise<void> {
+    try {
+      await this.cursorsInstance.request({
         json: { position },
         method: 'PUT',
         path: `/cursors/${CursorType.Read}/rooms/${room.id}/users/${this.id}`,
-      })
-      .then(onSuccess)
-      .catch(err => {
-        this.cursorsInstance.logger.verbose(
-          `Error setting cursor in room ${room.name}:`,
-          err,
-        );
-        onError(err);
       });
+    } catch (err) {
+      this.cursorsInstance.logger.verbose(
+        `Error setting cursor in room ${room.name}:`,
+        err,
+      );
+      throw err;
+    }
   }
 
-  sendMessage(
-    options: SendMessageOptions,
-    onSuccess: (messageId: number) => void,
-    onError: (error: any) => void,
-  ) {
+  async sendMessage(options: SendMessageOptions): Promise<number> {
     const { attachment, ...rest } = options;
     const completeOptions: CompleteMessageOptions = {
       user_id: this.id,
@@ -491,73 +391,62 @@ export default class CurrentUser {
 
     if (attachment !== undefined) {
       if (this.isDataAttachment(attachment)) {
-        const { file, name } = attachment;
-        this.uploadFile(file, name, options.roomId)
-          .then((fileRes: any) => {
-            this.sendMessageWithCompleteOptions(
-              {
-                attachment: fileRes,
-                user_id: this.id,
-                ...rest,
-              },
-              onSuccess,
-              onError,
-            );
-          })
-          .catch((error: any) => {
-            onError(error);
-            return;
-          });
+        return this.sendMessageWithCompleteOptions({
+          attachment: await this.uploadFile(
+            attachment.file,
+            attachment.name,
+            options.roomId,
+          ),
+          ...completeOptions,
+        });
       } else if (this.isLinkAttachment(attachment)) {
-        const { link, type } = attachment;
-        completeOptions.attachment = {
-          resource_link: link,
-          type,
-        };
-        this.sendMessageWithCompleteOptions(
-          completeOptions,
-          onSuccess,
-          onError,
-        );
+        return this.sendMessageWithCompleteOptions({
+          attachment: {
+            resource_link: attachment.link,
+            type: attachment.type,
+          },
+          ...completeOptions,
+        });
       } else {
         this.apiInstance.logger.debug(
           'Message not sent: invalid attachment property provided: ',
           attachment,
         );
+        throw TypeError('invalid attachment');
       }
-    } else {
-      this.sendMessageWithCompleteOptions(completeOptions, onSuccess, onError);
     }
+    return this.sendMessageWithCompleteOptions(completeOptions);
   }
 
-  subscribeToRoom(room: Room, roomDelegate: RoomDelegate, messageLimit = 20) {
-    this.cursorsReq.then(() => {
-      room.subscription = new RoomSubscription({
-        basicMessageEnricher: new BasicMessageEnricher(
-          this.userStore,
-          room,
-          this.apiInstance.logger,
-        ),
-        delegate: roomDelegate,
-        logger: this.apiInstance.logger,
-      });
-      this.apiInstance.subscribeNonResuming({
-        listeners: {
-          onError: roomDelegate.error,
-          onEvent: room.subscription.handleEvent.bind(room.subscription),
-        },
-        path: `/rooms/${room.id}?message_limit=${messageLimit}`,
-      });
-      this.subscribeToCursors(room, roomDelegate);
+  async subscribeToRoom(
+    room: Room,
+    roomDelegate: RoomDelegate,
+    messageLimit = 20,
+  ) {
+    await this.cursorsReq;
+    room.subscription = new RoomSubscription({
+      basicMessageEnricher: new BasicMessageEnricher(
+        this.userStore,
+        room,
+        this.apiInstance.logger,
+      ),
+      delegate: roomDelegate,
+      logger: this.apiInstance.logger,
     });
+    this.apiInstance.subscribeNonResuming({
+      listeners: {
+        onError: roomDelegate.error,
+        onEvent: room.subscription.handleEvent.bind(room.subscription),
+      },
+      path: `/rooms/${room.id}?message_limit=${messageLimit}`,
+    });
+    this.subscribeToCursors(room, roomDelegate);
   }
 
-  fetchMessagesFromRoom(
+  async fetchMessagesFromRoom(
     room: Room,
     fetchOptions: FetchRoomMessagesOptions,
-    onSuccess: (messages: Message[]) => void,
-    onError: (error: any) => void,
-  ) {
+  ): Promise<Message[]> {
     const initialIdQueryParam = fetchOptions.initialId
       ? `initial_id=${fetchOptions.initialId}`
       : '';
@@ -574,99 +463,78 @@ export default class CurrentUser {
       directionQueryParam,
     ].join('&');
 
-    this.apiInstance
-      .request({
+    try {
+      const res = await this.apiInstance.request({
         method: 'GET',
         path: `/rooms/${room.id}/messages?${combinedQueryParams}`,
-      })
-      .then((res: any) => {
-        const messagesPayload = JSON.parse(res);
+      });
+      const messagesPayload = JSON.parse(res);
 
-        const messages = new Array<Message>();
-        const basicMessages = new Array<BasicMessage>();
+      const messages = new Array<Message>();
+      const basicMessages = new Array<BasicMessage>();
 
-        // TODO: Error handling
-        const messageUserIds = messagesPayload.map((messagePayload: any) => {
-          const basicMessage = PayloadDeserializer.createBasicMessageFromPayload(
-            messagePayload,
+      // TODO: Error handling
+      const messageUserIds = messagesPayload.map((messagePayload: any) => {
+        const basicMessage = PayloadDeserializer.createBasicMessageFromPayload(
+          messagePayload,
+        );
+        basicMessages.push(basicMessage);
+        return basicMessage.id;
+      });
+
+      const messageUserIdsSet = new Set<string>(messageUserIds);
+      const userIdsToFetch = Array.from(messageUserIdsSet.values());
+
+      const users = await this.userStore.fetchUsersWithIds(userIdsToFetch);
+      const messageEnricher = new BasicMessageEnricher(
+        this.userStore,
+        room,
+        this.apiInstance.logger,
+      );
+      const enrichmentPromises = new Array<Promise<any>>();
+
+      basicMessages.forEach(basicMessage => {
+        const enrichmentPromise = new Promise<any>((resolve, reject) => {
+          messageEnricher.enrich(
+            basicMessage,
+            message => {
+              messages.push(message);
+              resolve();
+            },
+            error => {
+              this.apiInstance.logger.verbose(
+                `Unable to enrich basic mesage ${basicMessage.id}: ${error}`,
+              );
+              reject();
+            },
           );
-          basicMessages.push(basicMessage);
-          return basicMessage.id;
         });
 
-        const messageUserIdsSet = new Set<string>(messageUserIds);
-        const userIdsToFetch = Array.from(messageUserIdsSet.values());
-
-        this.userStore.fetchUsersWithIds(
-          userIdsToFetch,
-          users => {
-            const messageEnricher = new BasicMessageEnricher(
-              this.userStore,
-              room,
-              this.apiInstance.logger,
-            );
-            const enrichmentPromises = new Array<Promise<any>>();
-
-            basicMessages.forEach(basicMessage => {
-              const enrichmentPromise = new Promise<any>((resolve, reject) => {
-                messageEnricher.enrich(
-                  basicMessage,
-                  message => {
-                    messages.push(message);
-                    resolve();
-                  },
-                  error => {
-                    this.apiInstance.logger.verbose(
-                      `Unable to enrich basic mesage ${
-                        basicMessage.id
-                      }: ${error}`,
-                    );
-                    reject();
-                  },
-                );
-              });
-
-              enrichmentPromises.push(enrichmentPromise);
-            });
-
-            allPromisesSettled(enrichmentPromises).then(() => {
-              if (room.subscription === undefined) {
-                this.apiInstance.logger.verbose(
-                  `Room ${room.name} has no subscription object set`,
-                );
-              } else {
-                if (
-                  room.subscription.delegate &&
-                  room.subscription.delegate.usersUpdated
-                ) {
-                  room.subscription.delegate.usersUpdated();
-                }
-              }
-
-              this.apiInstance.logger.verbose(
-                `Users updated in room ${room.name}`,
-              );
-
-              onSuccess(
-                messages.sort((msgOne, msgTwo) => msgOne.id - msgTwo.id),
-              );
-            });
-          },
-          error => {
-            this.apiInstance.logger.verbose(
-              `Error fetching users with ids ${userIdsToFetch}:`,
-              error,
-            );
-          },
-        );
-      })
-      .catch((error: any) => {
-        this.apiInstance.logger.verbose(
-          `Error fetching messages froom room ${room.name}:`,
-          error,
-        );
-        onError(error);
+        enrichmentPromises.push(enrichmentPromise);
       });
+
+      await allPromisesSettled(enrichmentPromises);
+      if (room.subscription === undefined) {
+        this.apiInstance.logger.verbose(
+          `Room ${room.name} has no subscription object set`,
+        );
+      } else if (
+        room.subscription.delegate &&
+        room.subscription.delegate.usersUpdated
+      ) {
+        room.subscription.delegate.usersUpdated();
+      }
+
+      this.apiInstance.logger.verbose(`Users updated in room ${room.name}`);
+
+      return messages.sort((msgOne, msgTwo) => msgOne.id - msgTwo.id);
+    } catch (err) {
+      this.apiInstance.logger.verbose(
+        `Error fetching messages froom room ${room.name}:`,
+        err,
+      );
+      throw err;
+    }
   }
 
   fetchAttachment(attachmentURL: string): Promise<any> {
@@ -727,29 +595,23 @@ export default class CurrentUser {
       });
   }
 
-  private sendMessageWithCompleteOptions(
+  private async sendMessageWithCompleteOptions(
     options: CompleteMessageOptions,
-    onSuccess: (messageId: number) => void,
-    onError: (error: any) => void,
-  ) {
-    this.apiInstance
-      .request({
+  ): Promise<number> {
+    try {
+      const res = await this.apiInstance.request({
         json: options,
         method: 'POST',
         path: `/rooms/${options.roomId}/messages`,
-      })
-      .then((res: any) => {
-        const messageIdPayload = JSON.parse(res);
-        const messageId = messageIdPayload.message_id;
-        onSuccess(messageId);
-      })
-      .catch((error: any) => {
-        this.apiInstance.logger.verbose(
-          `Error sending message to room ${options.roomId}:`,
-          error,
-        );
-        onError(error);
       });
+      return JSON.parse(res).message_id;
+    } catch (err) {
+      this.apiInstance.logger.verbose(
+        `Error sending message to room ${options.roomId}:`,
+        err,
+      );
+      throw err;
+    }
   }
 
   private subscribeToCursors(room: Room, roomDelegate: RoomDelegate) {
@@ -775,30 +637,22 @@ export default class CurrentUser {
     });
   }
 
-  private getRooms(
-    path: string,
-    onSuccess: (rooms: Room[]) => void,
-    onError: (error: any) => void,
-  ) {
-    this.apiInstance
-      .request({
+  private async getRooms(path: string): Promise<Room[]> {
+    try {
+      const res = await this.apiInstance.request({
         method: 'GET',
         path,
-      })
-      .then((res: any) => {
-        const roomsPayload = JSON.parse(res);
-        const rooms = roomsPayload.map((roomPayload: any) => {
-          return PayloadDeserializer.createRoomFromPayload(roomPayload);
-        });
-        // TODO: filter if undefined returned?
-        onSuccess(rooms);
-      })
-      .catch((error: any) => {
-        this.apiInstance.logger.verbose(
-          'Error when getting instance rooms:',
-          error,
-        );
-        onError(error);
       });
+      const roomsPayload = JSON.parse(res);
+      return roomsPayload.map((roomPayload: any) => {
+        return PayloadDeserializer.createRoomFromPayload(roomPayload);
+      });
+    } catch (err) {
+      this.apiInstance.logger.verbose(
+        'Error when getting instance rooms:',
+        err,
+      );
+      throw err;
+    }
   }
 }

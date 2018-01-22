@@ -395,9 +395,9 @@ export default class UserSubscription {
 
     const room = PayloadDeserializer.createRoomFromPayload(roomPayload);
 
-    this.currentUser.roomStore.room(
-      room.id,
-      roomToUpdate => {
+    this.currentUser.roomStore
+      .room(room.id)
+      .then(roomToUpdate => {
         roomToUpdate.updateWithPropertiesOfRoom(room);
 
         if (this.delegate && this.delegate.roomUpdated) {
@@ -405,11 +405,10 @@ export default class UserSubscription {
         }
 
         this.apiInstance.logger.verbose(`Room updated: ${room.name}`);
-      },
-      error => {
+      })
+      .catch(error => {
         this.apiInstance.logger.debug(`Error updating room ${room.id}:`, error);
-      },
-    );
+      });
   }
 
   parseRoomDeletedPayload(eventName: string, data: any) {
@@ -471,9 +470,9 @@ export default class UserSubscription {
       return;
     }
 
-    this.currentUser.roomStore.room(
-      roomId,
-      room => {
+    this.currentUser.roomStore
+      .room(roomId)
+      .then(room => {
         if (!this.currentUser) {
           this.apiInstance.logger.verbose(
             'currentUser property not set on UserSubscription',
@@ -519,15 +518,14 @@ export default class UserSubscription {
             // strongSelf.delegate.error(error: err!)
             return;
           });
-      },
-      error => {
+      })
+      .catch(error => {
         this.apiInstance.logger.verbose(
           `User with id ${userId} joined room with id ${roomId} but no information about the room could be retrieved. Error was: ${error}`,
         );
         // self.delegate.error(error: err!)
         return;
-      },
-    );
+      });
   }
 
   parseUserLeftPayload(eventName: string, data: any) {
@@ -556,9 +554,9 @@ export default class UserSubscription {
       return;
     }
 
-    this.currentUser.roomStore.room(
-      roomId,
-      room => {
+    this.currentUser.roomStore
+      .room(roomId)
+      .then(room => {
         if (!this.currentUser) {
           this.apiInstance.logger.verbose(
             'currentUser property not set on UserSubscription',
@@ -605,15 +603,14 @@ export default class UserSubscription {
             // strongSelf.delegate.error(error: err!)
             return;
           });
-      },
-      error => {
+      })
+      .catch(error => {
         this.apiInstance.logger.verbose(
           `User with id ${userId} joined room with id ${roomId} but no information about the room could be retrieved. Error was: ${error}`,
         );
         // self.delegate.error(error: err!)
         return;
-      },
-    );
+      });
   }
 
   parseIsTypingPayload(eventName: string, data: any, userId: string) {
@@ -648,9 +645,9 @@ export default class UserSubscription {
       return;
     }
 
-    this.currentUser.roomStore.room(
-      roomId,
-      room => {
+    this.currentUser.roomStore
+      .room(roomId)
+      .then(room => {
         if (!this.currentUser) {
           this.apiInstance.logger.verbose(
             'currentUser property not set on UserSubscription',
@@ -690,16 +687,15 @@ export default class UserSubscription {
             // strongSelf.delegate.error(error: err!)
             return;
           });
-      },
-      error => {
+      })
+      .catch(error => {
         this.apiInstance.logger.verbose(
           `Error fetching information for room ${roomId}:`,
           error,
         );
         // self.delegate.error(error: err!)
         return;
-      },
-    );
+      });
   }
 
   private stoppedTyping(roomId: number, userId: string) {
@@ -710,9 +706,9 @@ export default class UserSubscription {
       return;
     }
 
-    this.currentUser.roomStore.room(
-      roomId,
-      room => {
+    this.currentUser.roomStore
+      .room(roomId)
+      .then(room => {
         if (!this.currentUser) {
           this.apiInstance.logger.verbose(
             'currentUser property not set on UserSubscription',
@@ -752,15 +748,14 @@ export default class UserSubscription {
             // strongSelf.delegate.error(error: err!)
             return;
           });
-      },
-      error => {
+      })
+      .catch(error => {
         this.apiInstance.logger.debug(
           `Error fetching information for room ${roomId}:`,
           error,
         );
         // self.delegate.error(error: err!)
         return;
-      },
-    );
+      });
   }
 }

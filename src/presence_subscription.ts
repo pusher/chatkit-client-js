@@ -95,7 +95,7 @@ export default class PresenceSubscription {
       return;
     }
 
-    this.userStore.handleInitialPresencePayloads(userStates, () => {
+    this.userStore.handleInitialPresencePayloads(userStates).then(() => {
       this.roomStore.rooms.forEach(room => {
         if (room.subscription === undefined) {
           this.apiInstance.logger.verbose(
@@ -123,8 +123,7 @@ export default class PresenceSubscription {
       data,
     );
 
-    userStore.user(
-      presencePayload.userId,
+    userStore.user(presencePayload.userId).then(
       user => {
         user.updatePresenceInfoIfAppropriate(presencePayload);
 
@@ -229,7 +228,7 @@ export default class PresenceSubscription {
       return;
     }
 
-    this.userStore.handleInitialPresencePayloads(userStates, () => {
+    this.userStore.handleInitialPresencePayloads(userStates).then(() => {
       this.roomStore.rooms.forEach(room => {
         if (room.subscription === undefined) {
           this.apiInstance.logger.verbose(

@@ -183,19 +183,18 @@ export default class CurrentUser {
 
     room.userIds.forEach(userId => {
       const userPromise = new Promise<any>((resolve, reject) => {
-        this.userStore.user(
-          userId,
-          user => {
+        this.userStore
+          .user(userId)
+          .then(user => {
             room.userStore.addOrMerge(user);
             resolve();
-          },
-          error => {
+          })
+          .catch(error => {
             this.apiInstance.logger.debug(
               `Unable to add user with id ${userId} to room \(room.name): ${error}`,
             );
             reject();
-          },
-        );
+          });
       });
 
       userPromises.push(userPromise);

@@ -57,27 +57,21 @@ export default class CursorSubscription {
     }
   }
 
-  private enrich(basicCursor: BasicCursor): Promise<Cursor> {
-    return new Promise((resolve, reject) => {
-      this.userStore.user(
-        basicCursor.userId,
-        user => {
-          resolve({
-            cursorType: basicCursor.cursorType,
-            position: basicCursor.position,
-            room: this.room,
-            updatedAt: basicCursor.updatedAt,
-            user,
-          });
-        },
-        error => {
-          this.logger.debug(
-            `Unable to find user with id ${basicCursor.userId}. Error:`,
-            error,
-          );
-          reject(error);
-        },
+  private async enrich(basicCursor: BasicCursor): Promise<Cursor> {
+    try {
+      return {
+        cursorType: basicCursor.cursorType,
+        position: basicCursor.position,
+        room: this.room,
+        updatedAt: basicCursor.updatedAt,
+        user: await this.userStore.user(basicCursor.userId),
+      };
+    } catch (err) {
+      this.logger.debug(
+        `Unable to find user with id ${basicCursor.userId}. Error:`,
+        err,
       );
-    });
+      throw err;
+    }
   }
 }

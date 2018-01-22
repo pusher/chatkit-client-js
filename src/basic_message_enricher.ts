@@ -78,9 +78,9 @@ export default class BasicMessageEnricher {
       this.userIdsBeingRetrieved.push(basicMessageSenderId);
     }
 
-    this.userStore.user(
-      basicMessageSenderId,
-      user => {
+    this.userStore
+      .user(basicMessageSenderId)
+      .then(user => {
         const basicMessageIds = this.userIdsToBasicMessageIds[
           basicMessageSenderId
         ];
@@ -111,8 +111,8 @@ export default class BasicMessageEnricher {
         if (indexToRemove > -1) {
           this.userIdsBeingRetrieved.splice(indexToRemove, 1);
         }
-      },
-      error => {
+      })
+      .catch(error => {
         this.logger.debug(
           `Unable to find user with id ${
             basicMessage.senderId
@@ -123,8 +123,7 @@ export default class BasicMessageEnricher {
           basicMessageId,
           error,
         );
-      },
-    );
+      });
   }
 
   enrichMessagesWithUser(user: User, messages: BasicMessage[]) {

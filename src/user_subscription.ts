@@ -168,9 +168,9 @@ export default class UserSubscription {
   ) {
     const userIdsArray: string[] = Array.from(userIds.values());
 
-    this.userStore.initialFetchOfUsersWithIds(
-      userIdsArray,
-      users => {
+    this.userStore
+      .fetchUsersWithIds(userIdsArray)
+      .then(users => {
         const combinedRoomUsersPromises = new Array<Promise<any>>();
 
         if (!this.currentUser) {
@@ -187,19 +187,18 @@ export default class UserSubscription {
             room.userIds.forEach(userId => {
               const userPromise = new Promise<any>(
                 (userResolve, userReject) => {
-                  this.userStore.user(
-                    userId,
-                    user => {
+                  this.userStore
+                    .user(userId)
+                    .then(user => {
                       room.userStore.addOrMerge(user);
                       userResolve();
-                    },
-                    error => {
+                    })
+                    .catch(error => {
                       this.apiInstance.logger.verbose(
                         `Unable to fetch information about user ${userId}`,
                       );
                       userReject();
-                    },
-                  );
+                    });
                 },
               );
               roomUsersPromises.push(userPromise);
@@ -239,14 +238,13 @@ export default class UserSubscription {
 
           this.currentUser.setupPresenceSubscription(this.delegate);
         });
-      },
-      error => {
+      })
+      .catch(error => {
         this.apiInstance.logger.debug(
           `Unable to fetch user information after successful connection: ${error}`,
         );
         return;
-      },
-    );
+      });
   }
 
   reconcileExistingRoomStoreWithRoomsReceivedOnConnection(
@@ -307,24 +305,23 @@ export default class UserSubscription {
 
     roomAdded.userIds.forEach(userId => {
       const userPromise = new Promise<any>((resolve, reject) => {
-        this.userStore.user(
-          userId,
-          user => {
+        this.userStore
+          .user(userId)
+          .then(user => {
             this.apiInstance.logger.verbose(
               `Added user id ${userId} to room ${room.name}`,
             );
             room.userStore.addOrMerge(user);
             resolve();
-          },
-          error => {
+          })
+          .catch(error => {
             this.apiInstance.logger.debug(
               `Unable to add user with id ${userId} to room ${
                 room.name
               }: ${error}`,
             );
             reject();
-          },
-        );
+          });
       });
       roomUsersPromises.push(userPromise);
     });
@@ -484,9 +481,9 @@ export default class UserSubscription {
           return;
         }
 
-        this.currentUser.userStore.user(
-          userId,
-          user => {
+        this.currentUser.userStore
+          .user(userId)
+          .then(user => {
             const addedOrMergedUser = room.userStore.addOrMerge(user);
             if (room.userIds.indexOf(addedOrMergedUser.id) === -1) {
               room.userIds.push(addedOrMergedUser.id);
@@ -512,8 +509,8 @@ export default class UserSubscription {
             this.apiInstance.logger.verbose(
               `User ${user.id} joined room: ${room.name}`,
             );
-          },
-          error => {
+          })
+          .catch(error => {
             this.apiInstance.logger.verbose(
               `Error fetching user ${userId}:`,
               error,
@@ -521,8 +518,7 @@ export default class UserSubscription {
             // TODO: Delegate question again
             // strongSelf.delegate.error(error: err!)
             return;
-          },
-        );
+          });
       },
       error => {
         this.apiInstance.logger.verbose(
@@ -570,9 +566,9 @@ export default class UserSubscription {
           return;
         }
 
-        this.currentUser.userStore.user(
-          userId,
-          user => {
+        this.currentUser.userStore
+          .user(userId)
+          .then(user => {
             const roomUserIdIndex = room.userIds.indexOf(user.id);
 
             if (roomUserIdIndex > -1) {
@@ -601,15 +597,14 @@ export default class UserSubscription {
             this.apiInstance.logger.verbose(
               `User ${user.id} left room ${room.name}`,
             );
-          },
-          error => {
+          })
+          .catch(error => {
             this.apiInstance.logger.verbose(
               `User with id ${userId} left room with id ${roomId} but no information about the user could be retrieved. Error was: ${error}`,
             );
             // strongSelf.delegate.error(error: err!)
             return;
-          },
-        );
+          });
       },
       error => {
         this.apiInstance.logger.verbose(
@@ -663,9 +658,9 @@ export default class UserSubscription {
           return;
         }
 
-        this.currentUser.userStore.user(
-          userId,
-          user => {
+        this.currentUser.userStore
+          .user(userId)
+          .then(user => {
             if (this.delegate && this.delegate.userStartedTyping) {
               this.delegate.userStartedTyping(room, user);
             }
@@ -686,16 +681,15 @@ export default class UserSubscription {
             this.apiInstance.logger.verbose(
               `User ${user.id} started typing in room ${room.name}`,
             );
-          },
-          error => {
+          })
+          .catch(error => {
             this.apiInstance.logger.verbose(
               `Error fetching information for user ${userId}:`,
               error,
             );
             // strongSelf.delegate.error(error: err!)
             return;
-          },
-        );
+          });
       },
       error => {
         this.apiInstance.logger.verbose(
@@ -726,9 +720,9 @@ export default class UserSubscription {
           return;
         }
 
-        this.currentUser.userStore.user(
-          userId,
-          user => {
+        this.currentUser.userStore
+          .user(userId)
+          .then(user => {
             if (this.delegate && this.delegate.userStoppedTyping) {
               this.delegate.userStoppedTyping(room, user);
             }
@@ -749,16 +743,15 @@ export default class UserSubscription {
             this.apiInstance.logger.verbose(
               `User ${user.id} stopped typing in room ${room.name}`,
             );
-          },
-          error => {
+          })
+          .catch(error => {
             this.apiInstance.logger.debug(
               `Error fetching information for user ${userId}:`,
               error,
             );
             // strongSelf.delegate.error(error: err!)
             return;
-          },
-        );
+          });
       },
       error => {
         this.apiInstance.logger.debug(

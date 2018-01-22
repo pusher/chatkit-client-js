@@ -29,90 +29,46 @@ export default class GlobalUserStore {
     return this.userStoreCore.remove(id);
   }
 
-  user(
-    id: string,
-    onSuccess: (user: User) => void,
-    onError: (error: any) => void,
-  ) {
-    this.findOrGetUser(id, onSuccess, onError);
-  }
-
-  findOrGetUser(
-    id: string,
-    onSuccess: (user: User) => void,
-    onError: (error: any) => void,
-  ) {
+  async user(id: string): Promise<User> {
     const user = this.userStoreCore.find(id);
     if (user) {
-      onSuccess(user);
-      return;
+      return user;
     }
-
-    this.getUser(id, onSuccess, onError);
+    return await this.getUser(id);
   }
 
-  getUser(
-    id: string,
-    onSuccess: (user: User) => void,
-    onError: (error: any) => void,
-  ) {
-    this.apiInstance
-      .request({
+  async getUser(id: string): Promise<User> {
+    try {
+      const res = await this.apiInstance.request({
         method: 'GET',
         path: `/users/${id}`,
-      })
-      .then((res: any) => {
-        const userPayload = JSON.parse(res);
-        const user = PayloadDeserializer.createUserFromPayload(userPayload);
-        const userToReturn = this.addOrMerge(user);
-        onSuccess(userToReturn);
-      })
-      .catch((error: any) => {
-        this.apiInstance.logger.verbose(
-          'Error fetching user information:',
-          error,
-        );
-        onError(error);
       });
+      const userPayload = JSON.parse(res);
+      const user = PayloadDeserializer.createUserFromPayload(userPayload);
+      return this.addOrMerge(user);
+    } catch (err) {
+      this.apiInstance.logger.verbose('Error fetching user information:', err);
+      throw err;
+    }
   }
 
-  handleInitialPresencePayloadsAfterRoomJoin(
+  async handleInitialPresencePayloads(
     payloads: PresencePayload[],
-    onComplete: () => void,
-  ) {
-    this.handleInitialPresencePayloads(payloads, onComplete);
-  }
-
-  handleInitialPresencePayloads(
-    payloads: PresencePayload[],
-    onComplete: () => void,
-  ) {
-    const presencePayloadPromises = new Array<Promise<any>>();
-
-    payloads.forEach(payload => {
-      const presencePromise = new Promise<any>((resolve, reject) => {
-        this.user(
-          payload.userId,
-          user => {
-            user.updatePresenceInfoIfAppropriate(payload);
-            resolve();
-          },
-          error => {
-            this.apiInstance.logger.verbose(
-              'Error fetching user information:',
-              error,
-            );
-            reject();
-          },
-        );
-      });
-
-      presencePayloadPromises.push(presencePromise);
+  ): Promise<void> {
+    const presencePayloadPromises = payloads.map(payload => {
+      return this.user(payload.userId)
+        .then(user => {
+          user.updatePresenceInfoIfAppropriate(payload);
+        })
+        .catch(err => {
+          this.apiInstance.logger.verbose(
+            'Error fetching user information:',
+            err,
+          );
+          throw err;
+        });
     });
-
-    allPromisesSettled(presencePayloadPromises).then(() => {
-      onComplete();
-    });
+    await allPromisesSettled(presencePayloadPromises);
   }
 
   // TODO: Need a version of this that first checks the userStore for any of the userIds
@@ -147,15 +103,5 @@ export default class GlobalUserStore {
       this.apiInstance.logger.verbose('Error fetching user information:', err);
       throw err;
     }
-  }
-
-  initialFetchOfUsersWithIds(
-    userIds: string[],
-    onSuccess: (users: User[]) => void,
-    onError: (error: Error) => void,
-  ) {
-    this.fetchUsersWithIds(userIds)
-      .then(onSuccess)
-      .catch(onError);
   }
 }

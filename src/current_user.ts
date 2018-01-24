@@ -530,7 +530,12 @@ export default class CurrentUser {
     }
   }
 
-  subscribeToRoom(room: Room, roomDelegate: RoomDelegate, messageLimit = 20) {
+  subscribeToRoom(room: Room, roomDelegate: RoomDelegate, messageLimit?: number) {
+    const path = `/rooms/${room.id}`;
+    if (messageLimit !== undefined) {
+      path = `${path}?message_limit=${messageLimit}`;
+    }
+
     this.cursorsReq.then(() => {
       room.subscription = new RoomSubscription({
         basicMessageEnricher: new BasicMessageEnricher(
@@ -546,7 +551,7 @@ export default class CurrentUser {
           onError: roomDelegate.error,
           onEvent: room.subscription.handleEvent.bind(room.subscription),
         },
-        path: `/rooms/${room.id}?message_limit=${messageLimit}`,
+        path: path,
       });
       this.subscribeToCursors(room, roomDelegate);
     });

@@ -533,6 +533,9 @@ export default class CurrentUser {
   subscribeToRoom(room: Room, roomDelegate: RoomDelegate, messageLimit?: number) {
     const path = `/rooms/${room.id}`;
     if (messageLimit !== undefined) {
+      if (typeof messageLimit !== "number") {
+        thow new Error(`Message limit should be a valid number`);
+      }
       path = `${path}?message_limit=${messageLimit}`;
     }
 

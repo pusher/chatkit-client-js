@@ -462,8 +462,8 @@ export default class CurrentUser {
     onSuccess: () => void,
     onError: (error: any) => void,
   ) {
-    if (typeof position !== "number") {
-      throw new Error("Cursor position should be a valid number");
+    if (typeof position !== 'number') {
+      throw new Error('Cursor position should be a valid number');
     }
 
     this.cursorsInstance
@@ -534,11 +534,15 @@ export default class CurrentUser {
     }
   }
 
-  subscribeToRoom(room: Room, roomDelegate: RoomDelegate, messageLimit?: number) {
-    const path = `/rooms/${room.id}`;
+  subscribeToRoom(
+    room: Room,
+    roomDelegate: RoomDelegate,
+    messageLimit?: number,
+  ) {
+    let path = `/rooms/${room.id}`;
     if (messageLimit !== undefined) {
-      if (typeof messageLimit !== "number") {
-        thow new Error(`Message limit should be a valid number`);
+      if (typeof messageLimit !== 'number') {
+        throw new Error('Message limit should be a valid number');
       }
       path = `${path}?message_limit=${messageLimit}`;
     }
@@ -558,7 +562,7 @@ export default class CurrentUser {
           onError: roomDelegate.error,
           onEvent: room.subscription.handleEvent.bind(room.subscription),
         },
-        path: path,
+        path,
       });
       this.subscribeToCursors(room, roomDelegate);
     });

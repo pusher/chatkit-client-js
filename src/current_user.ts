@@ -462,6 +462,10 @@ export default class CurrentUser {
     onSuccess: () => void,
     onError: (error: any) => void,
   ) {
+    if (typeof position !== "number") {
+      throw new Error("Cursor position should be a valid number");
+    }
+
     this.cursorsInstance
       .request({
         json: { position },

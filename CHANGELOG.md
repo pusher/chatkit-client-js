@@ -6,14 +6,14 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.5.1...HEAD)
 
-## Fixes
+## 0.6.1 -- 2018-01-25
 
-- Made sure that the `messageLimit` argument in `subscribeToRoom` was being validated as a number.
+### Fixes
+
+- Made sure that the `messageLimit` argument in `subscribeToRoom` was being
+  validated as a number.
 - Ensured that the `position` argument in `setCursor` is a valid number.
-
-### Additions
-
-- Throw an error if the userId isn't provided to the ChatManager
+- Throw an error if the userId isn't provided to the ChatManager.
 
 ## 0.6.0 -- 2018-01-19
 

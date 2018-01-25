@@ -32,6 +32,9 @@ export default class ChatManager {
   private userSubscription: UserSubscription;
 
   constructor(options: ChatManagerOptions) {
+    if (typeof options.userId !== 'string') {
+      throw new Error('Please provide a userId to the ChatManger constructor!');
+    }
     this.userId = options.userId;
     const splitInstanceLocator = options.instanceLocator.split(':');
     if (splitInstanceLocator.length !== 3) {

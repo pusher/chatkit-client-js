@@ -132,12 +132,22 @@ test('instantiate ChatManager with non-string instanceLocator fails', t => {
   t.end()
 })
 
-test('instantiate ChatManager with non-string userId fails', t => {
+test('instantiate ChatManager without userId fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 42,
     tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
   }), /userId/)
+  t.end()
+})
+
+// FIXME
+test.skip('instantiate ChatManager with non-string userId fails', t => {
+  t.throws(() => new ChatManager({
+    instanceLocator: INSTANCE_LOCATOR,
+    userId: 42,
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
+  }), /string/)
   t.end()
 })
 

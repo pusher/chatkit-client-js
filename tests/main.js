@@ -685,20 +685,21 @@ test('user came online hook', t => {
 test('typing indicators', t => {
   let started
   Promise.all([
-    fetchUser(t, 'alice', {
-      // FIXME these callbacks should just take the user (as advertised in the
-      // docs...) we already know the room.
-      userStartedTyping: once((room, user) => {
-        started = Date.now()
-        t.equal(user.id, 'carol')
-        t.equal(user.name, 'Carol')
-      }),
-      userStoppedTyping: once((room, user) => {
-        t.equal(user.id, 'carol')
-        t.equal(user.name, 'Carol')
-        t.true(Date.now() - started > 1000, 'fired more than 1s after start')
-        t.end()
+    fetchUser(t, 'alice').then(alice => {
+      alice.subscribeToRoom(find(r => r.id === bobsRoom.id, alice.rooms), {
+        userStartedTyping: once(user => {
+          started = Date.now()
+          t.equal(user.id, 'carol')
+          t.equal(user.name, 'Carol')
+        }),
+        userStoppedTyping: once(user => {
+          t.equal(user.id, 'carol')
+          t.equal(user.name, 'Carol')
+          t.true(Date.now() - started > 1000, 'fired more than 1s after start')
+          t.end()
+        })
       })
+      return alice
     }),
     fetchUser(t, 'carol')
   ]).then(([alice, carol]) => carol.isTypingIn(

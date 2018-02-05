@@ -14,30 +14,35 @@
     "type": "git",
     "url": "git+https://github.com/pusher/chatkit-client-js.git"
   },
-  "scripts": {
-    "build": "yarn build:all",
-    "build:all": "yarn clean && yarn build:web && yarn build:react-native && yarn build:worker",
-    "build:web": "webpack --config=webpack/config.web.js",
-    "build:react-native": "webpack --config=webpack/config.react-native.js",
-    "build:worker": "webpack --config=webpack/config.worker.js",
-    "clean": "rm -rf dist",
-    "format": "yarn prettier --write",
-    "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "prettier": "prettier 'src/**/*.ts'"
-  },
   "dependencies": {
-    "pusher-platform": "^0.14.0",
-    "tslint-config-prettier": "^1.6.0"
+    "pusher-platform": "^0.14.0"
   },
   "devDependencies": {
-    "babel-core": "^6.25.0",
-    "babel-loader": "^7.0.0",
-    "babel-preset-env": "^1.6.0",
-    "prettier": "^1.9.1",
-    "ts-loader": "^2.1.0",
-    "tslint": "^5.8.0",
-    "tslint-config-prettier": "^1.6.0",
-    "typescript": "^2.6.1",
-    "webpack": "^3.8.1"
+    "babel-core": "^6.26.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babelify": "^8.0.0",
+    "browserify": "^15.2.0",
+    "faucet": "^0.0.1",
+    "pusher-chatkit-server": "^0.9.1",
+    "ramda": "^0.25.0",
+    "snazzy": "^7.0.0",
+    "standard": "^10.0.3",
+    "tape": "^4.8.0",
+    "tape-run": "^3.0.2"
+  },
+  "scripts": {
+    "build": "echo ...",
+    "lint": "standard --verbose tests | snazzy",
+    "test": "browserify tests/main.js -t babelify | tape-run | faucet",
+    "lint:test": "clear && yarn lint && clear && yarn test"
+  },
+  "babel": {
+    "presets": [
+      "env"
+    ],
+    "plugins": [
+      "transform-object-rest-spread"
+    ]
   }
 }

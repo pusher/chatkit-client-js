@@ -96,6 +96,13 @@ export default class ChatManager {
           ] = PayloadDeserializer.createBasicCursorFromPayload(c);
         });
         return cursorsByRoom;
+      })
+      .catch(err => {
+        this.cursorsInstance.logger.verbose(
+          'Error getting cursors:',
+          err,
+        );
+        return {}
       });
 
     this.userSubscription = new UserSubscription({
@@ -105,12 +112,6 @@ export default class ChatManager {
           currentUser.cursorsReq = cursorsReq
             .then(cursors => {
               currentUser.cursors = cursors;
-            })
-            .catch(err => {
-              this.cursorsInstance.logger.verbose(
-                'Error getting cursors:',
-                err,
-              );
             });
           options.onSuccess(currentUser);
         } else {

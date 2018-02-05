@@ -1,1 +1,1 @@
-module.exports = require('./dist/worker/chatkit.worker');
+module.exports = require('./dist/worker/chatkit.worker')

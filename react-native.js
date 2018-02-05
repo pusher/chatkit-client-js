@@ -1,1 +1,1 @@
-module.exports = require('./dist/react-native/chatkit');
+module.exports = require('./dist/react-native/chatkit')

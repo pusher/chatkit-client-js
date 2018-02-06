@@ -45,15 +45,20 @@ export class ChatManager {
       serviceVersion: 'v1',
       ...instanceOptions
     })
+    this.userId = userId
   }
 
   connect (hooks = {}) {
     typeCheckObj('function', hooks)
     const currentUser = new CurrentUser({
+      id: this.userId,
       apiInstance: this.apiInstance
     })
     return Promise.all([
       currentUser.establishUserSubscription(hooks)
+        .then(currentUser.initializeUserStore),
+      currentUser.establishPresenceSubscription(hooks)
+      // currentUser.initializeCursorStore()
     ]).then(() => currentUser)
   }
 }

@@ -1,4 +1,4 @@
-import test from 'tape'
+import test from 'tape-catch'
 import {
   any,
   compose,
@@ -6,7 +6,9 @@ import {
   curry,
   find,
   head,
+  length,
   map,
+  prop,
   once,
   reduce,
   tail,
@@ -74,7 +76,7 @@ const endWithErr = curry((t, err) => t.end(`error: ${toString(err)}`))
 const sendMessage = (user, room, text) => new Promise((resolve, reject) =>
   user.sendMessage({ roomId: room.id, text }, resolve, reject))
 
-const sendMessages = (user, room, texts) => texts.length === 0
+const sendMessages = (user, room, texts) => length(texts) === 0
   ? Promise.resolve()
   : sendMessage(user, room, head(texts))
     .then(() => sendMessages(user, room, tail(texts)))
@@ -199,17 +201,22 @@ test('[setup] create Alice', t => {
 })
 
 test('connection resolves with current user object', t => {
-  fetchUser(t, 'alice').then(user => {
-    t.equal(typeof user, 'object')
-    t.equal(user.id, 'alice')
-    t.equal(user.name, 'Alice')
-    t.true(Array.isArray(user.rooms), 'user.rooms is an array')
-    t.equal(user.rooms.length, 1)
-    t.equal(user.rooms[0].name, `Alice's room`)
-    t.equal(user.rooms[0].isPrivate, false)
-    t.equal(user.rooms[0].createdByUserId, 'alice')
-    t.deepEqual(user.rooms[0].userIds, ['alice'])
-    t.end()
+  fetchUser(t, 'alice').then(alice => {
+    t.equal(typeof alice, 'object')
+    t.equal(alice.id, 'alice')
+    t.equal(alice.name, 'Alice')
+    t.true(Array.isArray(alice.rooms), 'alice.rooms is an array')
+    t.equal(length(alice.rooms), 1)
+    t.equal(alice.rooms[0].name, `Alice's room`)
+    t.equal(alice.rooms[0].isPrivate, false)
+    t.equal(alice.rooms[0].createdByUserId, 'alice')
+    t.deepEqual(alice.rooms[0].userIds, ['alice'])
+    alice.rooms[0].getUsers().then(users => {
+      t.true(Array.isArray(users), 'users is an array')
+      t.equal(length(users), 1)
+      t.equal(users[0].name, 'Alice')
+      t.end()
+    }).catch(endWithErr(t))
   })
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -221,8 +228,18 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
   fetchUser(t, 'alice', {
     addedToRoom: room => {
       t.equal(room.name, `Bob's room`)
-      t.true(any(r => r.id === room.id, alice.rooms), `should contain Bob's room`)
-      t.end()
+      t.true(
+        any(r => r.id === room.id, alice.rooms),
+        `should contain Bob's room`
+      )
+      const br = find(r => r.id === room.id, alice.rooms)
+      t.true(br, `alice.rooms should contain Bob's room`)
+      br.getUsers()
+        .then(users => {
+          t.deepEqual(map(prop('name'), users).sort(), ['Alice', 'Bob'])
+          t.end()
+        })
+        .catch(endWithErr(t))
     }
   })
     .then(a => { alice = a })
@@ -239,7 +256,7 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
 
 // This test has to run before any tests which cause Bob to open a subscription
 // (since then he will already be online)
-test.skip('user came online hook (user sub)', t => {
+test('user came online hook (user sub)', t => {
   fetchUser(t, 'alice', {
     userCameOnline: user => {
       t.equal(user.id, 'bob')
@@ -254,6 +271,8 @@ test.skip('user came online hook (user sub)', t => {
 
 // We can't easily test for the user going offline, because the presence
 // subscription in the above test hangs around until it is garbage collected.
+// TODO cancel methods so that we can do this, and because we should have them
+// anyway
 
 test.skip('typing indicators (user sub)', t => {
   let started

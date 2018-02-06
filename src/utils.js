@@ -18,8 +18,8 @@ export const urlEncode = pipe(
 
 // appendQueryParam :: String -> String -> String -> String
 export const appendQueryParam = (key, value, url) => {
-  const [ beforeQ, afterQ ] = split('?', url)
-  return beforeQ + '?' + (afterQ ? afterQ + '&' : '') + urlEncode({ [key]: value })
+  const [ before, after ] = split('?', url)
+  return before + '?' + (after ? after + '&' : '') + urlEncode({ [key]: value })
 }
 
 export const typeCheck = (name, expectedType, value) => {

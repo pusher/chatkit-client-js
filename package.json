@@ -37,6 +37,7 @@
     "snazzy": "^7.0.0",
     "standard": "^10.0.3",
     "tape": "^4.8.0",
+    "tape-catch": "^1.0.6",
     "tape-run": "^3.0.2"
   },
   "scripts": {

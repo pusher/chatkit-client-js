@@ -260,12 +260,10 @@ test('user came online hook (user sub)', t => {
   fetchUser(t, 'alice', {
     userCameOnline: user => {
       t.equal(user.id, 'bob')
+      t.equal(user.presenceState.state, 'online')
       t.end()
     }
-  })
-    // FIXME We have to wrap this in a timeout to give the presence
-    // subscription a chance to finish. Not ideal.
-    .then(() => setTimeout(() => fetchUser(t, 'bob'), 1000))
+  }).then(() => fetchUser(t, 'bob'))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

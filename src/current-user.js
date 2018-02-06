@@ -95,6 +95,15 @@ export class CurrentUser {
           hooks.subscriptionEstablished()
         }
         break
+      case 'presence_update':
+        const presence = parsePresenceState(body.data)
+        this.presenceStore.set(presence.userId, presence)
+        if (presence.state === 'online' && hooks.userCameOnline) {
+          this.userStore.get(presence.userId).then(hooks.userCameOnline)
+        } else if (presence.state === 'offline' && hooks.userWentOffline) {
+          this.userStore.get(presence.userId).then(hooks.userWentOffline)
+        }
+        break
     }
   }
 

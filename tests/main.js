@@ -272,7 +272,7 @@ test('user came online hook (user sub)', t => {
 // TODO cancel methods so that we can do this, and because we should have them
 // anyway
 
-test.skip('typing indicators (user sub)', t => {
+test('typing indicators (user sub)', t => {
   let started
   Promise.all([
     fetchUser(t, 'alice', {

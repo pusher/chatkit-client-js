@@ -2,6 +2,7 @@ import {
   append,
   chain,
   compose,
+  find,
   join,
   length,
   map,
@@ -15,6 +16,7 @@ import { appendQueryParam } from './utils'
 import { Store } from './store'
 import { UserStore } from './user-store'
 import { parseUser, parseRoom, parsePresenceState } from './parsers'
+import { TypingIndicators } from './typing-indicators'
 
 export class CurrentUser {
   constructor ({ id, apiInstance }) {
@@ -27,9 +29,16 @@ export class CurrentUser {
       presenceStore: this.presenceStore,
       logger: this.logger
     })
+    this.typingIndicators = new TypingIndicators({
+      userId: this.id,
+      apiInstance: this.apiInstance,
+      logger: this.logger
+    })
   }
 
   /* public */
+
+  isTypingIn = roomId => this.typingIndicators.sendThrottledRequest(roomId)
 
   /* internal */
   establishUserSubscription = hooks => new Promise((resolve, reject) =>
@@ -60,6 +69,15 @@ export class CurrentUser {
         if (hooks.addedToRoom) {
           hooks.addedToRoom(room)
         }
+        break
+      case 'typing_start': // TODO 'is_typing'
+        const { room_id: roomId, user_id: userId } = body.data
+        this.userStore.get(userId)
+          .then(user => this.typingIndicators.onIsTyping(
+            find(r => r.id === roomId, this.rooms), // TODO room store
+            user,
+            hooks
+          ))
         break
     }
   }

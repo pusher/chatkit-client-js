@@ -1,0 +1,2 @@
+export const TYPING_INDICATOR_TTL = 1500
+export const TYPING_INDICATOR_LEEWAY = 500

@@ -1,8 +1,6 @@
-import { curry, contains } from 'ramda'
+import { contains } from 'ramda'
 
-import { Room } from './room'
-
-export const parseRoom = curry((userStore, data) => new Room({
+export const parseBasicRoom = data => ({
   createdAt: data.created_at,
   createdByUserId: data.created_by_id,
   deletedAt: data.deletedAt,
@@ -10,9 +8,8 @@ export const parseRoom = curry((userStore, data) => new Room({
   isPrivate: data.private,
   name: data.name,
   updatedAt: data.updated_at,
-  userIds: data.member_user_ids,
-  userStore
-}))
+  userIds: data.member_user_ids
+})
 
 export const parseUser = data => ({
   avatarURL: data.avatar_url,

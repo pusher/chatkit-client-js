@@ -1,21 +1,21 @@
 import {
-  append,
   chain,
   compose,
-  find,
+  indexBy,
   join,
   length,
   map,
   pipe,
   prop,
-  reduce,
-  uniq
+  uniq,
+  values
 } from 'ramda'
 
 import { appendQueryParam } from './utils'
 import { Store } from './store'
 import { UserStore } from './user-store'
-import { parseUser, parseRoom, parsePresenceState } from './parsers'
+import { RoomStore } from './room-store'
+import { parseUser, parseBasicRoom, parsePresenceState } from './parsers'
 import { TypingIndicators } from './typing-indicators'
 
 export class CurrentUser {
@@ -29,6 +29,11 @@ export class CurrentUser {
       presenceStore: this.presenceStore,
       logger: this.logger
     })
+    this.roomStore = new RoomStore({
+      apiInstance: this.apiInstance,
+      userStore: this.userStore,
+      logger: this.logger
+    })
     this.typingIndicators = new TypingIndicators({
       userId: this.id,
       apiInstance: this.apiInstance,
@@ -38,9 +43,14 @@ export class CurrentUser {
 
   /* public */
 
+  get rooms () {
+    return values(this.roomStore.snapshot())
+  }
+
   isTypingIn = roomId => this.typingIndicators.sendThrottledRequest(roomId)
 
   /* internal */
+
   establishUserSubscription = hooks => new Promise((resolve, reject) =>
     this.apiInstance.subscribeNonResuming({
       path: '/users',
@@ -64,20 +74,19 @@ export class CurrentUser {
         break
       case 'added_to_room':
         // TODO fetch new user details in bulk when added to room (etc)
-        const room = parseRoom(this.userStore, body.data.room)
-        this.rooms = append(room, this.rooms)
+        const basicRoom = parseBasicRoom(body.data.room)
+        this.roomStore.set(basicRoom.id, basicRoom)
         if (hooks.addedToRoom) {
-          hooks.addedToRoom(room)
+          this.roomStore.get(basicRoom.id)
+            .then(room => {
+              hooks.addedToRoom(room)
+            })
         }
         break
       case 'typing_start': // TODO 'is_typing'
         const { room_id: roomId, user_id: userId } = body.data
-        this.userStore.get(userId)
-          .then(user => this.typingIndicators.onIsTyping(
-            find(r => r.id === roomId, this.rooms), // TODO room store
-            user,
-            hooks
-          ))
+        Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
+          .then(([r, u]) => this.typingIndicators.onIsTyping(r, u, hooks))
         break
     }
   }
@@ -89,7 +98,11 @@ export class CurrentUser {
     this.id = currentUser.id
     this.name = currentUser.name
     this.updatedAt = currentUser.updated_at
-    this.rooms = map(parseRoom(this.userStore), rooms)
+    compose(
+      this.roomStore.initialize,
+      indexBy(prop('id')),
+      map(parseBasicRoom)
+    )(rooms)
   }
 
   establishPresenceSubscription = hooks => new Promise((resolve, reject) =>
@@ -125,13 +138,11 @@ export class CurrentUser {
     }
   }
 
-  onPresenceInitialState = ({ user_states: userStates }) => {
-    compose(
-      this.presenceStore.initialize,
-      reduce((acc, state) => ({ ...acc, [state.userId]: state }), {}),
-      map(parsePresenceState)
-    )(userStates)
-  }
+  onPresenceInitialState = ({ user_states: userStates }) => compose(
+    this.presenceStore.initialize,
+    indexBy(prop('userId')),
+    map(parsePresenceState)
+  )(userStates)
 
   initializeUserStore = () => {
     const userIds = uniq(chain(prop('userIds'), this.rooms))
@@ -147,11 +158,11 @@ export class CurrentUser {
       .then(pipe(
         JSON.parse,
         map(parseUser),
-        reduce((acc, user) => ({ ...acc, [user.id]: user }), {}),
+        indexBy(prop('id')),
         this.userStore.initialize
       ))
       .catch(err => {
-        this.logger.warning('error fetching initial user information:', err)
+        this.logger.warn('error fetching initial user information:', err)
         // fall back to fetching lazily
         this.userStore.initialize({})
       })

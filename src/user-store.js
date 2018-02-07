@@ -31,7 +31,7 @@ export class UserStore {
         return user
       })
       .catch(err => {
-        this.logger.warning('error fetching user information:', err)
+        this.logger.warn('error fetching user information:', err)
         throw err
       })
   }

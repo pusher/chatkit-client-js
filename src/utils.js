@@ -36,3 +36,9 @@ export const typeCheckObj = (expectedType, obj) => forEachObjIndexed(
   (value, key) => typeCheck(key, expectedType, value),
   obj
 )
+
+// pointfree debugging
+export const trace = msg => x => {
+  console.log(msg, x)
+  return x
+}

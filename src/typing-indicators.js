@@ -27,7 +27,7 @@ export class TypingIndicators {
       })
       .catch(err => {
         delete this.typingRequestSent[roomId]
-        this.logger.warning(
+        this.logger.warn(
           `Error sending is_typing event in room ${roomId}`,
           err
         )

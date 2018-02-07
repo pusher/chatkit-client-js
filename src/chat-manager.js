@@ -48,7 +48,7 @@ export class ChatManager {
     this.userId = userId
   }
 
-  connect (hooks = {}) {
+  connect = (hooks = {}) => {
     typeCheckObj('function', hooks)
     const currentUser = new CurrentUser({
       id: this.userId,

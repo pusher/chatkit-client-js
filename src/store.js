@@ -19,4 +19,6 @@ export class Store {
       })
     }
   }
+
+  snapshot = () => this.store
 }

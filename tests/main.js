@@ -250,6 +250,7 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
     }))
     .then(room => {
       bobsRoom = room // we'll want this in the following tests
+      t.comment(`bob's room id:` + bobsRoom.id)
     })
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -289,11 +290,9 @@ test('typing indicators (user sub)', t => {
       }
     }),
     fetchUser(t, 'bob')
-  ]).then(([alice, bob]) => bob.isTypingIn(
-    bobsRoom.id,
-    () => {},
-    err => t.end(err)
-  ))
+  ])
+    .then(([alice, bob]) => bob.isTypingIn(bobsRoom.id))
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

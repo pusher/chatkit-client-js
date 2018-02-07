@@ -21,6 +21,8 @@ export class RoomStore {
     basicRoom || this.fetchBasicRoom(roomId)
   ).then(this.decorate)
 
+  pop = roomId => this.store.pop(roomId).then(this.decorate)
+
   fetchBasicRoom = roomId => {
     return this.apiInstance
       .request({
@@ -38,7 +40,9 @@ export class RoomStore {
       })
   }
 
-  decorate = basicRoom => new Room(basicRoom, this.userStore)
+  decorate = basicRoom => basicRoom
+    ? new Room(basicRoom, this.userStore)
+    : undefined
 
   snapshot = () => map(this.decorate, this.store.snapshot())
 }

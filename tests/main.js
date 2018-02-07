@@ -343,20 +343,18 @@ test.skip('room updated hook', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`removed from room hook [removes Alice from Bob's room]`, t => {
+test(`removed from room hook [removes Alice from Bob's room]`, t => {
   fetchUser(t, 'alice', {
     removedFromRoom: room => {
       t.equal(room.id, bobsRoom.id)
       t.end()
     }
-  })
-    .then(() => server.apiRequest({
-      method: 'PUT',
-      path: `/rooms/${bobsRoom.id}/users/remove`,
-      body: { user_ids: ['alice'] },
-      jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
-    }))
-    .catch(endWithErr(t))
+  }).then(() => server.apiRequest({
+    method: 'PUT',
+    path: `/rooms/${bobsRoom.id}/users/remove`,
+    body: { user_ids: ['alice'] },
+    jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
+  }))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

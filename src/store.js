@@ -34,5 +34,10 @@ export class Store {
     }
   }
 
+  pop = key => this.get(key).then(value => {
+    delete this.store[key]
+    return value
+  })
+
   snapshot = () => this.store
 }

@@ -81,12 +81,13 @@ export class CurrentUser {
           }
         })
         break
-      // case 'removed_from_room':
-      //   const room = this.roomStore.pop(body.room_id)
-      //   if (hooks.removedFromRoom) {
-      //     hooks.removedFromRoom(room)
-      //   }
-      //   break
+      case 'removed_from_room':
+        this.roomStore.pop(body.data.room_id).then(room => {
+          if (hooks.removedFromRoom) {
+            hooks.removedFromRoom(room)
+          }
+        })
+        break
       case 'typing_start': // TODO 'is_typing'
         const { room_id: roomId, user_id: userId } = body.data
         Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])

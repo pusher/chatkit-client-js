@@ -14,6 +14,7 @@ export interface UserSubscriptionOptions {
   apiInstance: Instance;
   filesInstance: Instance;
   cursorsInstance: Instance;
+  presenceInstance: Instance;
   userStore: GlobalUserStore;
   delegate?: ChatManagerDelegate;
   connectCompletionHandler: (currentUser?: CurrentUser, error?: any) => void;
@@ -28,12 +29,14 @@ export default class UserSubscription {
   private apiInstance: Instance;
   private filesInstance: Instance;
   private cursorsInstance: Instance;
+  private presenceInstance: Instance;
   private typingTimers: { [roomId: number]: { [userId: string]: number } } = {};
 
   constructor(options: UserSubscriptionOptions) {
     this.apiInstance = options.apiInstance;
     this.filesInstance = options.filesInstance;
     this.cursorsInstance = options.cursorsInstance;
+    this.presenceInstance = options.presenceInstance;
     this.userStore = options.userStore;
     this.delegate = options.delegate;
     this.connectCompletionHandlers = [options.connectCompletionHandler];
@@ -100,6 +103,7 @@ export default class UserSubscription {
       this.apiInstance,
       this.filesInstance,
       this.cursorsInstance,
+      this.presenceInstance,
       this.userStore,
     );
 

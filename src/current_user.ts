@@ -47,6 +47,7 @@ export interface CurrentUserOptions {
   apiInstance: Instance;
   filesInstance: Instance;
   cursorsInstance: Instance;
+  presenceInstance: Instance;
   userStore: GlobalUserStore;
 }
 
@@ -94,6 +95,7 @@ export default class CurrentUser {
   apiInstance: Instance;
   filesInstance: Instance;
   cursorsInstance: Instance;
+  presenceInstance: Instance;
   pathFriendlyId: string;
   presenceSubscription: PresenceSubscription;
   typingRequestSent: { [roomId: string]: number };
@@ -103,7 +105,7 @@ export default class CurrentUser {
   }
 
   constructor(options: CurrentUserOptions) {
-    const { rooms, id, apiInstance, filesInstance, cursorsInstance } = options;
+    const { rooms, id, apiInstance, filesInstance, cursorsInstance, presenceInstance } = options;
     const validRooms: Room[] = rooms || [];
 
     this.id = id;
@@ -117,6 +119,7 @@ export default class CurrentUser {
     this.apiInstance = apiInstance;
     this.filesInstance = filesInstance;
     this.cursorsInstance = cursorsInstance;
+    this.presenceInstance = presenceInstance;
     this.userStore = options.userStore;
     this.pathFriendlyId = encodeURIComponent(id); // TODO: This is different to Swift SDK
     this.typingRequestSent = {};
@@ -130,13 +133,13 @@ export default class CurrentUser {
 
   setupPresenceSubscription(delegate?: ChatManagerDelegate) {
     this.presenceSubscription = new PresenceSubscription({
-      apiInstance: this.apiInstance,
+      instance: this.presenceInstance,
       delegate,
       roomStore: this.roomStore,
       userStore: this.userStore,
     });
 
-    this.apiInstance.subscribeNonResuming({
+    this.presenceInstance.subscribeNonResuming({
       listeners: {
         onError: delegate && delegate.error,
         onEvent: this.presenceSubscription.handleEvent.bind(

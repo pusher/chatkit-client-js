@@ -14,4 +14,11 @@ export class Room {
   }
 
   getUsers = () => Promise.all(map(this.userStore.get, this.userIds))
+
+  get users () {
+    return filter(
+      user => contains(user.id, this.userIds),
+      values(this.userStore.snapshot())
+    )
+  }
 }

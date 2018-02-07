@@ -1,3 +1,5 @@
+import { map } from 'ramda'
+
 import { Store } from './store'
 import { parseUser } from './parsers'
 
@@ -34,5 +36,13 @@ export class UserStore {
         this.logger.warn('error fetching user information:', err)
         throw err
       })
+  }
+
+  snapshot = () => {
+    const presenceSnapshot = this.presenceStore.snapshot()
+    return map(
+      user => ({ ...user, presence: presenceSnapshot[user.id] }),
+      this.store.snapshot()
+    )
   }
 }

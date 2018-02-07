@@ -1,21 +1,35 @@
-import { clone, forEachObjIndexed } from 'ramda'
+import { clone, forEach } from 'ramda'
 
 export class Store {
-  pending = {}
+  pendingSets = [] // [{ key, value, resolve }]
+  pendingGets = [] // [{ key, resolve }]
 
   initialize = initialStore => {
     this.store = clone(initialStore)
-    forEachObjIndexed((resolve, key) => resolve(this.store[key]))
+    forEach(({ key, value, resolve }) => {
+      resolve(this.store[key] = value)
+    }, this.pendingSets)
+    forEach(({ key, resolve }) => {
+      resolve(this.store[key])
+    }, this.pendingGets)
   }
 
-  set = (key, value) => { this.store[key] = value }
+  set = (key, value) => {
+    if (this.store) {
+      return Promise.resolve(this.store[key] = value)
+    } else {
+      return new Promise(resolve => {
+        this.pendingSets.push({ key, value, resolve })
+      })
+    }
+  }
 
   get = key => {
     if (this.store) {
       return Promise.resolve(this.store[key])
     } else {
       return new Promise(resolve => {
-        this.pending[key] = resolve
+        this.pendingGets.push({ key, resolve })
       })
     }
   }

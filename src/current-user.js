@@ -47,6 +47,10 @@ export class CurrentUser {
     return values(this.roomStore.snapshot())
   }
 
+  get users () {
+    return values(this.userStore.snapshot())
+  }
+
   isTypingIn = roomId => this.typingIndicators.sendThrottledRequest(roomId)
 
   /* internal */

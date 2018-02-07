@@ -250,7 +250,6 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
     }))
     .then(room => {
       bobsRoom = room // we'll want this in the following tests
-      t.comment(`bob's room id:` + bobsRoom.id)
     })
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -261,7 +260,7 @@ test('user came online hook (user sub)', t => {
   fetchUser(t, 'alice', {
     userCameOnline: user => {
       t.equal(user.id, 'bob')
-      t.equal(user.presenceState.state, 'online')
+      t.equal(user.presence.state, 'online')
       t.end()
     }
   }).then(() => fetchUser(t, 'bob'))

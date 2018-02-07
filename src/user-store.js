@@ -17,7 +17,7 @@ export class UserStore {
   get = userId => Promise.all([
     this.store.get(userId).then(user => user || this.fetchUser(userId)),
     this.presenceStore.get(userId)
-  ]).then(([user, presenceState]) => ({ ...user, presenceState }))
+  ]).then(([user, presence]) => ({ ...user, presence }))
 
   fetchUser = userId => {
     return this.apiInstance

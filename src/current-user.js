@@ -75,14 +75,18 @@ export class CurrentUser {
       case 'added_to_room':
         // TODO fetch new user details in bulk when added to room (etc)
         const basicRoom = parseBasicRoom(body.data.room)
-        this.roomStore.set(basicRoom.id, basicRoom)
-        if (hooks.addedToRoom) {
-          this.roomStore.get(basicRoom.id)
-            .then(room => {
-              hooks.addedToRoom(room)
-            })
-        }
+        this.roomStore.set(basicRoom.id, basicRoom).then(room => {
+          if (hooks.addedToRoom) {
+            hooks.addedToRoom(room)
+          }
+        })
         break
+      // case 'removed_from_room':
+      //   const room = this.roomStore.pop(body.room_id)
+      //   if (hooks.removedFromRoom) {
+      //     hooks.removedFromRoom(room)
+      //   }
+      //   break
       case 'typing_start': // TODO 'is_typing'
         const { room_id: roomId, user_id: userId } = body.data
         Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
@@ -128,12 +132,13 @@ export class CurrentUser {
         break
       case 'presence_update':
         const presence = parsePresenceState(body.data)
-        this.presenceStore.set(presence.userId, presence)
-        if (presence.state === 'online' && hooks.userCameOnline) {
-          this.userStore.get(presence.userId).then(hooks.userCameOnline)
-        } else if (presence.state === 'offline' && hooks.userWentOffline) {
-          this.userStore.get(presence.userId).then(hooks.userWentOffline)
-        }
+        this.presenceStore.set(presence.userId, presence).then(p => {
+          if (p.state === 'online' && hooks.userCameOnline) {
+            this.userStore.get(p.userId).then(hooks.userCameOnline)
+          } else if (p.state === 'offline' && hooks.userWentOffline) {
+            this.userStore.get(p.userId).then(hooks.userWentOffline)
+          }
+        })
         break
     }
   }
@@ -163,7 +168,6 @@ export class CurrentUser {
       ))
       .catch(err => {
         this.logger.warn('error fetching initial user information:', err)
-        // fall back to fetching lazily
         this.userStore.initialize({})
       })
   }

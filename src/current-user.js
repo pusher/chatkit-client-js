@@ -1,5 +1,6 @@
 import {
   chain,
+  concat,
   indexBy,
   join,
   length,
@@ -52,12 +53,12 @@ export class CurrentUser {
     return values(this.userStore.snapshot())
   }
 
-  isTypingIn (roomId) {
+  isTypingIn = (roomId) => {
     typeCheck('roomId', 'number', roomId)
     return this.typingIndicators.sendThrottledRequest(roomId)
   }
 
-  createRoom (options = {}) {
+  createRoom = (options = {}) => {
     typeCheck('options', 'object', options)
     if (options.name !== undefined) {
       typeCheck('name', 'string', options.name)
@@ -85,7 +86,7 @@ export class CurrentUser {
       })
   }
 
-  getJoinableRooms () {
+  getJoinableRooms = () => {
     // TODO path friendly ids everywhere
     return this.apiInstance
       .request({
@@ -97,6 +98,10 @@ export class CurrentUser {
         this.logger.warning('error getting joinable rooms:', err)
         throw err
       })
+  }
+
+  getAllRooms = () => {
+    return this.getJoinableRooms().then(concat(this.rooms))
   }
 
   /* internal */

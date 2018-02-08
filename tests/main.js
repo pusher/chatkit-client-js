@@ -451,13 +451,10 @@ test('get joinable rooms', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-// FIXME
-test.skip('get all rooms', t => {
-  // Currently slightly broken because the /rooms route only returns 20 rooms
-  // by default, and there's no way to hook in to the pagination via this
-  // method.
-  fetchUser(t, 'bob').then(bob => bob.getAllRooms(
-    rooms => {
+test('get all rooms', t => {
+  fetchUser(t, 'bob')
+    .then(bob => bob.getAllRooms())
+    .then(rooms => {
       const ids = rooms.map(r => r.id)
       t.true(ids.includes(alicesRoom.id), `should include Alice's room`)
       t.true(ids.includes(bobsRoom.id), `should include Bob's room`)
@@ -466,9 +463,8 @@ test.skip('get all rooms', t => {
         `shouldn't include Alice's private room`
       )
       t.end()
-    },
-    endWithErr(t)
-  ))
+    })
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

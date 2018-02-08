@@ -30,14 +30,7 @@ export class PresenceSubscription {
         this.onInitialState(body.data)
         break
       case 'presence_update':
-        const presence = parsePresenceState(body.data)
-        this.presenceStore.set(presence.userId, presence).then(p => {
-          if (p.state === 'online' && this.hooks.userCameOnline) {
-            this.userStore.get(p.userId).then(this.hooks.userCameOnline)
-          } else if (p.state === 'offline' && this.hooks.userWentOffline) {
-            this.userStore.get(p.userId).then(this.hooks.userWentOffline)
-          }
-        })
+        this.onPresenceUpdate(body.data)
         break
     }
   }
@@ -47,5 +40,16 @@ export class PresenceSubscription {
       indexBy(prop('userId'), map(parsePresenceState, userStates))
     )
     this.hooks.subscriptionEstablished()
+  }
+
+  onPresenceUpdate = data => {
+    const presence = parsePresenceState(data)
+    this.presenceStore.set(presence.userId, presence).then(p => {
+      if (p.state === 'online' && this.hooks.userCameOnline) {
+        this.userStore.get(p.userId).then(this.hooks.userCameOnline)
+      } else if (p.state === 'offline' && this.hooks.userWentOffline) {
+        this.userStore.get(p.userId).then(this.hooks.userWentOffline)
+      }
+    })
   }
 }

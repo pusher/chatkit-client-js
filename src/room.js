@@ -1,4 +1,4 @@
-import { map, contains, filter, values } from 'ramda'
+import { contains, filter, values } from 'ramda'
 
 export class Room {
   constructor (basicRoom, userStore) {
@@ -14,10 +14,6 @@ export class Room {
   }
 
   get users () {
-    console.log(`userIds = ${JSON.stringify(this.userIds)}`)
-    console.log(`userStore ids = ${
-      JSON.stringify(map(user => user.id, values(this.userStore.snapshot())))
-    }`)
     return filter(
       user => contains(user.id, this.userIds),
       values(this.userStore.snapshot())

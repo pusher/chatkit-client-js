@@ -115,6 +115,20 @@ export class CurrentUser {
       })
       .catch(err => {
         this.logger.warn(`error joining room ${roomId}:`, err)
+        throw err
+      })
+  }
+
+  leaveRoom = roomId => {
+    typeCheck('roomId', 'number', roomId)
+    return this.apiInstance
+      .request({
+        method: 'POST',
+        path: `/users/${this.id}/rooms/${roomId}/leave`
+      })
+      .catch(err => {
+        this.logger.warn(`error joining room ${roomId}:`, err)
+        throw err
       })
   }
 

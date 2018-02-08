@@ -72,7 +72,7 @@ export class UserSubscription {
 
   onRemovedFromRoom = ({ room_id: roomId }) => {
     this.roomStore.pop(roomId).then(room => {
-      if (this.hooks.removedFromRoom) {
+      if (room && this.hooks.removedFromRoom) {
         this.hooks.removedFromRoom(room)
       }
     })

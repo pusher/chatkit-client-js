@@ -23,6 +23,10 @@ export class RoomStore {
 
   pop = roomId => this.store.pop(roomId).then(this.decorate)
 
+  removeUserFromRoom = (roomId, userId) => this.store.pop(roomId).then(r =>
+    this.set(roomId, { ...r, userIds: r.userIds.filter(id => id !== userId) })
+  )
+
   fetchBasicRoom = roomId => {
     return this.apiInstance
       .request({

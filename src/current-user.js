@@ -15,8 +15,9 @@ import { appendQueryParam } from './utils'
 import { Store } from './store'
 import { UserStore } from './user-store'
 import { RoomStore } from './room-store'
-import { parseUser, parseBasicRoom, parsePresenceState } from './parsers'
+import { parseUser, parsePresenceState } from './parsers'
 import { TypingIndicators } from './typing-indicators'
+import { UserSubscription } from './user-subscription'
 
 export class CurrentUser {
   constructor ({ id, apiInstance }) {
@@ -55,63 +56,16 @@ export class CurrentUser {
 
   /* internal */
 
-  establishUserSubscription = hooks => new Promise((resolve, reject) =>
-    this.apiInstance.subscribeNonResuming({
-      path: '/users',
-      listeners: {
-        onError: reject,
-        onEvent: this.onUserEvent({
-          ...hooks,
-          subscriptionEstablished: resolve
-        })
-      }
+  establishUserSubscription = hooks => {
+    this.userSubscription = new UserSubscription({ hooks, ...this })
+    return this.userSubscription.connect().then(({ user, basicRooms }) => {
+      this.avatarURL = user.avatarURL
+      this.createdAt = user.createdAt
+      this.customData = user.customData
+      this.name = user.name
+      this.updatedAt = user.updatedAt
+      this.roomStore.initialize(indexBy(prop('id'), basicRooms))
     })
-  )
-
-  onUserEvent = hooks => ({ body }) => {
-    switch (body.event_name) {
-      case 'initial_state':
-        this.onUserInitialState(body.data)
-        if (hooks.subscriptionEstablished) {
-          hooks.subscriptionEstablished()
-        }
-        break
-      case 'added_to_room':
-        // TODO fetch new user details in bulk when added to room (etc)
-        const basicRoom = parseBasicRoom(body.data.room)
-        this.roomStore.set(basicRoom.id, basicRoom).then(room => {
-          if (hooks.addedToRoom) {
-            hooks.addedToRoom(room)
-          }
-        })
-        break
-      case 'removed_from_room':
-        this.roomStore.pop(body.data.room_id).then(room => {
-          if (hooks.removedFromRoom) {
-            hooks.removedFromRoom(room)
-          }
-        })
-        break
-      case 'typing_start': // TODO 'is_typing'
-        const { room_id: roomId, user_id: userId } = body.data
-        Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
-          .then(([r, u]) => this.typingIndicators.onIsTyping(r, u, hooks))
-        break
-    }
-  }
-
-  onUserInitialState = ({ current_user: currentUser, rooms }) => {
-    this.avatarURL = currentUser.avatar_url
-    this.createdAt = currentUser.created_at
-    this.customData = currentUser.custom_data
-    this.id = currentUser.id
-    this.name = currentUser.name
-    this.updatedAt = currentUser.updated_at
-    compose(
-      this.roomStore.initialize,
-      indexBy(prop('id')),
-      map(parseBasicRoom)
-    )(rooms)
   }
 
   establishPresenceSubscription = hooks => new Promise((resolve, reject) =>

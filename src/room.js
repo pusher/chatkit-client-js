@@ -1,4 +1,4 @@
-import { map } from 'ramda'
+import { contains, filter, map, values } from 'ramda'
 
 export class Room {
   constructor (basicRoom, userStore) {

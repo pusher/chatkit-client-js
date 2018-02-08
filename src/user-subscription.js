@@ -31,23 +31,13 @@ export class UserSubscription {
         this.onInitialState(body.data)
         break
       case 'added_to_room':
-        // TODO fetch new user details in bulk when added to room (etc)
-        const basicRoom = parseBasicRoom(body.data.room)
-        this.roomStore.set(basicRoom.id, basicRoom).then(room => {
-          if (this.hooks.addedToRoom) {
-            this.hooks.addedToRoom(room)
-          }
-        })
+        this.onAddedToRoom(body.data)
         break
       case 'removed_from_room':
-        this.roomStore.pop(body.data.room_id).then(room => {
-          if (this.hooks.removedFromRoom) {
-            this.hooks.removedFromRoom(room)
-          }
-        })
+        this.onRemovedFromRoom(body.data)
         break
-      case 'user_joined':
-        break
+      // case 'user_joined':
+      //   break
       case 'user_left':
         // const { room_id: roomId, user_id: userId } = body.data
         // this.roomStore.removeUserFromRoom(roomId, userId)
@@ -57,9 +47,7 @@ export class UserSubscription {
         // }
         break
       case 'typing_start': // TODO 'is_typing'
-        const { room_id: roomId, user_id: userId } = body.data
-        Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
-          .then(([r, u]) => this.typingIndicators.onIsTyping(r, u, this.hooks))
+        this.onTypingStart(body.data)
         break
     }
   }
@@ -69,5 +57,28 @@ export class UserSubscription {
       user: parseUser(userData),
       basicRooms: map(parseBasicRoom, roomsData)
     })
+  }
+
+  onAddedToRoom = ({ room: roomData }) => {
+    // TODO fetch new user details in bulk when added to room (etc)
+    const basicRoom = parseBasicRoom(roomData)
+    this.roomStore.set(basicRoom.id, basicRoom).then(room => {
+      if (this.hooks.addedToRoom) {
+        this.hooks.addedToRoom(room)
+      }
+    })
+  }
+
+  onRemovedFromRoom = ({ room_id: roomId }) => {
+    this.roomStore.pop(roomId).then(room => {
+      if (this.hooks.removedFromRoom) {
+        this.hooks.removedFromRoom(room)
+      }
+    })
+  }
+
+  onTypingStart = ({ room_id: roomId, user_id: userId }) => {
+    Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
+      .then(([r, u]) => this.typingIndicators.onIsTyping(r, u, this.hooks))
   }
 }

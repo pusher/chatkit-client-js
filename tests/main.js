@@ -423,22 +423,21 @@ test(`create room with members [creates Bob's new room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('get joined rooms', t => {
+test('get joined rooms', t => {
   const expectedRoomIds = [alicesRoom, bobsRoom, alicesPrivateRoom]
     .map(r => r.id).sort()
-  fetchUser(t, 'alice').then(alice => alice.getJoinedRooms(
-    rooms => {
-      t.deepEqual(rooms.map(r => r.id).sort(), expectedRoomIds)
+  fetchUser(t, 'alice')
+    .then(alice => {
+      t.deepEqual(map(r => r.id, alice.rooms).sort(), expectedRoomIds)
       t.end()
-    },
-    endWithErr(t)
-  ))
+    })
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('get joinable rooms', t => {
-  fetchUser(t, 'bob').then(bob => bob.getJoinableRooms(
-    rooms => {
+test('get joinable rooms', t => {
+  fetchUser(t, 'bob')
+    .then(bob => bob.getJoinableRooms())
+    .then(rooms => {
       const ids = rooms.map(r => r.id)
       t.true(ids.includes(alicesRoom.id), `should include Alice's room`)
       t.false(ids.includes(bobsRoom.id), `shouldn't include Bob's room`)
@@ -447,9 +446,8 @@ test.skip('get joinable rooms', t => {
         `shouldn't include Alice's private room`
       )
       t.end()
-    },
-    endWithErr(t)
-  ))
+    })
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

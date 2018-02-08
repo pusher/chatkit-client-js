@@ -10,11 +10,11 @@ import {
   values
 } from 'ramda'
 
-import { appendQueryParam } from './utils'
+import { appendQueryParam, typeCheck, typeCheckArr } from './utils'
 import { Store } from './store'
 import { UserStore } from './user-store'
 import { RoomStore } from './room-store'
-import { parseUser } from './parsers'
+import { parseUser, parseBasicRoom } from './parsers'
 import { TypingIndicators } from './typing-indicators'
 import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
@@ -52,7 +52,38 @@ export class CurrentUser {
     return values(this.userStore.snapshot())
   }
 
-  isTypingIn = roomId => this.typingIndicators.sendThrottledRequest(roomId)
+  isTypingIn (roomId) {
+    typeCheck('roomId', 'number', roomId)
+    return this.typingIndicators.sendThrottledRequest(roomId)
+  }
+
+  createRoom (options = {}) {
+    typeCheck('options', 'object', options)
+    if (options.name !== undefined) {
+      typeCheck('name', 'string', options.name)
+    }
+    if (options.addUserIds !== undefined) {
+      typeCheckArr('addUserIds', 'string', options.addUserIds)
+    }
+    return this.apiInstance.request({
+      method: 'POST',
+      path: '/rooms',
+      json: {
+        created_by_id: this.id,
+        name: options.name,
+        private: !!options.private,
+        user_ids: options.addUserIds
+      }
+    })
+      .then(res => {
+        const basicRoom = parseBasicRoom(JSON.parse(res))
+        return this.roomStore.set(basicRoom.id, basicRoom)
+      })
+      .catch(err => {
+        this.logger.warning('error creating room:', err)
+        throw err
+      })
+  }
 
   /* internal */
 

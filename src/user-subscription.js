@@ -39,12 +39,7 @@ export class UserSubscription {
       // case 'user_joined':
       //   break
       case 'user_left':
-        // const { room_id: roomId, user_id: userId } = body.data
-        // this.roomStore.removeUserFromRoom(roomId, userId)
-        // if (this.hooks.userLeftRoom) {
-        //   Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
-        //     .then(([r, u]) => this.hooks.userLeftRoom(r, u))
-        // }
+        this.onUserLeft(body.data)
         break
       case 'typing_start': // TODO 'is_typing'
         this.onTypingStart(body.data)
@@ -75,6 +70,14 @@ export class UserSubscription {
         this.hooks.removedFromRoom(room)
       }
     })
+  }
+
+  onUserLeft = ({ room_id: roomId, user_id: userId }) => {
+    this.roomStore.removeUserFromRoom(roomId, userId)
+    if (this.hooks.userLeftRoom) {
+      Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
+        .then(([r, u]) => this.hooks.userLeftRoom(r, u))
+    }
   }
 
   onTypingStart = ({ room_id: roomId, user_id: userId }) => {

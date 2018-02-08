@@ -45,6 +45,9 @@ export class UserSubscription {
       case 'room_updated':
         this.onRoomUpdated(body.data)
         break
+      case 'room_deleted':
+        this.onRoomDeleted(body.data)
+        break
       case 'typing_start': // TODO 'is_typing'
         this.onTypingStart(body.data)
         break
@@ -103,6 +106,14 @@ export class UserSubscription {
     this.roomStore.update(updates.id, updates).then(room => {
       if (this.hooks.roomUpdated) {
         this.hooks.roomUpdated(room)
+      }
+    })
+  }
+
+  onRoomDeleted = ({ room_id: roomId }) => {
+    this.roomStore.pop(roomId).then(room => {
+      if (room && this.hooks.roomDeleted) {
+        this.hooks.roomDeleted(room)
       }
     })
   }

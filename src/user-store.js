@@ -1,5 +1,6 @@
-import { map } from 'ramda'
+import { difference, join, length, map, pipe, prop, forEach } from 'ramda'
 
+import { appendQueryParam } from './utils'
 import { Store } from './store'
 import { parseUser } from './parsers'
 
@@ -34,6 +35,27 @@ export class UserStore {
       })
       .catch(err => {
         this.logger.warn('error fetching user information:', err)
+        throw err
+      })
+  }
+
+  fetchMissingUsers = userIds => {
+    const missing = difference(userIds, map(prop('id'), this.store.snapshot()))
+    if (length(missing) === 0) {
+      return Promise.resolve()
+    }
+    return this.instance
+      .request({
+        method: 'GET',
+        path: appendQueryParam('user_ids', join(',', missing), '/users_by_ids')
+      })
+      .then(pipe(
+        JSON.parse,
+        map(parseUser),
+        forEach(user => this.set(user.id, user))
+      ))
+      .catch(err => {
+        this.logger.warn('error fetching missing users:', err)
         throw err
       })
   }

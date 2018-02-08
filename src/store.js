@@ -39,5 +39,5 @@ export class Store {
     return value
   })
 
-  snapshot = () => this.store
+  snapshot = () => this.store || {}
 }

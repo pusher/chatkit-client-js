@@ -2,8 +2,6 @@ import {
   chain,
   concat,
   indexBy,
-  join,
-  length,
   map,
   pipe,
   prop,
@@ -11,11 +9,11 @@ import {
   values
 } from 'ramda'
 
-import { appendQueryParam, typeCheck, typeCheckArr } from './utils'
+import { typeCheck, typeCheckArr } from './utils'
 import { Store } from './store'
 import { UserStore } from './user-store'
 import { RoomStore } from './room-store'
-import { parseUser, parseBasicRoom } from './parsers'
+import { parseBasicRoom } from './parsers'
 import { TypingIndicators } from './typing-indicators'
 import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
@@ -77,12 +75,11 @@ export class CurrentUser {
       }
     })
       .then(res => {
-        // TODO grab user details
         const basicRoom = parseBasicRoom(JSON.parse(res))
         return this.roomStore.set(basicRoom.id, basicRoom)
       })
       .catch(err => {
-        this.logger.warning('error creating room:', err)
+        this.logger.warn('error creating room:', err)
         throw err
       })
   }
@@ -96,7 +93,7 @@ export class CurrentUser {
       })
       .then(pipe(JSON.parse, map(parseBasicRoom)))
       .catch(err => {
-        this.logger.warning('error getting joinable rooms:', err)
+        this.logger.warn('error getting joinable rooms:', err)
         throw err
       })
   }
@@ -113,12 +110,11 @@ export class CurrentUser {
         path: `/users/${this.id}/rooms/${roomId}/join`
       })
       .then(res => {
-        // TODO grab user details
         const basicRoom = parseBasicRoom(JSON.parse(res))
         return this.roomStore.set(basicRoom.id, basicRoom)
       })
       .catch(err => {
-        this.logger.warning(`error joining room ${roomId}:`, err)
+        this.logger.warn(`error joining room ${roomId}:`, err)
       })
   }
 
@@ -155,24 +151,13 @@ export class CurrentUser {
   }
 
   initializeUserStore = () => {
-    const userIds = uniq(chain(prop('userIds'), this.rooms))
-    if (length(userIds) === 0) {
-      this.userStore.initialize({})
-      return
-    }
-    return this.apiInstance
-      .request({
-        method: 'GET',
-        path: appendQueryParam('user_ids', join(',', userIds), '/users_by_ids')
-      })
-      .then(pipe(
-        JSON.parse,
-        map(parseUser),
-        indexBy(prop('id')),
-        this.userStore.initialize
-      ))
+    return this.userStore.fetchMissingUsers(
+      uniq(chain(prop('userIds'), this.rooms))
+    )
       .catch(err => {
         this.logger.warn('error fetching initial user information:', err)
+      })
+      .then(() => {
         this.userStore.initialize({})
       })
   }

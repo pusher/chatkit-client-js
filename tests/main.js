@@ -295,7 +295,7 @@ test('typing indicators (user sub)', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('user left room hook (user sub) [removes Bob from his own room]', t => {
+test('user left room hook (user sub) [removes Bob from his own room]', t => {
   fetchUser(t, 'alice', {
     userLeftRoom: (room, user) => {
       t.equal(room.id, bobsRoom.id)

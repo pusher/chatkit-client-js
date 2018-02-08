@@ -1,6 +1,5 @@
 import {
   chain,
-  compose,
   indexBy,
   join,
   length,
@@ -15,9 +14,10 @@ import { appendQueryParam } from './utils'
 import { Store } from './store'
 import { UserStore } from './user-store'
 import { RoomStore } from './room-store'
-import { parseUser, parsePresenceState } from './parsers'
+import { parseUser } from './parsers'
 import { TypingIndicators } from './typing-indicators'
 import { UserSubscription } from './user-subscription'
+import { PresenceSubscription } from './presence-subscription'
 
 export class CurrentUser {
   constructor ({ id, apiInstance }) {
@@ -26,18 +26,18 @@ export class CurrentUser {
     this.logger = apiInstance.logger
     this.presenceStore = new Store()
     this.userStore = new UserStore({
-      apiInstance,
+      instance: this.apiInstance,
       presenceStore: this.presenceStore,
       logger: this.logger
     })
     this.roomStore = new RoomStore({
-      apiInstance: this.apiInstance,
+      instance: this.apiInstance,
       userStore: this.userStore,
       logger: this.logger
     })
     this.typingIndicators = new TypingIndicators({
       userId: this.id,
-      apiInstance: this.apiInstance,
+      instance: this.apiInstance,
       logger: this.logger
     })
   }
@@ -57,7 +57,14 @@ export class CurrentUser {
   /* internal */
 
   establishUserSubscription = hooks => {
-    this.userSubscription = new UserSubscription({ hooks, ...this })
+    this.userSubscription = new UserSubscription({
+      hooks,
+      userId: this.id,
+      instance: this.apiInstance,
+      userStore: this.userStore,
+      roomStore: this.roomStore,
+      typingIndicators: this.typingIndicators
+    })
     return this.userSubscription.connect().then(({ user, basicRooms }) => {
       this.avatarURL = user.avatarURL
       this.createdAt = user.createdAt
@@ -65,48 +72,19 @@ export class CurrentUser {
       this.name = user.name
       this.updatedAt = user.updatedAt
       this.roomStore.initialize(indexBy(prop('id'), basicRooms))
-    })
+    }).then(this.initializeUserStore)
   }
 
-  establishPresenceSubscription = hooks => new Promise((resolve, reject) =>
-    this.apiInstance.subscribeNonResuming({
-      path: `/users/${this.id}/presence`,
-      listeners: {
-        onError: reject,
-        onEvent: this.onPresenceEvent({
-          ...hooks,
-          subscriptionEstablished: resolve
-        })
-      }
+  establishPresenceSubscription = hooks => {
+    this.presenceSubscription = new PresenceSubscription({
+      hooks,
+      userId: this.id,
+      instance: this.apiInstance,
+      userStore: this.userStore,
+      presenceStore: this.presenceStore
     })
-  )
-
-  onPresenceEvent = hooks => ({ body }) => {
-    switch (body.event_name) {
-      case 'initial_state':
-        this.onPresenceInitialState(body.data)
-        if (hooks.subscriptionEstablished) {
-          hooks.subscriptionEstablished()
-        }
-        break
-      case 'presence_update':
-        const presence = parsePresenceState(body.data)
-        this.presenceStore.set(presence.userId, presence).then(p => {
-          if (p.state === 'online' && hooks.userCameOnline) {
-            this.userStore.get(p.userId).then(hooks.userCameOnline)
-          } else if (p.state === 'offline' && hooks.userWentOffline) {
-            this.userStore.get(p.userId).then(hooks.userWentOffline)
-          }
-        })
-        break
-    }
+    return this.presenceSubscription.connect()
   }
-
-  onPresenceInitialState = ({ user_states: userStates }) => compose(
-    this.presenceStore.initialize,
-    indexBy(prop('userId')),
-    map(parsePresenceState)
-  )(userStates)
 
   initializeUserStore = () => {
     const userIds = uniq(chain(prop('userIds'), this.rooms))

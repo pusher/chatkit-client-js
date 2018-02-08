@@ -4,8 +4,8 @@ import { Store } from './store'
 import { parseUser } from './parsers'
 
 export class UserStore {
-  constructor ({ apiInstance, presenceStore, logger }) {
-    this.apiInstance = apiInstance
+  constructor ({ instance, presenceStore, logger }) {
+    this.instance = instance
     this.presenceStore = presenceStore
     this.logger = logger
   }
@@ -22,7 +22,7 @@ export class UserStore {
   ]).then(([user, presence]) => ({ ...user, presence }))
 
   fetchUser = userId => {
-    return this.apiInstance
+    return this.instance
       .request({
         method: 'GET',
         path: `/users/${userId}`

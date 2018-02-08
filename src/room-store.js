@@ -5,8 +5,8 @@ import { parseBasicRoom } from './parsers'
 import { Room } from './room'
 
 export class RoomStore {
-  constructor ({ apiInstance, userStore, logger }) {
-    this.apiInstance = apiInstance
+  constructor ({ instance, userStore, logger }) {
+    this.instance = instance
     this.userStore = userStore
     this.logger = logger
   }
@@ -28,7 +28,7 @@ export class RoomStore {
   )
 
   fetchBasicRoom = roomId => {
-    return this.apiInstance
+    return this.instance
       .request({
         method: 'GET',
         path: `/rooms/${roomId}`

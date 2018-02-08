@@ -1,9 +1,9 @@
 import { TYPING_INDICATOR_TTL, TYPING_INDICATOR_LEEWAY } from './constants'
 
 export class TypingIndicators {
-  constructor ({ userId, apiInstance, logger }) {
+  constructor ({ userId, instance, logger }) {
     this.userId = userId
-    this.apiInstance = apiInstance
+    this.instance = instance
     this.logger = logger
     this.lastSentRequests = {}
     this.timers = {}
@@ -16,7 +16,7 @@ export class TypingIndicators {
       return Promise.resolve()
     }
     this.lastSentRequests[roomId] = now
-    return this.apiInstance
+    return this.instance
       .request({
         method: 'POST',
         path: `/rooms/${roomId}/events`,

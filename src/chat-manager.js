@@ -55,8 +55,7 @@ export class ChatManager {
       apiInstance: this.apiInstance
     })
     return Promise.all([
-      currentUser.establishUserSubscription(hooks)
-        .then(currentUser.initializeUserStore),
+      currentUser.establishUserSubscription(hooks),
       currentUser.establishPresenceSubscription(hooks)
       // currentUser.initializeCursorStore()
     ]).then(() => currentUser)

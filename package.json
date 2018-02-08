@@ -45,10 +45,11 @@
     "build": "yarn build:all",
     "build:all": "yarn build:web",
     "build:web": "rollup -c rollup/web.js",
-    "test": "browserify tests/main.js -t babelify | tape-run",
+    "test": "yarn test:raw | faucet",
+    "test:raw": "browserify tests/main.js -t babelify | tape-run",
     "lint:build": "clear && yarn lint && clear && yarn build",
-    "lint:build:test": "yarn lint:build && clear && yarn test | faucet",
-    "lint:build:test:raw": "yarn lint:build && clear && yarn test"
+    "lint:build:test": "yarn lint:build && clear && yarn test",
+    "lint:build:test:raw": "yarn lint:build && clear && yarn test:raw"
   },
   "babel": {
     "presets": [

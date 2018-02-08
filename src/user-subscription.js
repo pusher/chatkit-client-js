@@ -3,24 +3,27 @@ import { map } from 'ramda'
 import { parseBasicRoom, parseUser } from './parsers'
 
 export class UserSubscription {
-  constructor ({ hooks, apiInstance, userStore, roomStore, typingIndicators }) {
-    this.hooks = hooks
-    this.apiInstance = apiInstance
-    this.userStore = userStore
-    this.roomStore = roomStore
-    this.typingIndicators = typingIndicators
+  constructor (options) {
+    this.userId = options.userId
+    this.hooks = options.hooks
+    this.instance = options.instance
+    this.userStore = options.userStore
+    this.roomStore = options.roomStore
+    this.typingIndicators = options.typingIndicators
   }
 
-  connect = () => new Promise((resolve, reject) => {
-    this.hooks.subscriptionEstablished = resolve
-    this.apiInstance.subscribeNonResuming({
-      path: '/users',
-      listeners: {
-        onError: reject,
-        onEvent: this.onEvent
-      }
+  connect () {
+    return new Promise((resolve, reject) => {
+      this.hooks = { ...this.hooks, subscriptionEstablished: resolve }
+      this.instance.subscribeNonResuming({
+        path: '/users',
+        listeners: {
+          onError: reject,
+          onEvent: this.onEvent
+        }
+      })
     })
-  })
+  }
 
   onEvent = ({ body }) => {
     switch (body.event_name) {
@@ -44,10 +47,8 @@ export class UserSubscription {
         })
         break
       case 'user_joined':
-        console.log('user_joined', body.data)
         break
       case 'user_left':
-        console.log('user_left', body.data)
         // const { room_id: roomId, user_id: userId } = body.data
         // this.roomStore.removeUserFromRoom(roomId, userId)
         // if (this.hooks.userLeftRoom) {

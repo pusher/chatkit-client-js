@@ -49,7 +49,7 @@ export class ChatManager {
   }
 
   connect = (hooks = {}) => {
-    typeCheckObj('function', hooks)
+    typeCheckObj('hooks', 'function', hooks)
     const currentUser = new CurrentUser({
       id: this.userId,
       apiInstance: this.apiInstance

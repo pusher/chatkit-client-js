@@ -31,11 +31,19 @@ export const typeCheck = (name, expectedType, value) => {
   }
 }
 
+// checks that all of an arrays elements are of the given type
+export const typeCheckArr = (name, expectedType, arr) => {
+  if (!Array.isArray(arr)) {
+    throw new TypeError(`expected ${name} to be an array`)
+  }
+  arr.forEach((value, i) => typeCheck(`${name}[${i}]`, expectedType, value))
+}
+
 // checks that all of an objects values are of the given type
-export const typeCheckObj = (expectedType, obj) => forEachObjIndexed(
-  (value, key) => typeCheck(key, expectedType, value),
-  obj
-)
+export const typeCheckObj = (name, expectedType, obj) => {
+  typeCheck(name, 'object', obj)
+  forEachObjIndexed((value, key) => typeCheck(key, expectedType, value), obj)
+}
 
 // pointfree debugging
 export const trace = msg => x => {

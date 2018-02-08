@@ -372,51 +372,54 @@ test(`room deleted hook [destroys Alice's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`create room [creates Alice's new room]`, t => {
-  fetchUser(t, 'alice').then(alice => alice.createRoom(
-    { name: `Alice's new room` },
-    room => {
+test(`create room [creates Alice's new room]`, t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.createRoom({ name: `Alice's new room` }))
+    .then(room => {
       alicesRoom = room
       t.equal(room.name, `Alice's new room`)
       t.false(room.isPrivate, `room shouldn't be private`)
       t.equal(room.createdByUserId, 'alice')
       t.deepEqual(room.userIds, ['alice'])
       t.end()
-    },
-    endWithErr(t)
-  ))
+    })
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`create private room [creates Alice's private room]`, t => {
-  fetchUser(t, 'alice').then(alice => alice.createRoom(
-    { name: `Alice's private room`, private: true },
-    room => {
+test(`create private room [creates Alice's private room]`, t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.createRoom({
+      name: `Alice's private room`,
+      private: true
+    }))
+    .then(room => {
       alicesPrivateRoom = room
       t.equal(room.name, `Alice's private room`)
       t.true(room.isPrivate, 'room should be private')
       t.equal(room.createdByUserId, 'alice')
       t.deepEqual(room.userIds, ['alice'])
       t.end()
-    },
-    endWithErr(t)
-  ))
+    })
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`create room with members [creates Bob's new room]`, t => {
-  fetchUser(t, 'bob').then(bob => bob.createRoom(
-    { name: `Bob's new room`, addUserIds: ['alice'] },
-    room => {
+test(`create room with members [creates Bob's new room]`, t => {
+  fetchUser(t, 'bob')
+    .then(bob => bob.createRoom({
+      name: `Bob's new room`,
+      addUserIds: ['alice']
+    }))
+    .then(room => {
       bobsRoom = room
       t.equal(room.name, `Bob's new room`)
       t.false(room.isPrivate, `room shouldn't be private`)
       t.equal(room.createdByUserId, 'bob')
       t.deepEqual(room.userIds.sort(), ['alice', 'bob'])
       t.end()
-    },
-    endWithErr(t)
-  ))
+    })
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

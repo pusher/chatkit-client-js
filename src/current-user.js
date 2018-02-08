@@ -85,6 +85,20 @@ export class CurrentUser {
       })
   }
 
+  getJoinableRooms () {
+    // TODO path friendly ids everywhere
+    return this.apiInstance
+      .request({
+        method: 'GET',
+        path: `/users/${this.id}/rooms?joinable=true`
+      })
+      .then(pipe(JSON.parse, map(parseBasicRoom)))
+      .catch(err => {
+        this.logger.warning('error getting joinable rooms:', err)
+        throw err
+      })
+  }
+
   /* internal */
 
   establishUserSubscription = hooks => {

@@ -487,18 +487,22 @@ test(`join room [Bob joins Alice's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`leave room [Bob leaves Alice's room]`, t => {
-  fetchUser(t, 'bob').then(bob => bob.leaveRoom(
-    alicesRoom.id,
-    () => setTimeout(() => {
-      t.false(
+test(`leave room [Bob leaves Alice's room]`, t => {
+  fetchUser(t, 'bob')
+    .then(bob => {
+      t.true(
         any(r => r.id === alicesRoom.id, bob.rooms),
-        `shouldn't include Alice's room`
+        `should include Bob's room`
       )
-      t.end()
-    }, 1000), // FIXME should work without the timeout
-    endWithErr(t)
-  ))
+      bob.leaveRoom(alicesRoom.id)
+        .then(() => {
+          t.false(
+            any(r => r.id === alicesRoom.id, bob.rooms),
+            `shouldn't include Alice's room`
+          )
+          t.end()
+        })
+    })
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

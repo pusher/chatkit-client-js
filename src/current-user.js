@@ -77,6 +77,7 @@ export class CurrentUser {
       }
     })
       .then(res => {
+        // TODO grab user details
         const basicRoom = parseBasicRoom(JSON.parse(res))
         return this.roomStore.set(basicRoom.id, basicRoom)
       })
@@ -102,6 +103,23 @@ export class CurrentUser {
 
   getAllRooms = () => {
     return this.getJoinableRooms().then(concat(this.rooms))
+  }
+
+  joinRoom = roomId => {
+    typeCheck('roomId', 'number', roomId)
+    return this.apiInstance
+      .request({
+        method: 'POST',
+        path: `/users/${this.id}/rooms/${roomId}/join`
+      })
+      .then(res => {
+        // TODO grab user details
+        const basicRoom = parseBasicRoom(JSON.parse(res))
+        return this.roomStore.set(basicRoom.id, basicRoom)
+      })
+      .catch(err => {
+        this.logger.warning(`error joining room ${roomId}:`, err)
+      })
   }
 
   /* internal */

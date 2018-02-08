@@ -68,7 +68,14 @@ const concatBatch = (n, f) => batch(n, compose(f, reduce(concat, [])))
 const fetchUser = (t, userId, hooks = {}) => new ChatManager({
   instanceLocator: INSTANCE_LOCATOR,
   userId,
-  tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
+  tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
+  logger: {
+    error: console.log,
+    warn: console.log,
+    info: () => {},
+    debug: () => {},
+    verbose: () => {}
+  }
 }).connect(map(once, hooks)).catch(endWithErr(t))
 
 const endWithErr = curry((t, err) => t.end(`error: ${toString(err)}`))
@@ -211,12 +218,10 @@ test('connection resolves with current user object', t => {
     t.equal(alice.rooms[0].isPrivate, false)
     t.equal(alice.rooms[0].createdByUserId, 'alice')
     t.deepEqual(alice.rooms[0].userIds, ['alice'])
-    alice.rooms[0].getUsers().then(users => {
-      t.true(Array.isArray(users), 'users is an array')
-      t.equal(length(users), 1)
-      t.equal(users[0].name, 'Alice')
-      t.end()
-    }).catch(endWithErr(t))
+    t.true(Array.isArray(alice.rooms[0].users), 'users is an array')
+    t.equal(length(alice.rooms[0].users), 1)
+    t.equal(alice.rooms[0].users[0].name, 'Alice')
+    t.end()
   })
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -234,12 +239,8 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
       )
       const br = find(r => r.id === room.id, alice.rooms)
       t.true(br, `alice.rooms should contain Bob's room`)
-      br.getUsers()
-        .then(users => {
-          t.deepEqual(map(prop('name'), users).sort(), ['Alice', 'Bob'])
-          t.end()
-        })
-        .catch(endWithErr(t))
+      t.deepEqual(map(prop('name'), br.users).sort(), ['Alice', 'Bob'])
+      t.end()
     }
   })
     .then(a => { alice = a })

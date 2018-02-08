@@ -62,7 +62,6 @@ export class UserSubscription {
   }
 
   onAddedToRoom = ({ room: roomData }) => {
-    // TODO fetch new user details in bulk when added to room
     const basicRoom = parseBasicRoom(roomData)
     this.roomStore.set(basicRoom.id, basicRoom).then(room => {
       if (this.hooks.addedToRoom) {

@@ -15,7 +15,13 @@ export class RoomStore {
 
   initialize = this.store.initialize
 
-  set = (key, value) => this.store.set(key, value).then(this.decorate)
+  set = (roomId, basicRoom) => {
+    return this.store.set(roomId, basicRoom)
+      .then(this.decorate)
+      .then(room =>
+        this.userStore.fetchMissingUsers(room.userIds).then(() => room)
+      )
+  }
 
   get = roomId => this.store.get(roomId).then(basicRoom =>
     basicRoom || this.fetchBasicRoom(roomId)

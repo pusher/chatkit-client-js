@@ -327,7 +327,7 @@ test('user joined room hook (user sub) [Bob rejoins his own room]', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('room updated hook', t => {
+test('room updated hook', t => {
   fetchUser(t, 'alice', {
     roomUpdated: room => {
       t.equal(room.id, bobsRoom.id)

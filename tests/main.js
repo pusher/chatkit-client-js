@@ -468,21 +468,21 @@ test('get all rooms', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`join room [Bob joins Alice's room]`, t => {
-  fetchUser(t, 'bob').then(bob => bob.joinRoom(
-    alicesRoom.id,
-    room => {
-      t.equal(room.id, alicesRoom.id)
-      t.equal(room.createdByUserId, 'alice')
-      t.true(room.userIds.includes('bob'), 'should include bob')
-      t.true(
-        any(r => r.id === alicesRoom.id, bob.rooms),
-        `should include Alice's room`
-      )
-      t.end()
-    },
-    endWithErr(t)
-  ))
+test(`join room [Bob joins Alice's room]`, t => {
+  fetchUser(t, 'bob')
+    .then(bob => bob.joinRoom(alicesRoom.id)
+      .then(room => {
+        t.equal(room.id, alicesRoom.id)
+        t.equal(room.createdByUserId, 'alice')
+        t.true(room.userIds.includes('bob'), 'should include bob')
+        t.true(
+          any(r => r.id === alicesRoom.id, bob.rooms),
+          `should include Alice's room`
+        )
+        t.end()
+      })
+    )
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

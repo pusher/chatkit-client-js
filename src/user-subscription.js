@@ -36,8 +36,9 @@ export class UserSubscription {
       case 'removed_from_room':
         this.onRemovedFromRoom(body.data)
         break
-      // case 'user_joined':
-      //   break
+      case 'user_joined':
+        this.onUserJoined(body.data)
+        break
       case 'user_left':
         this.onUserLeft(body.data)
         break
@@ -72,12 +73,26 @@ export class UserSubscription {
     })
   }
 
-  onUserLeft = ({ room_id: roomId, user_id: userId }) => {
-    this.roomStore.removeUserFromRoom(roomId, userId)
-    if (this.hooks.userLeftRoom) {
+  onUserJoined = ({ room_id: roomId, user_id: userId }) => {
+    this.roomStore.addUserToRoom(roomId, userId).then(() => {
       Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
-        .then(([r, u]) => this.hooks.userLeftRoom(r, u))
-    }
+        .then(([r, u]) => {
+          if (this.hooks.userJoinedRoom) {
+            this.hooks.userJoinedRoom(r, u)
+          }
+        })
+    })
+  }
+
+  onUserLeft = ({ room_id: roomId, user_id: userId }) => {
+    this.roomStore.removeUserFromRoom(roomId, userId).then(() => {
+      Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
+        .then(([r, u]) => {
+          if (this.hooks.userLeftRoom) {
+            this.hooks.userLeftRoom(r, u)
+          }
+        })
+    })
   }
 
   onTypingStart = ({ room_id: roomId, user_id: userId }) => {

@@ -1,4 +1,4 @@
-import { map } from 'ramda'
+import { append, map, filter, uniq } from 'ramda'
 
 import { Store } from './store'
 import { parseBasicRoom } from './parsers'
@@ -23,8 +23,12 @@ export class RoomStore {
 
   pop = roomId => this.store.pop(roomId).then(this.decorate)
 
+  addUserToRoom = (roomId, userId) => this.store.pop(roomId).then(r =>
+    this.set(roomId, { ...r, userIds: uniq(append(userId, r.userIds)) })
+  )
+
   removeUserFromRoom = (roomId, userId) => this.store.pop(roomId).then(r =>
-    this.set(roomId, { ...r, userIds: r.userIds.filter(id => id !== userId) })
+    this.set(roomId, { ...r, userIds: filter(id => id !== userId, r.userIds) })
   )
 
   fetchBasicRoom = roomId => {

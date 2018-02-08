@@ -358,19 +358,17 @@ test(`removed from room hook [removes Alice from Bob's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`room deleted hook [destroys Alice's room]`, t => {
+test(`room deleted hook [destroys Alice's room]`, t => {
   fetchUser(t, 'alice', {
     roomDeleted: room => {
       t.equal(room.id, alicesRoom.id)
       t.end()
     }
-  })
-    .then(() => server.apiRequest({
-      method: 'DELETE',
-      path: `/rooms/${alicesRoom.id}`,
-      jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
-    }))
-    .catch(endWithErr(t))
+  }).then(() => server.apiRequest({
+    method: 'DELETE',
+    path: `/rooms/${alicesRoom.id}`,
+    jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
+  }))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

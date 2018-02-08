@@ -1,4 +1,4 @@
-import { append, map, filter, uniq } from 'ramda'
+import { append, map, mergeWith, filter, uniq } from 'ramda'
 
 import { Store } from './store'
 import { parseBasicRoom } from './parsers'
@@ -15,7 +15,7 @@ export class RoomStore {
 
   initialize = this.store.initialize
 
-  set = this.store.set
+  set = (key, value) => this.store.set(key, value).then(this.decorate)
 
   get = roomId => this.store.get(roomId).then(basicRoom =>
     basicRoom || this.fetchBasicRoom(roomId)
@@ -29,6 +29,10 @@ export class RoomStore {
 
   removeUserFromRoom = (roomId, userId) => this.store.pop(roomId).then(r =>
     this.set(roomId, { ...r, userIds: filter(id => id !== userId, r.userIds) })
+  )
+
+  update = (roomId, updates) => this.store.pop(roomId).then(r =>
+    this.set(roomId, mergeWith((x, y) => y || x, r, updates))
   )
 
   fetchBasicRoom = roomId => {

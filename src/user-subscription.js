@@ -42,6 +42,9 @@ export class UserSubscription {
       case 'user_left':
         this.onUserLeft(body.data)
         break
+      case 'room_updated':
+        this.onRoomUpdated(body.data)
+        break
       case 'typing_start': // TODO 'is_typing'
         this.onTypingStart(body.data)
         break
@@ -56,7 +59,7 @@ export class UserSubscription {
   }
 
   onAddedToRoom = ({ room: roomData }) => {
-    // TODO fetch new user details in bulk when added to room (etc)
+    // TODO fetch new user details in bulk when added to room
     const basicRoom = parseBasicRoom(roomData)
     this.roomStore.set(basicRoom.id, basicRoom).then(room => {
       if (this.hooks.addedToRoom) {
@@ -92,6 +95,15 @@ export class UserSubscription {
             this.hooks.userLeftRoom(r, u)
           }
         })
+    })
+  }
+
+  onRoomUpdated = ({ room: roomData }) => {
+    const updates = parseBasicRoom(roomData)
+    this.roomStore.update(updates.id, updates).then(room => {
+      if (this.hooks.roomUpdated) {
+        this.hooks.roomUpdated(room)
+      }
     })
   }
 

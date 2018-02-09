@@ -539,20 +539,18 @@ test(`send message [sends four messages to Bob's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('fetch messages', t => {
-  fetchUser(t, 'alice').then(alice => alice.fetchMessagesFromRoom(
-    bobsRoom, // TODO why is this room, and send message etc is roomId?
-    {},
-    messages => {
+test('fetch messages', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.fetchMessages(bobsRoom.id))
+    .then(messages => {
       t.deepEqual(messages.map(m => m.text), ['hello', 'hey', 'hi', 'ho'])
       t.equal(messages[0].sender.id, 'alice')
       t.equal(messages[0].sender.name, 'Alice')
       t.equal(messages[0].room.id, bobsRoom.id)
       t.equal(messages[0].room.name, bobsRoom.name)
       t.end()
-    },
-    endWithErr(t)
-  ))
+    })
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

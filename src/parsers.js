@@ -25,3 +25,12 @@ export const parsePresenceState = data => ({
   state: contains(data.state, ['online', 'offline']) ? data.state : 'unknown',
   userId: data.user_id
 })
+
+export const parseBasicMessage = data => ({
+  id: data.id,
+  senderId: data.user_id,
+  roomId: data.room_id,
+  text: data.text,
+  createdAt: data.created_at,
+  updatedAt: data.updated_at
+})

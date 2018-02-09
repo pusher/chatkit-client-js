@@ -40,4 +40,6 @@ export class Store {
   })
 
   snapshot = () => this.store || {}
+
+  getSync = key => this.store ? this.store[key] : undefined
 }

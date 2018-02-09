@@ -80,24 +80,22 @@ export class UserSubscription {
   }
 
   onUserJoined = ({ room_id: roomId, user_id: userId }) => {
-    this.roomStore.addUserToRoom(roomId, userId).then(() => {
-      Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
-        .then(([r, u]) => {
-          if (this.hooks.userJoinedRoom) {
-            this.hooks.userJoinedRoom(r, u)
-          }
-        })
+    this.roomStore.addUserToRoom(roomId, userId).then(room => {
+      this.userStore.get(userId).then(user => {
+        if (this.hooks.userJoinedRoom) {
+          this.hooks.userJoinedRoom(room, user)
+        }
+      })
     })
   }
 
   onUserLeft = ({ room_id: roomId, user_id: userId }) => {
-    this.roomStore.removeUserFromRoom(roomId, userId).then(() => {
-      Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
-        .then(([r, u]) => {
-          if (this.hooks.userLeftRoom) {
-            this.hooks.userLeftRoom(r, u)
-          }
-        })
+    this.roomStore.removeUserFromRoom(roomId, userId).then(room => {
+      this.userStore.get(userId).then(user => {
+        if (this.hooks.userLeftRoom) {
+          this.hooks.userLeftRoom(room, user)
+        }
+      })
     })
   }
 

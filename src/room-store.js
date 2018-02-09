@@ -58,11 +58,11 @@ export class RoomStore {
       })
   }
 
-  decorate = basicRoom => basicRoom
-    ? new Room(basicRoom, this.userStore)
-    : undefined
-
   snapshot = () => map(this.decorate, this.store.snapshot())
 
   getSync = key => this.decorate(this.store.getSync(key))
+
+  decorate = basicRoom => basicRoom
+    ? new Room(basicRoom, this.userStore)
+    : undefined
 }

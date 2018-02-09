@@ -1,4 +1,5 @@
 import {
+  contains,
   filter,
   forEachObjIndexed,
   join,
@@ -43,6 +44,14 @@ export const typeCheckArr = (name, expectedType, arr) => {
 export const typeCheckObj = (name, expectedType, obj) => {
   typeCheck(name, 'object', obj)
   forEachObjIndexed((value, key) => typeCheck(key, expectedType, value), obj)
+}
+
+export const checkOneOf = (name, values, value) => {
+  if (!contains(value, values)) {
+    throw new TypeError(
+      `expected ${name} to be one of ${values} but was ${value}`
+    )
+  }
 }
 
 // pointfree debugging

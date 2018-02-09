@@ -554,30 +554,20 @@ test('fetch messages', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('fetch messages with pagination', t => {
+test('fetch messages with pagination', t => {
   fetchUser(t, 'alice')
-    .then(alice => new Promise(resolve => {
-      alice.fetchMessagesFromRoom(
-        bobsRoom,
-        { limit: 2 },
-        messages => {
-          t.deepEqual(messages.map(m => m.text), ['hi', 'ho'])
-          resolve([alice, messages[0].id])
-        },
-        endWithErr(t)
-      )
-    }))
-    .then(([alice, initialId]) => {
-      alice.fetchMessagesFromRoom(
-        bobsRoom,
-        { initialId },
-        messages => {
-          t.deepEqual(messages.map(m => m.text), ['hello', 'hey'])
-          t.end()
-        },
-        endWithErr(t)
-      )
-    })
+    .then(alice => alice.fetchMessages(bobsRoom.id, { limit: 2 })
+      .then(messages => {
+        t.deepEqual(messages.map(m => m.text), ['hi', 'ho'])
+        return messages[0].id
+      })
+      .then(initialId => alice.fetchMessages(bobsRoom.id, { initialId }))
+      .then(messages => {
+        t.deepEqual(messages.map(m => m.text), ['hello', 'hey'])
+        t.end()
+      })
+    )
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

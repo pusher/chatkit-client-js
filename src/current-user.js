@@ -11,7 +11,7 @@ import {
   values
 } from 'ramda'
 
-import { typeCheck, typeCheckArr } from './utils'
+import { urlEncode, typeCheck, typeCheckArr, checkOneOf } from './utils'
 import { Store } from './store'
 import { UserStore } from './user-store'
 import { RoomStore } from './room-store'
@@ -59,22 +59,17 @@ export class CurrentUser {
     return this.typingIndicators.sendThrottledRequest(roomId)
   }
 
-  createRoom = (options = {}) => {
-    typeCheck('create room options', 'object', options)
-    if (options.name !== undefined) {
-      typeCheck('name', 'string', options.name)
-    }
-    if (options.addUserIds !== undefined) {
-      typeCheckArr('addUserIds', 'string', options.addUserIds)
-    }
+  createRoom = ({ name, addUserIds, ...rest } = {}) => {
+    name && typeCheck('name', 'string', name)
+    addUserIds && typeCheckArr('addUserIds', 'string', addUserIds)
     return this.apiInstance.request({
       method: 'POST',
       path: '/rooms',
       json: {
         created_by_id: this.id,
-        name: options.name,
-        private: !!options.private,
-        user_ids: options.addUserIds
+        name,
+        private: !!rest.private, // private is a reserved word in strict mode!
+        user_ids: addUserIds
       }
     })
       .then(res => {
@@ -179,7 +174,6 @@ export class CurrentUser {
   sendMessage = ({ text, roomId } = {}) => {
     typeCheck('text', 'string', text)
     typeCheck('roomId', 'number', roomId)
-    console.log(`SENDING MESSAGE ${text}`)
     return this.apiInstance
       .request({
         method: 'POST',
@@ -193,12 +187,19 @@ export class CurrentUser {
       })
   }
 
-  fetchMessages = roomId => {
+  fetchMessages = (roomId, { initialId, limit, direction } = {}) => {
     typeCheck('roomId', 'number', roomId)
+    initialId && typeCheck('initialId', 'number', initialId)
+    limit && typeCheck('limit', 'number', limit)
+    direction && checkOneOf('direction', ['older', 'newer'], direction)
     return this.apiInstance
       .request({
         method: 'GET',
-        path: `/rooms/${roomId}/messages`
+        path: `/rooms/${roomId}/messages?${urlEncode({
+          initial_id: initialId,
+          limit,
+          direction
+        })}`
       })
       .then(res => {
         const messages =

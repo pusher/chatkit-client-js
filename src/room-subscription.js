@@ -40,7 +40,7 @@ export class RoomSubscription {
   }
 
   onNewMessage = data => {
-    const pendingMessage = {
+    const pending = {
       message: new Message(
         parseBasicMessage(data),
         this.userStore,
@@ -48,12 +48,11 @@ export class RoomSubscription {
       ),
       ready: false
     }
-    this.messageBuffer.push(pendingMessage)
-    this.userStore.fetchMissingUsers([pendingMessage.message.senderId])
-      .then(() => {
-        pendingMessage.ready = true
-        this.flushBuffer()
-      })
+    this.messageBuffer.push(pending)
+    this.userStore.fetchMissingUsers([pending.message.senderId]).then(() => {
+      pending.ready = true
+      this.flushBuffer()
+    })
   }
 
   flushBuffer = () => {

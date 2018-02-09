@@ -80,12 +80,9 @@ const fetchUser = (t, userId, hooks = {}) => new ChatManager({
 
 const endWithErr = curry((t, err) => t.end(`error: ${toString(err)}`))
 
-const sendMessage = (user, room, text) => new Promise((resolve, reject) =>
-  user.sendMessage({ roomId: room.id, text }, resolve, reject))
-
 const sendMessages = (user, room, texts) => length(texts) === 0
   ? Promise.resolve()
-  : sendMessage(user, room, head(texts))
+  : user.sendMessage({ roomId: room.id, text: head(texts) })
     .then(() => sendMessages(user, room, tail(texts)))
 
 // Imports
@@ -532,12 +529,12 @@ test('remove user [Alice removes Bob from her room]', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`send message [sends four messages to Bob's room]`, t => {
+test(`send message [sends four messages to Bob's room]`, t => {
   fetchUser(t, 'alice')
     .then(alice => sendMessages(alice, bobsRoom, [
       'hello', 'hey', 'hi', 'ho'
     ]))
-    .then(() => t.end())
+    .then(t.end)
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })

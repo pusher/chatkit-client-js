@@ -57,7 +57,7 @@ export class CurrentUser {
   }
 
   createRoom = (options = {}) => {
-    typeCheck('options', 'object', options)
+    typeCheck('create room options', 'object', options)
     if (options.name !== undefined) {
       typeCheck('name', 'string', options.name)
     }
@@ -168,6 +168,23 @@ export class CurrentUser {
           `error removing user ${userId} from room ${roomId}:`,
           err
         )
+        throw err
+      })
+  }
+
+  // TODO attachments
+  sendMessage = ({ text, roomId } = {}) => {
+    typeCheck('text', 'string', text)
+    typeCheck('roomId', 'number', roomId)
+    return this.apiInstance
+      .request({
+        method: 'POST',
+        path: `/rooms/${roomId}/messages`,
+        json: { text }
+      })
+      .then(pipe(JSON.parse, prop('message_id')))
+      .catch(err => {
+        this.logger.warn(`error sending message to room ${roomId}:`, err)
         throw err
       })
   }

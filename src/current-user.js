@@ -126,6 +126,7 @@ export class CurrentUser {
         method: 'POST',
         path: `/users/${this.id}/rooms/${roomId}/leave`
       })
+      .then(() => this.roomStore.pop(roomId))
       .catch(err => {
         this.logger.warn(`error joining room ${roomId}:`, err)
         throw err

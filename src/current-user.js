@@ -11,7 +11,13 @@ import {
   values
 } from 'ramda'
 
-import { urlEncode, typeCheck, typeCheckArr, checkOneOf } from './utils'
+import {
+  checkOneOf,
+  typeCheck,
+  typeCheckArr,
+  typeCheckObj,
+  urlEncode
+} from './utils'
 import { Store } from './store'
 import { UserStore } from './user-store'
 import { RoomStore } from './room-store'
@@ -19,6 +25,7 @@ import { parseBasicRoom, parseBasicMessage } from './parsers'
 import { TypingIndicators } from './typing-indicators'
 import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
+import { RoomSubscription } from './room-subscription'
 import { Message } from './message'
 
 export class CurrentUser {
@@ -42,6 +49,7 @@ export class CurrentUser {
       instance: this.apiInstance,
       logger: this.logger
     })
+    this.roomSubscriptions = {}
   }
 
   /* public */
@@ -202,8 +210,10 @@ export class CurrentUser {
         })}`
       })
       .then(res => {
-        const messages =
-          map(compose(this.decorateMessage, parseBasicMessage), JSON.parse(res))
+        const messages = map(
+          compose(this.decorateMessage, parseBasicMessage),
+          JSON.parse(res)
+        )
         return this.userStore.fetchMissingUsers(
           uniq(map(prop('senderId'), messages))
         ).then(() => sort((x, y) => x.id - y.id, messages))
@@ -212,6 +222,22 @@ export class CurrentUser {
         this.logger.warn(`error fetching messages from room ${roomId}:`, err)
         throw err
       })
+  }
+
+  subscribeToRoom = (roomId, hooks = {}, messageLimit) => {
+    typeCheck('roomId', 'number', roomId)
+    typeCheckObj('hooks', 'function', hooks)
+    messageLimit && typeCheck('messageLimit', 'number', messageLimit)
+    this.roomSubscriptions[roomId] = new RoomSubscription({
+      roomId,
+      hooks,
+      messageLimit,
+      userId: this.id,
+      instance: this.apiInstance,
+      userStore: this.userStore,
+      roomStore: this.roomStore
+    })
+    return this.roomSubscriptions[roomId].connect()
   }
 
   /* internal */

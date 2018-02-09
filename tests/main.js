@@ -506,31 +506,29 @@ test(`leave room [Bob leaves Alice's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('add user [Alice adds Bob to her room]', t => {
-  fetchUser(t, 'alice').then(alice => alice.addUser(
-    'bob',
-    alicesRoom.id,
-    () => setTimeout(() => {
-      const room = alice.rooms.find(r => r.id === alicesRoom.id)
-      t.deepEqual(room.userIds.sort(), ['alice', 'bob'])
-      t.end()
-    }, 1000), // FIXME should work without the timeout
-    endWithErr(t)
-  ))
+test('add user [Alice adds Bob to her room]', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.addUser('bob', alicesRoom.id)
+      .then(() => {
+        const room = find(r => r.id === alicesRoom.id, alice.rooms)
+        t.deepEqual(room.userIds.sort(), ['alice', 'bob'])
+        t.end()
+      })
+      .catch(endWithErr(t))
+    )
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('remove user [Alice removes Bob from her room]', t => {
-  fetchUser(t, 'alice').then(alice => alice.removeUser(
-    'bob',
-    alicesRoom.id,
-    () => setTimeout(() => {
-      const room = alice.rooms.find(r => r.id === alicesRoom.id)
-      t.deepEqual(room.userIds.sort(), ['alice'])
-      t.end()
-    }, 1000), // FIXME should work without the timeout
-    endWithErr(t)
-  ))
+test('remove user [Alice removes Bob from her room]', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.removeUser('bob', alicesRoom.id)
+      .then(() => {
+        const room = find(r => r.id === alicesRoom.id, alice.rooms)
+        t.deepEqual(room.userIds.sort(), ['alice'])
+        t.end()
+      })
+      .catch(endWithErr(t))
+    )
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

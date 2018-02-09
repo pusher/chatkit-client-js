@@ -133,6 +133,45 @@ export class CurrentUser {
       })
   }
 
+  addUser = (userId, roomId) => {
+    typeCheck('userId', 'string', userId)
+    typeCheck('roomId', 'number', roomId)
+    return this.apiInstance
+      .request({
+        method: 'PUT',
+        path: `/rooms/${roomId}/users/add`,
+        json: {
+          user_ids: [userId]
+        }
+      })
+      .then(() => this.roomStore.addUserToRoom(roomId, userId))
+      .catch(err => {
+        this.logger.warn(`error adding user ${userId} to room ${roomId}:`, err)
+        throw err
+      })
+  }
+
+  removeUser = (userId, roomId) => {
+    typeCheck('userId', 'string', userId)
+    typeCheck('roomId', 'number', roomId)
+    return this.apiInstance
+      .request({
+        method: 'PUT',
+        path: `/rooms/${roomId}/users/remove`,
+        json: {
+          user_ids: [userId]
+        }
+      })
+      .then(() => this.roomStore.removeUserFromRoom(roomId, userId))
+      .catch(err => {
+        this.logger.warn(
+          `error removing user ${userId} from room ${roomId}:`,
+          err
+        )
+        throw err
+      })
+  }
+
   /* internal */
 
   establishUserSubscription = hooks => {

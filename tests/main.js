@@ -87,33 +87,33 @@ const sendMessages = (user, room, texts) => length(texts) === 0
 
 // Imports
 
-test('can import TokenProvider', t => {
+test.skip('can import TokenProvider', t => {
   t.equal(typeof TokenProvider, 'function')
   t.end()
 })
 
-test('can import ChatManager', t => {
+test.skip('can import ChatManager', t => {
   t.equal(typeof ChatManager, 'function')
   t.end()
 })
 
 // Token provider
 
-test('instantiate TokenProvider with url', t => {
+test.skip('instantiate TokenProvider with url', t => {
   const tokenProvider = new TokenProvider({ url: TOKEN_PROVIDER_URL })
   t.equal(typeof tokenProvider, 'object')
   t.equal(typeof tokenProvider.fetchToken, 'function')
   t.end()
 })
 
-test('instantiate TokenProvider with non-string url fails', t => {
+test.skip('instantiate TokenProvider with non-string url fails', t => {
   t.throws(() => new TokenProvider({ url: 42 }), /url/)
   t.end()
 })
 
 // Chat manager
 
-test('instantiate ChatManager with correct params', t => {
+test.skip('instantiate ChatManager with correct params', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
@@ -124,7 +124,7 @@ test('instantiate ChatManager with correct params', t => {
   t.end()
 })
 
-test('instantiate ChatManager with non-string instanceLocator fails', t => {
+test.skip('instantiate ChatManager with non-string instanceLocator fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: 42,
     userId: 'alice',
@@ -133,7 +133,7 @@ test('instantiate ChatManager with non-string instanceLocator fails', t => {
   t.end()
 })
 
-test('instantiate ChatManager without userId fails', t => {
+test.skip('instantiate ChatManager without userId fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 42,
@@ -142,7 +142,7 @@ test('instantiate ChatManager without userId fails', t => {
   t.end()
 })
 
-test('instantiate ChatManager with non-string userId fails', t => {
+test.skip('instantiate ChatManager with non-string userId fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 42,
@@ -151,7 +151,7 @@ test('instantiate ChatManager with non-string userId fails', t => {
   t.end()
 })
 
-test('instantiate ChatManager with non tokenProvider fails', t => {
+test.skip('instantiate ChatManager with non tokenProvider fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 42,
@@ -160,7 +160,7 @@ test('instantiate ChatManager with non tokenProvider fails', t => {
   t.end()
 })
 
-test('connection fails if provided with non-function hooks', t => {
+test.skip('connection fails if provided with non-function hooks', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
@@ -173,7 +173,7 @@ test('connection fails if provided with non-function hooks', t => {
   t.end()
 })
 
-test('connection fails for nonexistent user', t => {
+test.skip('connection fails for nonexistent user', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
@@ -204,7 +204,7 @@ test('[setup] create Alice', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('connection resolves with current user object', t => {
+test.skip('connection resolves with current user object', t => {
   fetchUser(t, 'alice').then(alice => {
     t.equal(typeof alice, 'object')
     t.equal(alice.id, 'alice')
@@ -254,7 +254,7 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
 
 // This test has to run before any tests which cause Bob to open a subscription
 // (since then he will already be online)
-test('user came online hook (user sub)', t => {
+test.skip('user came online hook (user sub)', t => {
   fetchUser(t, 'alice', {
     userCameOnline: user => {
       t.equal(user.id, 'bob')
@@ -270,7 +270,7 @@ test('user came online hook (user sub)', t => {
 // TODO cancel methods so that we can do this, and because we should have them
 // anyway
 
-test('typing indicators (user sub)', t => {
+test.skip('typing indicators (user sub)', t => {
   let started
   Promise.all([
     fetchUser(t, 'alice', {
@@ -293,7 +293,7 @@ test('typing indicators (user sub)', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('user left room hook (user sub) [removes Bob from his own room]', t => {
+test.skip('user left room hook (user sub) [removes Bob from his own room]', t => {
   fetchUser(t, 'alice', {
     userLeftRoom: (room, user) => {
       t.equal(room.id, bobsRoom.id)
@@ -309,7 +309,7 @@ test('user left room hook (user sub) [removes Bob from his own room]', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('user joined room hook (user sub) [Bob rejoins his own room]', t => {
+test.skip('user joined room hook (user sub) [Bob rejoins his own room]', t => {
   fetchUser(t, 'alice', {
     userJoinedRoom: (room, user) => {
       t.equal(room.id, bobsRoom.id)
@@ -325,7 +325,7 @@ test('user joined room hook (user sub) [Bob rejoins his own room]', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('room updated hook', t => {
+test.skip('room updated hook', t => {
   fetchUser(t, 'alice', {
     roomUpdated: room => {
       t.equal(room.id, bobsRoom.id)
@@ -341,7 +341,7 @@ test('room updated hook', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test(`removed from room hook [removes Alice from Bob's room]`, t => {
+test.skip(`removed from room hook [removes Alice from Bob's room]`, t => {
   fetchUser(t, 'alice', {
     removedFromRoom: room => {
       t.equal(room.id, bobsRoom.id)
@@ -356,7 +356,7 @@ test(`removed from room hook [removes Alice from Bob's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test(`room deleted hook [destroys Alice's room]`, t => {
+test.skip(`room deleted hook [destroys Alice's room]`, t => {
   fetchUser(t, 'alice', {
     roomDeleted: room => {
       t.equal(room.id, alicesRoom.id)
@@ -370,7 +370,7 @@ test(`room deleted hook [destroys Alice's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test(`create room [creates Alice's new room]`, t => {
+test.skip(`create room [creates Alice's new room]`, t => {
   fetchUser(t, 'alice')
     .then(alice => alice.createRoom({ name: `Alice's new room` }))
     .then(room => {
@@ -385,7 +385,7 @@ test(`create room [creates Alice's new room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test(`create private room [creates Alice's private room]`, t => {
+test.skip(`create private room [creates Alice's private room]`, t => {
   fetchUser(t, 'alice')
     .then(alice => alice.createRoom({
       name: `Alice's private room`,
@@ -403,7 +403,7 @@ test(`create private room [creates Alice's private room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test(`create room with members [creates Bob's new room]`, t => {
+test.skip(`create room with members [creates Bob's new room]`, t => {
   fetchUser(t, 'bob')
     .then(bob => bob.createRoom({
       name: `Bob's new room`,
@@ -421,7 +421,7 @@ test(`create room with members [creates Bob's new room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('get joined rooms', t => {
+test.skip('get joined rooms', t => {
   const expectedRoomIds = [alicesRoom, bobsRoom, alicesPrivateRoom]
     .map(r => r.id).sort()
   fetchUser(t, 'alice')
@@ -432,7 +432,7 @@ test('get joined rooms', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('get joinable rooms', t => {
+test.skip('get joinable rooms', t => {
   fetchUser(t, 'bob')
     .then(bob => bob.getJoinableRooms())
     .then(rooms => {
@@ -449,7 +449,7 @@ test('get joinable rooms', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('get all rooms', t => {
+test.skip('get all rooms', t => {
   fetchUser(t, 'bob')
     .then(bob => bob.getAllRooms())
     .then(rooms => {
@@ -466,7 +466,7 @@ test('get all rooms', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test(`join room [Bob joins Alice's room]`, t => {
+test.skip(`join room [Bob joins Alice's room]`, t => {
   fetchUser(t, 'bob')
     .then(bob => bob.joinRoom(alicesRoom.id)
       .then(room => {
@@ -484,7 +484,7 @@ test(`join room [Bob joins Alice's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test(`leave room [Bob leaves Alice's room]`, t => {
+test.skip(`leave room [Bob leaves Alice's room]`, t => {
   fetchUser(t, 'bob')
     .then(bob => {
       t.true(
@@ -503,7 +503,7 @@ test(`leave room [Bob leaves Alice's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('add user [Alice adds Bob to her room]', t => {
+test.skip('add user [Alice adds Bob to her room]', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.addUser('bob', alicesRoom.id)
       .then(() => {
@@ -516,7 +516,7 @@ test('add user [Alice adds Bob to her room]', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('remove user [Alice removes Bob from her room]', t => {
+test.skip('remove user [Alice removes Bob from her room]', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.removeUser('bob', alicesRoom.id)
       .then(() => {
@@ -539,7 +539,7 @@ test(`send message [sends four messages to Bob's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('fetch messages', t => {
+test.skip('fetch messages', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.fetchMessages(bobsRoom.id))
     .then(messages => {
@@ -554,7 +554,7 @@ test('fetch messages', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('fetch messages with pagination', t => {
+test.skip('fetch messages with pagination', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.fetchMessages(bobsRoom.id, { limit: 2 })
       .then(messages => {
@@ -571,12 +571,14 @@ test('fetch messages with pagination', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('subscribe to room and fetch initial messages', t => {
+test('subscribe to room and fetch initial messages', t => {
   fetchUser(t, 'alice').then(alice => alice.subscribeToRoom(
-    find(r => r.id === bobsRoom.id, alice.rooms),
+    bobsRoom.id,
     {
       newMessage: concatBatch(4, messages => {
         t.deepEqual(map(m => m.text, messages), ['hello', 'hey', 'hi', 'ho'])
+        t.equal(messages[0].sender.name, 'Alice')
+        t.equal(messages[0].room.name, `Bob's room`)
         t.end()
       })
     }

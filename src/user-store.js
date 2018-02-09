@@ -60,23 +60,13 @@ export class UserStore {
       })
   }
 
-  // TODO move decoration with presence in to a decorator function
-  snapshot = () => {
-    const presenceSnapshot = this.presenceStore.snapshot()
-    return map(
-      user => ({ ...user, presence: presenceSnapshot[user.id] }),
-      this.store.snapshot()
-    )
-  }
+  snapshot = () => map(this.decorate, this.store.snapshot())
 
-  getSync = userId => {
-    const user = this.store.getSync(userId)
-    if (user === undefined) {
-      return undefined
-    }
-    return {
-      ...user,
-      presence: this.presenceStore.getSync(userId)
-    }
+  getSync = userId => this.decorate(this.store.getSync(userId))
+
+  decorate = user => {
+    return user
+      ? { ...user, presence: this.presenceStore.getSync(user.id) }
+      : undefined
   }
 }

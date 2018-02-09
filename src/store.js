@@ -39,6 +39,10 @@ export class Store {
     return value
   })
 
+  // snapshot and getSync are useful for building synchronous interfaces, but
+  // should only be used when we can guarantee that the information we want is
+  // already in the store (i.e. we've just done an explicit fetch)
+
   snapshot = () => this.store || {}
 
   getSync = key => this.store ? this.store[key] : undefined

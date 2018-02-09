@@ -1,10 +1,12 @@
 import {
   chain,
+  compose,
   concat,
   indexBy,
   map,
   pipe,
   prop,
+  sort,
   uniq,
   values
 } from 'ramda'
@@ -13,10 +15,11 @@ import { typeCheck, typeCheckArr } from './utils'
 import { Store } from './store'
 import { UserStore } from './user-store'
 import { RoomStore } from './room-store'
-import { parseBasicRoom } from './parsers'
+import { parseBasicRoom, parseBasicMessage } from './parsers'
 import { TypingIndicators } from './typing-indicators'
 import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
+import { Message } from './message'
 
 export class CurrentUser {
   constructor ({ id, apiInstance }) {
@@ -176,6 +179,7 @@ export class CurrentUser {
   sendMessage = ({ text, roomId } = {}) => {
     typeCheck('text', 'string', text)
     typeCheck('roomId', 'number', roomId)
+    console.log(`SENDING MESSAGE ${text}`)
     return this.apiInstance
       .request({
         method: 'POST',
@@ -189,7 +193,33 @@ export class CurrentUser {
       })
   }
 
+  fetchMessages = roomId => {
+    typeCheck('roomId', 'number', roomId)
+    return this.apiInstance
+      .request({
+        method: 'GET',
+        path: `/rooms/${roomId}/messages`
+      })
+      .then(res => {
+        const messages =
+          map(compose(this.decorateMessage, parseBasicMessage), JSON.parse(res))
+        return this.userStore.fetchMissingUsers(
+          uniq(map(prop('senderId'), messages))
+        ).then(() => sort((x, y) => x.id - y.id, messages))
+      })
+      .catch(err => {
+        this.logger.warn(`error fetching messages from room ${roomId}:`, err)
+        throw err
+      })
+  }
+
   /* internal */
+
+  decorateMessage = basicMessage => new Message(
+    basicMessage,
+    this.userStore,
+    this.roomStore
+  )
 
   establishUserSubscription = hooks => {
     this.userSubscription = new UserSubscription({

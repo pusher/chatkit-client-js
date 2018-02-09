@@ -63,4 +63,6 @@ export class RoomStore {
     : undefined
 
   snapshot = () => map(this.decorate, this.store.snapshot())
+
+  getSync = key => this.decorate(this.store.getSync(key))
 }

@@ -586,9 +586,9 @@ test('subscribe to room and fetch initial messages', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('subscribe to room and fetch last two message only', t => {
+test('subscribe to room and fetch last two message only', t => {
   fetchUser(t, 'alice').then(alice => alice.subscribeToRoom(
-    find(r => r.id === bobsRoom.id, alice.rooms),
+    bobsRoom.id,
     {
       newMessage: concatBatch(2, messages => {
         t.deepEqual(map(m => m.text, messages), ['hi', 'ho'])
@@ -600,10 +600,10 @@ test.skip('subscribe to room and fetch last two message only', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('subscribe to room and receive sent messages', t => {
+test('subscribe to room and receive sent messages', t => {
   fetchUser(t, 'alice').then(alice => {
     alice.subscribeToRoom(
-      find(r => r.id === bobsRoom.id, alice.rooms),
+      bobsRoom.id,
       {
         newMessage: concatBatch(3, messages => {
           t.deepEqual(map(m => m.text, messages), ['yo', 'yoo', 'yooo'])

@@ -51,8 +51,7 @@ export class RoomStore {
       })
       .then(pipe(JSON.parse, parseBasicRoom))
       .catch(err => {
-        this.logger.warn('error fetching room information:', err)
-        throw err
+        this.logger.warn(`error fetching details for room ${roomId}:`, err)
       })
   }
 

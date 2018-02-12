@@ -19,15 +19,6 @@ import ChatkitServer from 'pusher-chatkit-server'
 import { TokenProvider, ChatManager } from '../dist/web/chatkit.js'
 import { INSTANCE_LOCATOR, INSTANCE_KEY, TOKEN_PROVIDER_URL } from './config'
 
-// Skipped tests don't currently pass, but should! The tests interact with a
-// real instance, and rely on the state of that instance. If the instance gets
-// in to an invalid state, you can usually get away with just running the tests
-// a couple of times to give the teardown tests a chance to run.
-//
-// Some tests demonstrate behaviour that is not quite what I think it should
-// be, but is close enough to be useful. Specific discrepencies in this case
-// are marked with FIXMEs.
-
 let alicesRoom, bobsRoom, alicesPrivateRoom
 
 const TEST_TIMEOUT = 15 * 1000
@@ -85,8 +76,8 @@ const sendMessages = (user, room, texts) => length(texts) === 0
   : user.sendMessage({ roomId: room.id, text: head(texts) })
     .then(() => sendMessages(user, room, tail(texts)))
 
-test('[teardown] destroy Carol', t => {
-  server.deleteUser('carol').then(() => t.end()).catch(err => t.end(err))
+test('[teardown] destroy Alice', t => {
+  server.deleteUser('alice').then(() => t.end()).catch(err => t.end(err))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
@@ -95,8 +86,8 @@ test('[teardown] destroy Bob', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('[teardown] destroy Alice', t => {
-  server.deleteUser('alice').then(() => t.end()).catch(err => t.end(err))
+test('[teardown] destroy Carol', t => {
+  server.deleteUser('carol').then(() => t.end()).catch(err => t.end(err))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
@@ -778,18 +769,3 @@ test.skip('non-admin delete room fails gracefully', t => {
 // TODO files stuff
 
 // TODO read cursors (perhaps reconsider interface)
-
-test('[teardown] destroy Carol', t => {
-  server.deleteUser('carol').then(() => t.end()).catch(err => t.end(err))
-  t.timeoutAfter(TEST_TIMEOUT)
-})
-
-test('[teardown] destroy Bob', t => {
-  server.deleteUser('bob').then(() => t.end()).catch(err => t.end(err))
-  t.timeoutAfter(TEST_TIMEOUT)
-})
-
-test('[teardown] destroy Alice', t => {
-  server.deleteUser('alice').then(() => t.end()).catch(err => t.end(err))
-  t.timeoutAfter(TEST_TIMEOUT)
-})

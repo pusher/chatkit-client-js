@@ -1,4 +1,4 @@
-import { map } from 'ramda'
+import { map, prop } from 'ramda'
 
 import { parseBasicRoom, parseUser } from './parsers'
 
@@ -50,7 +50,7 @@ export class UserSubscription {
         this.onRoomDeleted(body.data)
         break
       case 'typing_start': // TODO 'is_typing'
-        this.onTypingStart(body.data)
+        this.onIsTyping(body.data)
         break
     }
   }
@@ -123,8 +123,13 @@ export class UserSubscription {
     })
   }
 
-  onTypingStart = ({ room_id: roomId, user_id: userId }) => {
+  onIsTyping = ({ room_id: roomId, user_id: userId }) => {
     Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
-      .then(([r, u]) => this.typingIndicators.onIsTyping(r, u, this.hooks))
+      .then(([room, user]) => this.typingIndicators.onIsTyping(
+        room,
+        user,
+        this.hooks,
+        map(prop('hooks'), this.roomSubscriptions)
+      ))
   }
 }

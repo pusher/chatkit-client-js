@@ -35,20 +35,36 @@ export class TypingIndicators {
       })
   }
 
-  onIsTyping = (room, user, hooks) => {
+  onIsTyping = (room, user, hooks, roomHooks) => {
     if (!this.timers[room.id]) {
       this.timers[room.id] = {}
     }
     if (this.timers[room.id][user.id]) {
       clearTimeout(this.timers[room.id][user.id])
-    } else if (hooks.userStartedTyping) {
-      hooks.userStartedTyping(room, user)
+    } else {
+      this.onStarted(room, user, hooks, roomHooks)
     }
     this.timers[room.id][user.id] = setTimeout(() => {
-      if (hooks.userStoppedTyping) {
-        hooks.userStoppedTyping(room, user)
-      }
+      this.onStopped(room, user, hooks, roomHooks)
       delete this.timers[room.id][user.id]
     }, TYPING_INDICATOR_TTL)
+  }
+
+  onStarted = (room, user, hooks, roomHooks) => {
+    if (hooks.userStartedTyping) {
+      hooks.userStartedTyping(room, user)
+    }
+    if (roomHooks[room.id] && roomHooks[room.id].userStartedTyping) {
+      roomHooks[room.id].userStartedTyping(user)
+    }
+  }
+
+  onStopped = (room, user, hooks, roomHooks) => {
+    if (hooks.userStoppedTyping) {
+      hooks.userStoppedTyping(room, user)
+    }
+    if (roomHooks[room.id] && roomHooks[room.id].userStoppedTyping) {
+      roomHooks[room.id].userStoppedTyping(user)
+    }
   }
 }

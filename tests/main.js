@@ -624,15 +624,13 @@ test('[setup] create Carol', t => server.createUser('carol', 'Carol')
 
 test(`user joined hook [Carol joins Bob's room]`, t => {
   fetchUser(t, 'alice')
-    .then(alice => {
-      alice.subscribeToRoom(bobsRoom.id, {
-        userJoined: once(user => {
-          t.equal(user.id, 'carol')
-          t.equal(user.name, 'Carol')
-          t.end()
-        })
+    .then(alice => alice.subscribeToRoom(bobsRoom.id, {
+      userJoined: once(user => {
+        t.equal(user.id, 'carol')
+        t.equal(user.name, 'Carol')
+        t.end()
       })
-    })
+    }))
     .then(() => server.apiRequest({
       method: 'PUT',
       path: `/rooms/${bobsRoom.id}/users/add`,
@@ -645,21 +643,17 @@ test(`user joined hook [Carol joins Bob's room]`, t => {
 
 // This test has to run before any tests which cause Carol to open a
 // subscription (since then she will already be online)
-test.skip('user came online hook', t => {
+test('user came online hook', t => {
   fetchUser(t, 'alice')
-    .then(alice => {
-      alice.subscribeToRoom(bobsRoom.id, {
-        // FIXME inconsistent naming
-        userCameOnlineInRoom: once(user => {
-          t.equal(user.id, 'carol')
-          t.equal(user.name, 'Carol')
-          t.end()
-        })
+    .then(alice => alice.subscribeToRoom(bobsRoom.id, {
+      // FIXME inconsistent naming
+      userCameOnlineInRoom: once(user => {
+        t.equal(user.id, 'carol')
+        t.equal(user.name, 'Carol')
+        t.end()
       })
-    })
-    // FIXME We have to wrap this in a timeout to give the presence
-    // subscription a chance to finish. Not ideal.
-    .then(() => setTimeout(() => fetchUser(t, 'carol'), 1000))
+    }))
+    .then(() => fetchUser(t, 'carol'))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -670,8 +664,8 @@ test.skip('user came online hook', t => {
 test('typing indicators', t => {
   let started
   Promise.all([
-    fetchUser(t, 'alice').then(alice => {
-      alice.subscribeToRoom(find(r => r.id === bobsRoom.id, alice.rooms), {
+    fetchUser(t, 'alice')
+      .then(alice => alice.subscribeToRoom(bobsRoom.id, {
         userStartedTyping: once(user => {
           started = Date.now()
           t.equal(user.id, 'carol')
@@ -683,14 +677,12 @@ test('typing indicators', t => {
           t.true(Date.now() - started > 1000, 'fired more than 1s after start')
           t.end()
         })
-      })
-      return alice
-    }),
+      })),
     fetchUser(t, 'carol')
-  ]).then(([alice, carol]) => carol.isTypingIn(
+  ]).then(([x, carol]) => carol.isTypingIn(
     bobsRoom.id,
     () => {},
-    err => t.end(err)
+    endWithErr(t)
   ))
   t.timeoutAfter(TEST_TIMEOUT)
 })

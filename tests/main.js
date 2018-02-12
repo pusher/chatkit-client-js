@@ -687,17 +687,15 @@ test('typing indicators', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`user left hook [removes Carol from Bob's room]`, t => {
+test(`user left hook [removes Carol from Bob's room]`, t => {
   fetchUser(t, 'alice')
-    .then(alice => {
-      alice.subscribeToRoom(find(r => r.id === bobsRoom.id, alice.rooms), {
-        userLeft: once(user => {
-          t.equal(user.id, 'carol')
-          t.equal(user.name, 'Carol')
-          t.end()
-        })
+    .then(alice => alice.subscribeToRoom(bobsRoom.id, {
+      userLeft: once(user => {
+        t.equal(user.id, 'carol')
+        t.equal(user.name, 'Carol')
+        t.end()
       })
-    })
+    }))
     .then(() => server.apiRequest({
       method: 'PUT',
       path: `/rooms/${bobsRoom.id}/users/remove`,

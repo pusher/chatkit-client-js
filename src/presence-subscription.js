@@ -9,7 +9,7 @@ import {
   values
 } from 'ramda'
 
-import { parsePresenceState } from './parsers'
+import { parsePresence } from './parsers'
 
 export class PresenceSubscription {
   constructor (options) {
@@ -43,18 +43,21 @@ export class PresenceSubscription {
       case 'presence_update':
         this.onPresenceUpdate(body.data)
         break
+      case 'join_room_presence_update':
+        this.onJoinRoomPresenceUpdate(body.data)
+        break
     }
   }
 
   onInitialState = ({ user_states: userStates }) => {
     this.presenceStore.initialize(
-      indexBy(prop('userId'), map(parsePresenceState, userStates))
+      indexBy(prop('userId'), map(parsePresence, userStates))
     )
     this.hooks.subscriptionEstablished()
   }
 
   onPresenceUpdate = data => {
-    const presence = parsePresenceState(data)
+    const presence = parsePresence(data)
     this.presenceStore.set(presence.userId, presence)
       .then(p => this.userStore.get(p.userId)
         .then(user => {
@@ -69,6 +72,11 @@ export class PresenceSubscription {
         })
       )
   }
+
+  onJoinRoomPresenceUpdate = ({ user_states: userStates }) => forEach(
+    presence => this.presenceStore.set(presence.userId, presence),
+    map(parsePresence, userStates)
+  )
 
   onCameOnline = user => {
     if (this.hooks.userCameOnline) {

@@ -20,7 +20,7 @@ export const parseUser = data => ({
   updatedAt: data.updated_at
 })
 
-export const parsePresenceState = data => ({
+export const parsePresence = data => ({
   lastSeenAt: data.last_seen_at,
   state: contains(data.state, ['online', 'offline']) ? data.state : 'unknown',
   userId: data.user_id

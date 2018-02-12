@@ -102,6 +102,12 @@ export class UserSubscription {
         if (this.hooks.userLeftRoom) {
           this.hooks.userLeftRoom(room, user)
         }
+        if (
+          this.roomSubscriptions[roomId] &&
+          this.roomSubscriptions[roomId].hooks.userLeft
+        ) {
+          this.roomSubscriptions[roomId].hooks.userLeft(user)
+        }
       })
     })
   }

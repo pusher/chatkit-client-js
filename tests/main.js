@@ -270,7 +270,7 @@ test.skip('user came online hook (user sub)', t => {
 // TODO cancel methods so that we can do this, and because we should have them
 // anyway
 
-test.skip('typing indicators (user sub)', t => {
+test('typing indicators (user sub)', t => {
   let started
   Promise.all([
     fetchUser(t, 'alice', {
@@ -529,7 +529,7 @@ test.skip('remove user [Alice removes Bob from her room]', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test(`send message [sends four messages to Bob's room]`, t => {
+test.skip(`send message [sends four messages to Bob's room]`, t => {
   fetchUser(t, 'alice')
     .then(alice => sendMessages(alice, bobsRoom, [
       'hello', 'hey', 'hi', 'ho'
@@ -571,7 +571,7 @@ test.skip('fetch messages with pagination', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('subscribe to room and fetch initial messages', t => {
+test.skip('subscribe to room and fetch initial messages', t => {
   fetchUser(t, 'alice').then(alice => alice.subscribeToRoom(
     bobsRoom.id,
     {
@@ -586,7 +586,7 @@ test('subscribe to room and fetch initial messages', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('subscribe to room and fetch last two message only', t => {
+test.skip('subscribe to room and fetch last two message only', t => {
   fetchUser(t, 'alice').then(alice => alice.subscribeToRoom(
     bobsRoom.id,
     {
@@ -600,7 +600,7 @@ test('subscribe to room and fetch last two message only', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('subscribe to room and receive sent messages', t => {
+test.skip('subscribe to room and receive sent messages', t => {
   fetchUser(t, 'alice').then(alice => {
     alice.subscribeToRoom(
       bobsRoom.id,
@@ -617,15 +617,15 @@ test('subscribe to room and receive sent messages', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('[setup] create Carol', t => server.createUser('carol', 'Carol')
+test('[setup] create Carol', t => server.createUser('carol', 'Carol')
   .then(() => t.end())
   .catch(endWithErr(t))
 )
 
-test.skip(`user joined hook [Carol joins Bob's room]`, t => {
+test(`user joined hook [Carol joins Bob's room]`, t => {
   fetchUser(t, 'alice')
     .then(alice => {
-      alice.subscribeToRoom(find(r => r.id === bobsRoom.id, alice.rooms), {
+      alice.subscribeToRoom(bobsRoom.id, {
         userJoined: once(user => {
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
@@ -639,6 +639,7 @@ test.skip(`user joined hook [Carol joins Bob's room]`, t => {
       body: { user_ids: ['carol'] },
       jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
     }))
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
@@ -647,7 +648,7 @@ test.skip(`user joined hook [Carol joins Bob's room]`, t => {
 test.skip('user came online hook', t => {
   fetchUser(t, 'alice')
     .then(alice => {
-      alice.subscribeToRoom(find(r => r.id === bobsRoom.id, alice.rooms), {
+      alice.subscribeToRoom(bobsRoom.id, {
         // FIXME inconsistent naming
         userCameOnlineInRoom: once(user => {
           t.equal(user.id, 'carol')
@@ -659,13 +660,14 @@ test.skip('user came online hook', t => {
     // FIXME We have to wrap this in a timeout to give the presence
     // subscription a chance to finish. Not ideal.
     .then(() => setTimeout(() => fetchUser(t, 'carol'), 1000))
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
 // We can't easily test for the user going offline, because the presence
 // subscription in the above test hangs around until it is garbage collected.
 
-test.skip('typing indicators', t => {
+test('typing indicators', t => {
   let started
   Promise.all([
     fetchUser(t, 'alice').then(alice => {
@@ -747,7 +749,7 @@ test.skip('non-admin delete room fails gracefully', t => {
 
 // TODO read cursors (perhaps reconsider interface)
 
-test.skip('[teardown] destroy Carol', t => {
+test('[teardown] destroy Carol', t => {
   server.deleteUser('carol').then(() => t.end()).catch(err => t.end(err))
   t.timeoutAfter(TEST_TIMEOUT)
 })

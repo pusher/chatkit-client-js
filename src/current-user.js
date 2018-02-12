@@ -237,7 +237,8 @@ export class CurrentUser {
       userId: this.id,
       instance: this.apiInstance,
       userStore: this.userStore,
-      roomStore: this.roomStore
+      roomStore: this.roomStore,
+      logger: this.logger
     })
     return this.roomSubscriptions[roomId].connect()
   }

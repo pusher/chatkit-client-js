@@ -1,4 +1,4 @@
-import { append, map, mergeWith, filter, uniq } from 'ramda'
+import { append, map, mergeWith, filter, uniq, curry, pipe } from 'ramda'
 
 import { Store } from './store'
 import { parseBasicRoom } from './parsers'
@@ -15,25 +15,27 @@ export class RoomStore {
 
   initialize = this.store.initialize
 
-  set = (roomId, basicRoom) => {
+  set = curry((roomId, basicRoom) => {
     return this.store.set(roomId, basicRoom)
       .then(this.decorate)
       .then(room =>
         this.userStore.fetchMissingUsers(room.userIds).then(() => room)
       )
-  }
+  })
 
   get = roomId => this.store.get(roomId).then(basicRoom =>
+    basicRoom || this.fetchBasicRoom(roomId).then(this.set(roomId))
+  ).then(this.decorate)
+
+  pop = roomId => this.store.pop(roomId).then(basicRoom =>
     basicRoom || this.fetchBasicRoom(roomId)
   ).then(this.decorate)
 
-  pop = roomId => this.store.pop(roomId).then(this.decorate)
-
-  addUserToRoom = (roomId, userId) => this.store.pop(roomId).then(r =>
+  addUserToRoom = (roomId, userId) => this.pop(roomId).then(r =>
     this.set(roomId, { ...r, userIds: uniq(append(userId, r.userIds)) })
   )
 
-  removeUserFromRoom = (roomId, userId) => this.store.pop(roomId).then(r =>
+  removeUserFromRoom = (roomId, userId) => this.pop(roomId).then(r =>
     this.set(roomId, { ...r, userIds: filter(id => id !== userId, r.userIds) })
   )
 
@@ -47,11 +49,7 @@ export class RoomStore {
         method: 'GET',
         path: `/rooms/${roomId}`
       })
-      .then(res => {
-        const basicRoom = parseBasicRoom(JSON.parse(res))
-        this.set(roomId, basicRoom)
-        return basicRoom
-      })
+      .then(pipe(JSON.parse, parseBasicRoom))
       .catch(err => {
         this.logger.warn('error fetching room information:', err)
         throw err

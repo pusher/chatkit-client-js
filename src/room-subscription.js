@@ -49,16 +49,21 @@ export class RoomSubscription {
       ready: false
     }
     this.messageBuffer.push(pending)
-    this.userStore.fetchMissingUsers([pending.message.senderId]).then(() => {
-      pending.ready = true
-      this.flushBuffer()
-    })
+    this.userStore.fetchMissingUsers([pending.message.senderId])
+      .catch(err => {
+        this.logger.error('error fetching missing user information:', err)
+      })
+      .then(() => {
+        pending.ready = true
+        this.flushBuffer()
+      })
   }
 
   flushBuffer = () => {
     while (!isEmpty(this.messageBuffer) && head(this.messageBuffer).ready) {
+      const message = this.messageBuffer.shift().message
       if (this.hooks.newMessage) {
-        this.hooks.newMessage(this.messageBuffer.shift().message)
+        this.hooks.newMessage(message)
       }
     }
   }

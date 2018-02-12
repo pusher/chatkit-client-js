@@ -1,4 +1,13 @@
-import { difference, join, length, map, pipe, prop, forEach } from 'ramda'
+import {
+  difference,
+  forEach,
+  join,
+  length,
+  map,
+  pipe,
+  prop,
+  values
+} from 'ramda'
 
 import { appendQueryParam } from './utils'
 import { Store } from './store'
@@ -18,11 +27,11 @@ export class UserStore {
   set = this.store.set
 
   get = userId => Promise.all([
-    this.store.get(userId).then(user => user || this.fetchUser(userId)),
+    this.store.get(userId).then(user => user || this.fetchBasicUser(userId)),
     this.presenceStore.get(userId)
   ]).then(([user, presence]) => ({ ...user, presence }))
 
-  fetchUser = userId => {
+  fetchBasicUser = userId => {
     return this.instance
       .request({
         method: 'GET',
@@ -40,10 +49,14 @@ export class UserStore {
   }
 
   fetchMissingUsers = userIds => {
-    const missing = difference(userIds, map(prop('id'), this.store.snapshot()))
+    const missing = difference(
+      userIds,
+      map(prop('id'), values(this.store.snapshot()))
+    )
     if (length(missing) === 0) {
       return Promise.resolve()
     }
+    // TODO don't make simulatneous requests for the same users
     return this.instance
       .request({
         method: 'GET',

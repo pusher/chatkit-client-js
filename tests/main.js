@@ -1,4 +1,4 @@
-import test from 'tape-catch'
+import test from 'tape'
 import {
   any,
   compose,
@@ -85,35 +85,50 @@ const sendMessages = (user, room, texts) => length(texts) === 0
   : user.sendMessage({ roomId: room.id, text: head(texts) })
     .then(() => sendMessages(user, room, tail(texts)))
 
+test('[teardown] destroy Carol', t => {
+  server.deleteUser('carol').then(() => t.end()).catch(err => t.end(err))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('[teardown] destroy Bob', t => {
+  server.deleteUser('bob').then(() => t.end()).catch(err => t.end(err))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('[teardown] destroy Alice', t => {
+  server.deleteUser('alice').then(() => t.end()).catch(err => t.end(err))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 // Imports
 
-test.skip('can import TokenProvider', t => {
+test('can import TokenProvider', t => {
   t.equal(typeof TokenProvider, 'function')
   t.end()
 })
 
-test.skip('can import ChatManager', t => {
+test('can import ChatManager', t => {
   t.equal(typeof ChatManager, 'function')
   t.end()
 })
 
 // Token provider
 
-test.skip('instantiate TokenProvider with url', t => {
+test('instantiate TokenProvider with url', t => {
   const tokenProvider = new TokenProvider({ url: TOKEN_PROVIDER_URL })
   t.equal(typeof tokenProvider, 'object')
   t.equal(typeof tokenProvider.fetchToken, 'function')
   t.end()
 })
 
-test.skip('instantiate TokenProvider with non-string url fails', t => {
+test('instantiate TokenProvider with non-string url fails', t => {
   t.throws(() => new TokenProvider({ url: 42 }), /url/)
   t.end()
 })
 
 // Chat manager
 
-test.skip('instantiate ChatManager with correct params', t => {
+test('instantiate ChatManager with correct params', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
@@ -124,7 +139,7 @@ test.skip('instantiate ChatManager with correct params', t => {
   t.end()
 })
 
-test.skip('instantiate ChatManager with non-string instanceLocator fails', t => {
+test('instantiate ChatManager with non-string instanceLocator fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: 42,
     userId: 'alice',
@@ -133,7 +148,7 @@ test.skip('instantiate ChatManager with non-string instanceLocator fails', t => 
   t.end()
 })
 
-test.skip('instantiate ChatManager without userId fails', t => {
+test('instantiate ChatManager without userId fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 42,
@@ -142,7 +157,7 @@ test.skip('instantiate ChatManager without userId fails', t => {
   t.end()
 })
 
-test.skip('instantiate ChatManager with non-string userId fails', t => {
+test('instantiate ChatManager with non-string userId fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 42,
@@ -151,7 +166,7 @@ test.skip('instantiate ChatManager with non-string userId fails', t => {
   t.end()
 })
 
-test.skip('instantiate ChatManager with non tokenProvider fails', t => {
+test('instantiate ChatManager with non tokenProvider fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 42,
@@ -160,7 +175,7 @@ test.skip('instantiate ChatManager with non tokenProvider fails', t => {
   t.end()
 })
 
-test.skip('connection fails if provided with non-function hooks', t => {
+test('connection fails if provided with non-function hooks', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
@@ -173,7 +188,7 @@ test.skip('connection fails if provided with non-function hooks', t => {
   t.end()
 })
 
-test.skip('connection fails for nonexistent user', t => {
+test('connection fails for nonexistent user', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
@@ -204,22 +219,24 @@ test('[setup] create Alice', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('connection resolves with current user object', t => {
-  fetchUser(t, 'alice').then(alice => {
-    t.equal(typeof alice, 'object')
-    t.equal(alice.id, 'alice')
-    t.equal(alice.name, 'Alice')
-    t.true(Array.isArray(alice.rooms), 'alice.rooms is an array')
-    t.equal(length(alice.rooms), 1)
-    t.equal(alice.rooms[0].name, `Alice's room`)
-    t.equal(alice.rooms[0].isPrivate, false)
-    t.equal(alice.rooms[0].createdByUserId, 'alice')
-    t.deepEqual(alice.rooms[0].userIds, ['alice'])
-    t.true(Array.isArray(alice.rooms[0].users), 'users is an array')
-    t.equal(length(alice.rooms[0].users), 1)
-    t.equal(alice.rooms[0].users[0].name, 'Alice')
-    t.end()
-  })
+test('connection resolves with current user object', t => {
+  fetchUser(t, 'alice')
+    .then(alice => {
+      t.equal(typeof alice, 'object')
+      t.equal(alice.id, 'alice')
+      t.equal(alice.name, 'Alice')
+      t.true(Array.isArray(alice.rooms), 'alice.rooms is an array')
+      t.equal(length(alice.rooms), 1)
+      t.equal(alice.rooms[0].name, `Alice's room`)
+      t.equal(alice.rooms[0].isPrivate, false)
+      t.equal(alice.rooms[0].createdByUserId, 'alice')
+      t.deepEqual(alice.rooms[0].userIds, ['alice'])
+      t.true(Array.isArray(alice.rooms[0].users), 'users is an array')
+      t.equal(length(alice.rooms[0].users), 1)
+      t.equal(alice.rooms[0].users[0].name, 'Alice')
+      t.end()
+    })
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
@@ -249,19 +266,22 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
     .then(room => {
       bobsRoom = room // we'll want this in the following tests
     })
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
 // This test has to run before any tests which cause Bob to open a subscription
 // (since then he will already be online)
-test.skip('user came online hook (user sub)', t => {
+test('user came online hook (user sub)', t => {
   fetchUser(t, 'alice', {
     userCameOnline: user => {
       t.equal(user.id, 'bob')
       t.equal(user.presence.state, 'online')
       t.end()
     }
-  }).then(() => fetchUser(t, 'bob'))
+  })
+    .then(() => fetchUser(t, 'bob'))
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
@@ -293,84 +313,94 @@ test('typing indicators (user sub)', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('user left room hook (user sub) [removes Bob from his own room]', t => {
+test('user left room hook (user sub) [removes Bob from his own room]', t => {
   fetchUser(t, 'alice', {
     userLeftRoom: (room, user) => {
       t.equal(room.id, bobsRoom.id)
       t.equal(user.id, 'bob')
       t.end()
     }
-  }).then(() => server.apiRequest({
-    method: 'PUT',
-    path: `/rooms/${bobsRoom.id}/users/remove`,
-    body: { user_ids: ['bob'] },
-    jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
-  }))
+  })
+    .then(() => server.apiRequest({
+      method: 'PUT',
+      path: `/rooms/${bobsRoom.id}/users/remove`,
+      body: { user_ids: ['bob'] },
+      jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
+    }))
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('user joined room hook (user sub) [Bob rejoins his own room]', t => {
+test('user joined room hook (user sub) [Bob rejoins his own room]', t => {
   fetchUser(t, 'alice', {
     userJoinedRoom: (room, user) => {
       t.equal(room.id, bobsRoom.id)
       t.equal(user.id, 'bob')
       t.end()
     }
-  }).then(() => server.apiRequest({
-    method: 'PUT',
-    path: `/rooms/${bobsRoom.id}/users/add`,
-    body: { user_ids: ['bob'] },
-    jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
-  }))
+  })
+    .then(() => server.apiRequest({
+      method: 'PUT',
+      path: `/rooms/${bobsRoom.id}/users/add`,
+      body: { user_ids: ['bob'] },
+      jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
+    }))
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('room updated hook', t => {
+test('room updated hook', t => {
   fetchUser(t, 'alice', {
     roomUpdated: room => {
       t.equal(room.id, bobsRoom.id)
       t.equal(room.name, `Bob's renamed room`)
       t.end()
     }
-  }).then(() => server.apiRequest({
-    method: 'PUT',
-    path: `/rooms/${bobsRoom.id}`,
-    body: { name: `Bob's renamed room` },
-    jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
-  }))
+  })
+    .then(() => server.apiRequest({
+      method: 'PUT',
+      path: `/rooms/${bobsRoom.id}`,
+      body: { name: `Bob's renamed room` },
+      jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
+    }))
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`removed from room hook [removes Alice from Bob's room]`, t => {
+test(`removed from room hook [removes Alice from Bob's room]`, t => {
   fetchUser(t, 'alice', {
     removedFromRoom: room => {
       t.equal(room.id, bobsRoom.id)
       t.end()
     }
-  }).then(() => server.apiRequest({
-    method: 'PUT',
-    path: `/rooms/${bobsRoom.id}/users/remove`,
-    body: { user_ids: ['alice'] },
-    jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
-  }))
+  })
+    .then(() => server.apiRequest({
+      method: 'PUT',
+      path: `/rooms/${bobsRoom.id}/users/remove`,
+      body: { user_ids: ['alice'] },
+      jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
+    }))
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`room deleted hook [destroys Alice's room]`, t => {
+test(`room deleted hook [destroys Alice's room]`, t => {
   fetchUser(t, 'alice', {
     roomDeleted: room => {
       t.equal(room.id, alicesRoom.id)
       t.end()
     }
-  }).then(() => server.apiRequest({
-    method: 'DELETE',
-    path: `/rooms/${alicesRoom.id}`,
-    jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
-  }))
+  })
+    .then(() => server.apiRequest({
+      method: 'DELETE',
+      path: `/rooms/${alicesRoom.id}`,
+      jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
+    }))
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`create room [creates Alice's new room]`, t => {
+test(`create room [creates Alice's new room]`, t => {
   fetchUser(t, 'alice')
     .then(alice => alice.createRoom({ name: `Alice's new room` }))
     .then(room => {
@@ -385,7 +415,7 @@ test.skip(`create room [creates Alice's new room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`create private room [creates Alice's private room]`, t => {
+test(`create private room [creates Alice's private room]`, t => {
   fetchUser(t, 'alice')
     .then(alice => alice.createRoom({
       name: `Alice's private room`,
@@ -403,7 +433,7 @@ test.skip(`create private room [creates Alice's private room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`create room with members [creates Bob's new room]`, t => {
+test(`create room with members [creates Bob's new room]`, t => {
   fetchUser(t, 'bob')
     .then(bob => bob.createRoom({
       name: `Bob's new room`,
@@ -421,7 +451,7 @@ test.skip(`create room with members [creates Bob's new room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('get joined rooms', t => {
+test('get joined rooms', t => {
   const expectedRoomIds = [alicesRoom, bobsRoom, alicesPrivateRoom]
     .map(r => r.id).sort()
   fetchUser(t, 'alice')
@@ -429,10 +459,11 @@ test.skip('get joined rooms', t => {
       t.deepEqual(map(r => r.id, alice.rooms).sort(), expectedRoomIds)
       t.end()
     })
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('get joinable rooms', t => {
+test('get joinable rooms', t => {
   fetchUser(t, 'bob')
     .then(bob => bob.getJoinableRooms())
     .then(rooms => {
@@ -449,7 +480,7 @@ test.skip('get joinable rooms', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('get all rooms', t => {
+test('get all rooms', t => {
   fetchUser(t, 'bob')
     .then(bob => bob.getAllRooms())
     .then(rooms => {
@@ -466,7 +497,7 @@ test.skip('get all rooms', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`join room [Bob joins Alice's room]`, t => {
+test(`join room [Bob joins Alice's room]`, t => {
   fetchUser(t, 'bob')
     .then(bob => bob.joinRoom(alicesRoom.id)
       .then(room => {
@@ -484,7 +515,7 @@ test.skip(`join room [Bob joins Alice's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`leave room [Bob leaves Alice's room]`, t => {
+test(`leave room [Bob leaves Alice's room]`, t => {
   fetchUser(t, 'bob')
     .then(bob => {
       t.true(
@@ -500,10 +531,11 @@ test.skip(`leave room [Bob leaves Alice's room]`, t => {
           t.end()
         })
     })
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('add user [Alice adds Bob to her room]', t => {
+test('add user [Alice adds Bob to her room]', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.addUser('bob', alicesRoom.id)
       .then(() => {
@@ -516,7 +548,7 @@ test.skip('add user [Alice adds Bob to her room]', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('remove user [Alice removes Bob from her room]', t => {
+test('remove user [Alice removes Bob from her room]', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.removeUser('bob', alicesRoom.id)
       .then(() => {
@@ -529,7 +561,7 @@ test.skip('remove user [Alice removes Bob from her room]', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip(`send message [sends four messages to Bob's room]`, t => {
+test(`send messages [sends four messages to Bob's room]`, t => {
   fetchUser(t, 'alice')
     .then(alice => sendMessages(alice, bobsRoom, [
       'hello', 'hey', 'hi', 'ho'
@@ -539,7 +571,7 @@ test.skip(`send message [sends four messages to Bob's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('fetch messages', t => {
+test('fetch messages', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.fetchMessages(bobsRoom.id))
     .then(messages => {
@@ -554,7 +586,7 @@ test.skip('fetch messages', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('fetch messages with pagination', t => {
+test('fetch messages with pagination', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.fetchMessages(bobsRoom.id, { limit: 2 })
       .then(messages => {
@@ -571,56 +603,61 @@ test.skip('fetch messages with pagination', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test.skip('subscribe to room and fetch initial messages', t => {
-  fetchUser(t, 'alice').then(alice => alice.subscribeToRoom(
-    bobsRoom.id,
-    {
-      newMessage: concatBatch(4, messages => {
-        t.deepEqual(map(m => m.text, messages), ['hello', 'hey', 'hi', 'ho'])
-        t.equal(messages[0].sender.name, 'Alice')
-        t.equal(messages[0].room.name, `Bob's room`)
-        t.end()
-      })
-    }
-  ))
-  t.timeoutAfter(TEST_TIMEOUT)
-})
-
-test.skip('subscribe to room and fetch last two message only', t => {
-  fetchUser(t, 'alice').then(alice => alice.subscribeToRoom(
-    bobsRoom.id,
-    {
-      newMessage: concatBatch(2, messages => {
-        t.deepEqual(map(m => m.text, messages), ['hi', 'ho'])
-        t.end()
-      })
-    },
-    2
-  ))
-  t.timeoutAfter(TEST_TIMEOUT)
-})
-
-test.skip('subscribe to room and receive sent messages', t => {
-  fetchUser(t, 'alice').then(alice => {
-    alice.subscribeToRoom(
+test('subscribe to room and fetch initial messages', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.subscribeToRoom(
       bobsRoom.id,
       {
-        newMessage: concatBatch(3, messages => {
-          t.deepEqual(map(m => m.text, messages), ['yo', 'yoo', 'yooo'])
+        newMessage: concatBatch(4, messages => {
+          t.deepEqual(map(m => m.text, messages), ['hello', 'hey', 'hi', 'ho'])
+          t.equal(messages[0].sender.name, 'Alice')
+          t.equal(messages[0].room.name, `Bob's new room`)
+          t.end()
+        })
+      }
+    ))
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('subscribe to room and fetch last two message only', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.subscribeToRoom(
+      bobsRoom.id,
+      {
+        newMessage: concatBatch(2, messages => {
+          t.deepEqual(map(m => m.text, messages), ['hi', 'ho'])
           t.end()
         })
       },
-      0
-    )
-    setTimeout(() => sendMessages(alice, bobsRoom, ['yo', 'yoo', 'yooo']), 1000)
-  })
+      2
+    ))
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('[setup] create Carol', t => server.createUser('carol', 'Carol')
-  .then(() => t.end())
-  .catch(endWithErr(t))
-)
+test('subscribe to room and receive sent messages', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.subscribeToRoom(bobsRoom.id,
+      {
+        newMessage: concatBatch(3, messages => {
+          t.deepEqual(map(m => m.text, messages), ['yo', 'yoo', 'yooo'])
+          t.equal(messages[0].sender.name, 'Alice')
+          t.equal(messages[0].room.name, `Bob's new room`)
+          t.end()
+        })
+      }, 0).then(() => sendMessages(alice, bobsRoom, ['yo', 'yoo', 'yooo']))
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('[setup] create Carol', t => {
+  server.createUser('carol', 'Carol')
+    .then(() => t.end())
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
 
 test(`user joined hook [Carol joins Bob's room]`, t => {
   fetchUser(t, 'alice')
@@ -679,11 +716,13 @@ test('typing indicators', t => {
         })
       })),
     fetchUser(t, 'carol')
-  ]).then(([x, carol]) => carol.isTypingIn(
-    bobsRoom.id,
-    () => {},
-    endWithErr(t)
-  ))
+  ])
+    .then(([x, carol]) => carol.isTypingIn(
+      bobsRoom.id,
+      () => {},
+      endWithErr(t)
+    ))
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
@@ -702,6 +741,7 @@ test(`user left hook [removes Carol from Bob's room]`, t => {
       body: { user_ids: ['carol'] },
       jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
     }))
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

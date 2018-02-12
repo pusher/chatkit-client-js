@@ -26,6 +26,7 @@ export default class ChatManager {
   apiInstance: Instance;
   filesInstance: Instance;
   cursorsInstance: Instance;
+  presenceInstance: Instance;
   userId: string;
 
   private userStore: GlobalUserStore;
@@ -76,6 +77,12 @@ export default class ChatManager {
       ...sharedInstanceOptions,
     });
 
+    this.presenceInstance = new Instance({
+      serviceName: 'chatkit_presence',
+      serviceVersion: 'v1',
+      ...sharedInstanceOptions,
+    })
+
     this.userStore = new GlobalUserStore({ apiInstance: this.apiInstance });
   }
 
@@ -121,6 +128,7 @@ export default class ChatManager {
       cursorsInstance: this.cursorsInstance,
       delegate: options.delegate,
       filesInstance: this.filesInstance,
+      presenceInstance: this.presenceInstance,
       userStore: this.userStore,
     });
 

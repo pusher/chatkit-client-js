@@ -54,6 +54,7 @@ export default class PayloadDeserializer {
     apiInstance: Instance,
     filesInstance: Instance,
     cursorsInstance: Instance,
+    presenceInstance: Instance,
     userStore: GlobalUserStore,
   ): CurrentUser {
     const basicUser = PayloadDeserializer.createBasicUserFromPayload(
@@ -69,6 +70,7 @@ export default class PayloadDeserializer {
       filesInstance,
       id: basicUser.id,
       name: userPayload.name,
+      presenceInstance,
       updatedAt: basicUser.updatedAt,
       userStore,
     });

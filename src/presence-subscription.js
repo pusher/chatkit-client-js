@@ -1,4 +1,13 @@
-import { indexBy, prop, map } from 'ramda'
+import {
+  compose,
+  contains,
+  filter,
+  forEach,
+  indexBy,
+  map,
+  prop,
+  values
+} from 'ramda'
 
 import { parsePresenceState } from './parsers'
 
@@ -8,7 +17,9 @@ export class PresenceSubscription {
     this.hooks = options.hooks
     this.instance = options.instance
     this.userStore = options.userStore
+    this.roomStore = options.roomStore
     this.presenceStore = options.presenceStore
+    this.roomSubscriptions = options.roomSubscriptions
   }
 
   connect () {
@@ -44,12 +55,48 @@ export class PresenceSubscription {
 
   onPresenceUpdate = data => {
     const presence = parsePresenceState(data)
-    this.presenceStore.set(presence.userId, presence).then(p => {
-      if (p.state === 'online' && this.hooks.userCameOnline) {
-        this.userStore.get(p.userId).then(this.hooks.userCameOnline)
-      } else if (p.state === 'offline' && this.hooks.userWentOffline) {
-        this.userStore.get(p.userId).then(this.hooks.userWentOffline)
-      }
-    })
+    this.presenceStore.set(presence.userId, presence)
+      .then(p => this.userStore.get(p.userId)
+        .then(user => {
+          switch (p.state) {
+            case 'online':
+              this.onCameOnline(user)
+              break
+            case 'offline':
+              this.onWentOffline(user)
+              break
+          }
+        })
+      )
+  }
+
+  onCameOnline = user => {
+    if (this.hooks.userCameOnline) {
+      this.hooks.userCameOnline(user)
+    }
+    compose(
+      forEach(sub => this.roomStore.get(sub.roomId).then(room => {
+        if (contains(user.id, room.userIds)) {
+          sub.hooks.userCameOnlineInRoom(user)
+        }
+      })),
+      filter(sub => sub.hooks.userCameOnlineInRoom !== undefined),
+      values
+    )(this.roomSubscriptions)
+  }
+
+  onWentOffline = user => {
+    if (this.hooks.userWentOffline) {
+      this.hooks.userWentOffline(user)
+    }
+    compose(
+      forEach(sub => this.roomStore.get(sub.roomId).then(room => {
+        if (contains(user.id, room.userIds)) {
+          sub.hooks.userWentOfflineInRoom(user)
+        }
+      })),
+      filter(sub => sub.hooks.userWentOfflineInRoom !== undefined),
+      values
+    )(this.roomSubscriptions)
   }
 }

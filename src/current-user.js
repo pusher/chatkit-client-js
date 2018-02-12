@@ -228,6 +228,8 @@ export class CurrentUser {
     typeCheck('roomId', 'number', roomId)
     typeCheckObj('hooks', 'function', hooks)
     messageLimit && typeCheck('messageLimit', 'number', messageLimit)
+    // TODO what is the desired behaviour if there is already a subscription to
+    // this room? Close the old one? Throw an error? Merge the hooks?
     this.roomSubscriptions[roomId] = new RoomSubscription({
       roomId,
       hooks,
@@ -255,7 +257,8 @@ export class CurrentUser {
       instance: this.apiInstance,
       userStore: this.userStore,
       roomStore: this.roomStore,
-      typingIndicators: this.typingIndicators
+      typingIndicators: this.typingIndicators,
+      roomSubscriptions: this.roomSubscriptions
     })
     return this.userSubscription.connect().then(({ user, basicRooms }) => {
       this.avatarURL = user.avatarURL
@@ -273,7 +276,9 @@ export class CurrentUser {
       userId: this.id,
       instance: this.apiInstance,
       userStore: this.userStore,
-      presenceStore: this.presenceStore
+      roomStore: this.roomStore,
+      presenceStore: this.presenceStore,
+      roomSubscriptions: this.roomSubscriptions
     })
     return this.presenceSubscription.connect()
   }

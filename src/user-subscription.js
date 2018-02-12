@@ -10,6 +10,7 @@ export class UserSubscription {
     this.userStore = options.userStore
     this.roomStore = options.roomStore
     this.typingIndicators = options.typingIndicators
+    this.roomSubscriptions = options.roomSubscriptions
   }
 
   connect () {
@@ -84,6 +85,12 @@ export class UserSubscription {
       this.userStore.get(userId).then(user => {
         if (this.hooks.userJoinedRoom) {
           this.hooks.userJoinedRoom(room, user)
+        }
+        if (
+          this.roomSubscriptions[roomId] &&
+          this.roomSubscriptions[roomId].hooks.userJoined
+        ) {
+          this.roomSubscriptions[roomId].hooks.userJoined(user)
         }
       })
     })

@@ -54,6 +54,8 @@ export const checkOneOf = (name, values, value) => {
   }
 }
 
+export const unixSeconds = () => Math.floor(Date.now() / 1000)
+
 // pointfree debugging
 export const trace = msg => x => {
   console.log(msg, x)

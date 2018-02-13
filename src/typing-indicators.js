@@ -21,7 +21,7 @@ export class TypingIndicators {
         method: 'POST',
         path: `/rooms/${roomId}/events`,
         json: {
-          name: 'typing_start', // TODO 'is_typing'
+          name: 'typing_start', // soon to be 'is_typing'
           user_id: this.userId
         }
       })

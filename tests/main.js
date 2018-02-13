@@ -19,7 +19,7 @@ import ChatkitServer from 'pusher-chatkit-server'
 import { TokenProvider, ChatManager } from '../dist/web/chatkit.js'
 import { INSTANCE_LOCATOR, INSTANCE_KEY, TOKEN_PROVIDER_URL } from './config'
 
-let alicesRoom, bobsRoom, alicesPrivateRoom
+let alicesRoom, bobsRoom, carolsRoom, alicesPrivateRoom
 
 const TEST_TIMEOUT = 15 * 1000
 
@@ -647,8 +647,25 @@ test('subscribe to room and receive sent messages', t => {
 
 test('[setup] create Carol', t => {
   server.createUser('carol', 'Carol')
-    .then(() => t.end())
+    .then(() => server.createRoom('carol', { name: `Carol's room` }))
+    .then(room => {
+      carolsRoom = room // we'll want this in the following tests
+      t.end()
+    })
     .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('subscribe to room implicitly joins', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.subscribeToRoom(carolsRoom.id)
+      .then(() => {
+        t.true(
+          any(r => r.id === carolsRoom.id, alice.rooms),
+          `Alice's rooms include Carol's room`
+        )
+      })
+    )
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

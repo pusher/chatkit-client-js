@@ -78,6 +78,9 @@ const sendMessages = (user, room, texts) => length(texts) === 0
   : user.sendMessage({ roomId: room.id, text: head(texts) })
     .then(() => sendMessages(user, room, tail(texts)))
 
+// Teardown first so that we can kill the tests at any time, safe in the
+// knowledge that we'll always be starting with a blank slate next time
+
 test('[teardown] destroy Alice', t => {
   server.deleteUser('alice').then(() => t.end()).catch(err => t.end(err))
   t.timeoutAfter(TEST_TIMEOUT)
@@ -664,8 +667,11 @@ test('subscribe to room implicitly joins', t => {
           any(r => r.id === carolsRoom.id, alice.rooms),
           `Alice's rooms include Carol's room`
         )
+        t.end()
       })
+      .catch(endWithErr(t))
     )
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

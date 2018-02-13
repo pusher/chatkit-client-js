@@ -5590,11 +5590,11 @@ var checkOneOf = function checkOneOf(name, values, value) {
   }
 };
 
-// pointfree debugging
-
 var unixSeconds = function unixSeconds() {
   return Math.floor(Date.now() / 1000);
 };
+
+// pointfree debugging
 
 var TokenProvider =
 // TODO authContext
@@ -5801,7 +5801,9 @@ var UserStore = function UserStore(_ref) {
     if (length(missing) === 0) {
       return Promise.resolve();
     }
-    // TODO don't make simulatneous requests for the same users
+    // TODO don't make simulatneous requests for the same users (question: what
+    // will actually cause this situation to arise? Receiving lots of messages
+    // in a room from a user who is no longer a member of said room?)
     return _this.instance.request({
       method: 'GET',
       path: appendQueryParam('user_ids', join(',', missing), '/users_by_ids')
@@ -6438,6 +6440,9 @@ var CurrentUser = function () {
 
     this.joinRoom = function (roomId) {
       typeCheck('roomId', 'number', roomId);
+      if (_this.isMemberOf(roomId)) {
+        return _this.roomStore.get(roomId);
+      }
       return _this.apiInstance.request({
         method: 'POST',
         path: '/users/' + encodeURIComponent(_this.id) + '/rooms/' + roomId + '/join'
@@ -6548,7 +6553,6 @@ var CurrentUser = function () {
       var hooks = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
       var messageLimit = arguments[2];
 
-      // TODO join room if not already a member
       typeCheck('roomId', 'number', roomId);
       typeCheckObj('hooks', 'function', hooks);
       messageLimit && typeCheck('messageLimit', 'number', messageLimit);
@@ -6564,7 +6568,15 @@ var CurrentUser = function () {
         roomStore: _this.roomStore,
         logger: _this.logger
       });
-      return _this.roomSubscriptions[roomId].connect();
+      return _this.joinRoom(roomId).then(function () {
+        return _this.roomSubscriptions[roomId].connect();
+      }).catch(function (err) {
+        return _this.logger.error('error subscribing to room ' + roomId, err);
+      });
+    };
+
+    this.isMemberOf = function (roomId) {
+      return contains$1(roomId, map(prop('id'), _this.rooms));
     };
 
     this.decorateMessage = function (basicMessage) {
@@ -6659,9 +6671,7 @@ var CurrentUser = function () {
   return CurrentUser;
 }();
 
-var ChatManager =
-// TODO accept a tokenProviderUrl and create a default tokenProvider?
-function ChatManager() {
+var ChatManager = function ChatManager() {
   var _this = this;
 
   var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};

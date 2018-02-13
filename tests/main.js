@@ -733,11 +733,7 @@ test('typing indicators', t => {
       })),
     fetchUser(t, 'carol')
   ])
-    .then(([x, carol]) => carol.isTypingIn(
-      bobsRoom.id,
-      () => {},
-      endWithErr(t)
-    ))
+    .then(([x, carol]) => carol.isTypingIn(bobsRoom.id))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })

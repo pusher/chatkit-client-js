@@ -56,7 +56,9 @@ export class UserStore {
     if (length(missing) === 0) {
       return Promise.resolve()
     }
-    // TODO don't make simulatneous requests for the same users
+    // TODO don't make simulatneous requests for the same users (question: what
+    // will actually cause this situation to arise? Receiving lots of messages
+    // in a room from a user who is no longer a member of said room?)
     return this.instance
       .request({
         method: 'GET',

@@ -35,7 +35,7 @@ export class UserStore {
     return this.instance
       .request({
         method: 'GET',
-        path: `/users/${userId}`
+        path: `/users/${encodeURIComponent(userId)}`
       })
       .then(res => {
         const user = parseUser(JSON.parse(res))

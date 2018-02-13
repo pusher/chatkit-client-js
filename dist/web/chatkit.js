@@ -6568,8 +6568,10 @@ var CurrentUser = function () {
         roomStore: _this.roomStore,
         logger: _this.logger
       });
-      return _this.joinRoom(roomId).then(function () {
-        return _this.roomSubscriptions[roomId].connect();
+      return _this.joinRoom(roomId).then(function (room) {
+        return _this.roomSubscriptions[roomId].connect().then(function () {
+          return room;
+        });
       }).catch(function (err) {
         return _this.logger.error('error subscribing to room ' + roomId, err);
       });

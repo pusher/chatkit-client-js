@@ -662,7 +662,9 @@ test('[setup] create Carol', t => {
 test('subscribe to room implicitly joins', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.subscribeToRoom(carolsRoom.id)
-      .then(() => {
+      .then(room => {
+        t.equal(room.id, carolsRoom.id)
+        t.true(room.name, `Carol's room`)
         t.true(
           any(r => r.id === carolsRoom.id, alice.rooms),
           `Alice's rooms include Carol's room`

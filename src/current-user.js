@@ -244,7 +244,7 @@ export class CurrentUser {
       logger: this.logger
     })
     return this.joinRoom(roomId)
-      .then(() => this.roomSubscriptions[roomId].connect())
+      .then(room => this.roomSubscriptions[roomId].connect().then(() => room))
       .catch(err => this.logger.error(
         `error subscribing to room ${roomId}`,
         err

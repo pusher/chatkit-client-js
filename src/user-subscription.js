@@ -49,7 +49,7 @@ export class UserSubscription {
       case 'room_deleted':
         this.onRoomDeleted(body.data)
         break
-      case 'typing_start': // TODO 'is_typing'
+      case 'typing_start': // soon to be 'is_typing'
         this.onIsTyping(body.data)
         break
     }

@@ -2,6 +2,7 @@ import {
   chain,
   compose,
   concat,
+  contains,
   indexBy,
   map,
   pipe,
@@ -109,6 +110,9 @@ export class CurrentUser {
 
   joinRoom = roomId => {
     typeCheck('roomId', 'number', roomId)
+    if (this.isMemberOf(roomId)) {
+      return this.roomStore.get(roomId)
+    }
     return this.apiInstance
       .request({
         method: 'POST',
@@ -224,7 +228,6 @@ export class CurrentUser {
   }
 
   subscribeToRoom = (roomId, hooks = {}, messageLimit) => {
-    // TODO join room if not already a member
     typeCheck('roomId', 'number', roomId)
     typeCheckObj('hooks', 'function', hooks)
     messageLimit && typeCheck('messageLimit', 'number', messageLimit)
@@ -240,10 +243,17 @@ export class CurrentUser {
       roomStore: this.roomStore,
       logger: this.logger
     })
-    return this.roomSubscriptions[roomId].connect()
+    return this.joinRoom(roomId)
+      .then(() => this.roomSubscriptions[roomId].connect())
+      .catch(err => this.logger.error(
+        `error subscribing to room ${roomId}`,
+        err
+      ))
   }
 
   /* internal */
+
+  isMemberOf = roomId => contains(roomId, map(prop('id'), this.rooms))
 
   decorateMessage = basicMessage => new Message(
     basicMessage,

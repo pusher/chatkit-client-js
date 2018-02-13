@@ -5,7 +5,6 @@ import { CurrentUser } from './current-user'
 import { typeCheck, typeCheckObj } from './utils'
 
 export class ChatManager {
-  // TODO accept a tokenProviderUrl and create a default tokenProvider?
   constructor ({ instanceLocator, tokenProvider, userId, ...options } = {}) {
     typeCheck('instanceLocator', 'string', instanceLocator)
     typeCheck('tokenProvider', 'object', tokenProvider)

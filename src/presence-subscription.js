@@ -26,7 +26,7 @@ export class PresenceSubscription {
     return new Promise((resolve, reject) => {
       this.hooks = { ...this.hooks, subscriptionEstablished: resolve }
       this.instance.subscribeNonResuming({
-        path: `/users/${this.userId}/presence`,
+        path: `/users/${encodeURIComponent(this.userId)}/presence`,
         listeners: {
           onError: reject,
           onEvent: this.onEvent

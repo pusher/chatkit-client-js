@@ -91,11 +91,10 @@ export class CurrentUser {
   }
 
   getJoinableRooms = () => {
-    // TODO path friendly ids everywhere
     return this.apiInstance
       .request({
         method: 'GET',
-        path: `/users/${this.id}/rooms?joinable=true`
+        path: `/users/${encodeURIComponent(this.id)}/rooms?joinable=true`
       })
       .then(pipe(JSON.parse, map(parseBasicRoom)))
       .catch(err => {
@@ -113,7 +112,7 @@ export class CurrentUser {
     return this.apiInstance
       .request({
         method: 'POST',
-        path: `/users/${this.id}/rooms/${roomId}/join`
+        path: `/users/${encodeURIComponent(this.id)}/rooms/${roomId}/join`
       })
       .then(res => {
         const basicRoom = parseBasicRoom(JSON.parse(res))
@@ -130,7 +129,7 @@ export class CurrentUser {
     return this.apiInstance
       .request({
         method: 'POST',
-        path: `/users/${this.id}/rooms/${roomId}/leave`
+        path: `/users/${encodeURIComponent(this.id)}/rooms/${roomId}/leave`
       })
       .then(() => this.roomStore.pop(roomId))
       .catch(err => {
@@ -225,6 +224,7 @@ export class CurrentUser {
   }
 
   subscribeToRoom = (roomId, hooks = {}, messageLimit) => {
+    // TODO join room if not already a member
     typeCheck('roomId', 'number', roomId)
     typeCheckObj('hooks', 'function', hooks)
     messageLimit && typeCheck('messageLimit', 'number', messageLimit)

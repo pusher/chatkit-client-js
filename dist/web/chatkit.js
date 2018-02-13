@@ -5752,7 +5752,7 @@ var UserStore = function UserStore(_ref) {
   this.fetchBasicUser = function (userId) {
     return _this.instance.request({
       method: 'GET',
-      path: '/users/' + userId
+      path: '/users/' + encodeURIComponent(userId)
     }).then(function (res) {
       var user = parseUser(JSON.parse(res));
       _this.set(userId, user);
@@ -6238,7 +6238,7 @@ var PresenceSubscription = function () {
       return new Promise(function (resolve, reject) {
         _this2.hooks = _extends({}, _this2.hooks, { subscriptionEstablished: resolve });
         _this2.instance.subscribeNonResuming({
-          path: '/users/' + _this2.userId + '/presence',
+          path: '/users/' + encodeURIComponent(_this2.userId) + '/presence',
           listeners: {
             onError: reject,
             onEvent: _this2.onEvent
@@ -6390,10 +6390,9 @@ var CurrentUser = function () {
     };
 
     this.getJoinableRooms = function () {
-      // TODO path friendly ids everywhere
       return _this.apiInstance.request({
         method: 'GET',
-        path: '/users/' + _this.id + '/rooms?joinable=true'
+        path: '/users/' + encodeURIComponent(_this.id) + '/rooms?joinable=true'
       }).then(pipe(JSON.parse, map(parseBasicRoom))).catch(function (err) {
         _this.logger.warn('error getting joinable rooms:', err);
         throw err;
@@ -6408,7 +6407,7 @@ var CurrentUser = function () {
       typeCheck('roomId', 'number', roomId);
       return _this.apiInstance.request({
         method: 'POST',
-        path: '/users/' + _this.id + '/rooms/' + roomId + '/join'
+        path: '/users/' + encodeURIComponent(_this.id) + '/rooms/' + roomId + '/join'
       }).then(function (res) {
         var basicRoom = parseBasicRoom(JSON.parse(res));
         return _this.roomStore.set(basicRoom.id, basicRoom);
@@ -6422,7 +6421,7 @@ var CurrentUser = function () {
       typeCheck('roomId', 'number', roomId);
       return _this.apiInstance.request({
         method: 'POST',
-        path: '/users/' + _this.id + '/rooms/' + roomId + '/leave'
+        path: '/users/' + encodeURIComponent(_this.id) + '/rooms/' + roomId + '/leave'
       }).then(function () {
         return _this.roomStore.pop(roomId);
       }).catch(function (err) {
@@ -6516,6 +6515,7 @@ var CurrentUser = function () {
       var hooks = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
       var messageLimit = arguments[2];
 
+      // TODO join room if not already a member
       typeCheck('roomId', 'number', roomId);
       typeCheckObj('hooks', 'function', hooks);
       messageLimit && typeCheck('messageLimit', 'number', messageLimit);

@@ -5,7 +5,6 @@ import {
   join,
   map,
   pipe,
-  split,
   toPairs
 } from 'ramda'
 
@@ -19,8 +18,8 @@ export const urlEncode = pipe(
 
 // appendQueryParam :: String -> String -> String -> String
 export const appendQueryParam = (key, value, url) => {
-  const [ before, after ] = split('?', url)
-  return before + '?' + (after ? after + '&' : '') + urlEncode({ [key]: value })
+  const separator = contains('?', url) ? '&' : '?'
+  return url + separator + urlEncode({ [key]: value })
 }
 
 export const typeCheck = (name, expectedType, value) => {

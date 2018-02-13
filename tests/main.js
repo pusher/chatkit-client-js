@@ -56,10 +56,12 @@ const batch = (n, f) => {
 
 const concatBatch = (n, f) => batch(n, compose(f, reduce(concat, [])))
 
+const tokenProvider = new TokenProvider({ url: TOKEN_PROVIDER_URL })
+
 const fetchUser = (t, userId, hooks = {}) => new ChatManager({
   instanceLocator: INSTANCE_LOCATOR,
   userId,
-  tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
+  tokenProvider,
   logger: {
     error: console.log,
     warn: console.log,
@@ -123,7 +125,7 @@ test('instantiate ChatManager with correct params', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
-    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
+    tokenProvider
   })
   t.equal(typeof chatManager, 'object')
   t.equal(typeof chatManager.connect, 'function')
@@ -134,7 +136,7 @@ test('instantiate ChatManager with non-string instanceLocator fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: 42,
     userId: 'alice',
-    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
+    tokenProvider
   }), /instanceLocator/)
   t.end()
 })
@@ -143,7 +145,7 @@ test('instantiate ChatManager without userId fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 42,
-    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
+    tokenProvider
   }), /userId/)
   t.end()
 })
@@ -152,7 +154,7 @@ test('instantiate ChatManager with non-string userId fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 42,
-    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
+    tokenProvider
   }), /string/)
   t.end()
 })
@@ -170,7 +172,7 @@ test('connection fails if provided with non-function hooks', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
-    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
+    tokenProvider
   })
   t.throws(
     () => chatManager.connect({ nonFunction: 42 }),
@@ -183,7 +185,7 @@ test('connection fails for nonexistent user', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
-    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
+    tokenProvider
   })
   chatManager.connect()
     .then(() => {

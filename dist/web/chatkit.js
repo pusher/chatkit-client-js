@@ -5592,6 +5592,10 @@ var checkOneOf = function checkOneOf(name, values, value) {
 
 // pointfree debugging
 
+var unixSeconds = function unixSeconds() {
+  return Math.floor(Date.now() / 1000);
+};
+
 var TokenProvider =
 // TODO authContext
 function TokenProvider() {
@@ -5603,19 +5607,48 @@ function TokenProvider() {
   classCallCheck(this, TokenProvider);
 
   this.fetchToken = function () {
-    return pusherPlatform_4({
-      body: urlEncode({ grant_type: 'client_credentials' }),
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded'
-      },
-      method: 'POST',
-      url: appendQueryParam('user_id', _this.userId, _this.url)
-    }).then(function (res) {
-      return JSON.parse(res).access_token;
+    return !_this.cacheIsStale() ? Promise.resolve(_this.cachedToken) : _this.fetchFreshToken().then(function (_ref2) {
+      var token = _ref2.token,
+          expiresIn = _ref2.expiresIn;
+
+      _this.cache(token, expiresIn);
+      return token;
     });
   };
 
+  this.fetchFreshToken = function () {
+    return pusherPlatform_4({
+      method: 'POST',
+      url: appendQueryParam('user_id', _this.userId, _this.url),
+      body: urlEncode({ grant_type: 'client_credentials' }),
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
+      }
+    }).then(function (res) {
+      var _JSON$parse = JSON.parse(res),
+          token = _JSON$parse.access_token,
+          expiresIn = _JSON$parse.expires_in;
+
+      return { token: token, expiresIn: expiresIn };
+    });
+  };
+
+  this.cacheIsStale = function () {
+    return !_this.cachedToken || unixSeconds() > _this.cacheExpiresAt;
+  };
+
+  this.cache = function (token, expiresIn) {
+    _this.cachedToken = token;
+    _this.cacheExpiresAt = unixSeconds() + expiresIn;
+  };
+
+  this.clearCache = function () {
+    _this.cachedToken = undefined;
+    _this.cacheExpiresAt = undefined;
+  };
+
   this.setUserId = function (userId) {
+    _this.clearCache();
     _this.userId = userId;
   };
 
@@ -5924,7 +5957,7 @@ var TypingIndicators = function TypingIndicators(_ref) {
       method: 'POST',
       path: '/rooms/' + roomId + '/events',
       json: {
-        name: 'typing_start', // TODO 'is_typing'
+        name: 'typing_start', // soon to be 'is_typing'
         user_id: _this.userId
       }
     }).catch(function (err) {
@@ -6006,7 +6039,7 @@ var UserSubscription = function () {
           _this.onRoomDeleted(body.data);
           break;
         case 'typing_start':
-          // TODO 'is_typing'
+          // soon to be 'is_typing'
           _this.onIsTyping(body.data);
           break;
       }

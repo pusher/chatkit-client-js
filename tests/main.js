@@ -304,7 +304,10 @@ test('typing indicators (user sub)', t => {
     }),
     fetchUser(t, 'bob')
   ])
-    .then(([alice, bob]) => bob.isTypingIn(bobsRoom.id))
+  // FIXME This test (and the corresponding room sub one) occasionally fail if
+  // isTypingIn is called without this timeout. It would seem that there is a
+  // race condition *somewhere*.
+    .then(([alice, bob]) => setTimeout(() => bob.isTypingIn(bobsRoom.id), 1000))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -735,7 +738,10 @@ test('typing indicators', t => {
       })),
     fetchUser(t, 'carol')
   ])
-    .then(([x, carol]) => carol.isTypingIn(bobsRoom.id))
+  // FIXME This test (and the corresponding user sub one) occasionally fail if
+  // isTypingIn is called without this timeout. It would seem that there is a
+  // race condition *somewhere*.
+    .then(([x, carol]) => setTimeout(() => carol.isTypingIn(bobsRoom.id), 1000))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })

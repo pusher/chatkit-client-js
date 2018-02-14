@@ -704,8 +704,7 @@ test(`user joined hook [Carol joins Bob's room]`, t => {
 test('user came online hook', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.subscribeToRoom(bobsRoom.id, {
-      // FIXME inconsistent naming
-      userCameOnlineInRoom: once(user => {
+      userCameOnline: once(user => {
         t.equal(user.id, 'carol')
         t.equal(user.name, 'Carol')
         t.end()

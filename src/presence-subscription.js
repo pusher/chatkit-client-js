@@ -78,32 +78,21 @@ export class PresenceSubscription {
     map(parsePresence, userStates)
   )
 
-  onCameOnline = user => {
-    if (this.hooks.userCameOnline) {
-      this.hooks.userCameOnline(user)
-    }
-    compose(
-      forEach(sub => this.roomStore.get(sub.roomId).then(room => {
-        if (contains(user.id, room.userIds)) {
-          sub.hooks.userCameOnline(user)
-        }
-      })),
-      filter(sub => sub.hooks.userCameOnline !== undefined),
-      values
-    )(this.roomSubscriptions)
-  }
+  onCameOnline = user => this.callRelevantHooks('userCameOnline', user)
 
-  onWentOffline = user => {
-    if (this.hooks.userWentOffline) {
-      this.hooks.userWentOffline(user)
+  onWentOffline = user => this.callRelevantHooks('userWentOffline', user)
+
+  callRelevantHooks = (hookName, user) => {
+    if (this.hooks[hookName]) {
+      this.hooks[hookName](user)
     }
     compose(
       forEach(sub => this.roomStore.get(sub.roomId).then(room => {
         if (contains(user.id, room.userIds)) {
-          sub.hooks.userWentOffline(user)
+          sub.hooks[hookName](user)
         }
       })),
-      filter(sub => sub.hooks.userWentOffline !== undefined),
+      filter(sub => sub.hooks[hookName] !== undefined),
       values
     )(this.roomSubscriptions)
   }

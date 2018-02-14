@@ -85,10 +85,10 @@ export class PresenceSubscription {
     compose(
       forEach(sub => this.roomStore.get(sub.roomId).then(room => {
         if (contains(user.id, room.userIds)) {
-          sub.hooks.userCameOnlineInRoom(user)
+          sub.hooks.userCameOnline(user)
         }
       })),
-      filter(sub => sub.hooks.userCameOnlineInRoom !== undefined),
+      filter(sub => sub.hooks.userCameOnline !== undefined),
       values
     )(this.roomSubscriptions)
   }
@@ -100,10 +100,10 @@ export class PresenceSubscription {
     compose(
       forEach(sub => this.roomStore.get(sub.roomId).then(room => {
         if (contains(user.id, room.userIds)) {
-          sub.hooks.userWentOfflineInRoom(user)
+          sub.hooks.userWentOffline(user)
         }
       })),
-      filter(sub => sub.hooks.userWentOfflineInRoom !== undefined),
+      filter(sub => sub.hooks.userWentOffline !== undefined),
       values
     )(this.roomSubscriptions)
   }

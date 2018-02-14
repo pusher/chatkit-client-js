@@ -32,6 +32,7 @@ import { Message } from './message'
 export class CurrentUser {
   constructor ({ id, apiInstance }) {
     this.id = id
+    this.encodedId = encodeURIComponent(this.id)
     this.apiInstance = apiInstance
     this.logger = apiInstance.logger
     this.presenceStore = new Store()
@@ -95,7 +96,7 @@ export class CurrentUser {
     return this.apiInstance
       .request({
         method: 'GET',
-        path: `/users/${encodeURIComponent(this.id)}/rooms?joinable=true`
+        path: `/users/${this.encodedId}/rooms?joinable=true`
       })
       .then(pipe(JSON.parse, map(parseBasicRoom)))
       .catch(err => {
@@ -116,7 +117,7 @@ export class CurrentUser {
     return this.apiInstance
       .request({
         method: 'POST',
-        path: `/users/${encodeURIComponent(this.id)}/rooms/${roomId}/join`
+        path: `/users/${this.encodedId}/rooms/${roomId}/join`
       })
       .then(res => {
         const basicRoom = parseBasicRoom(JSON.parse(res))
@@ -133,7 +134,7 @@ export class CurrentUser {
     return this.apiInstance
       .request({
         method: 'POST',
-        path: `/users/${encodeURIComponent(this.id)}/rooms/${roomId}/leave`
+        path: `/users/${this.encodedId}/rooms/${roomId}/leave`
       })
       .then(() => this.roomStore.pop(roomId))
       .catch(err => {

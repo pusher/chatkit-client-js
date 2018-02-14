@@ -137,7 +137,7 @@ export class CurrentUser {
       })
       .then(() => this.roomStore.pop(roomId))
       .catch(err => {
-        this.logger.warn(`error joining room ${roomId}:`, err)
+        this.logger.warn(`error leaving room ${roomId}:`, err)
         throw err
       })
   }

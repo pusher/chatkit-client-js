@@ -51,7 +51,8 @@ export class ChatManager {
     typeCheckObj('hooks', 'function', hooks)
     const currentUser = new CurrentUser({
       id: this.userId,
-      apiInstance: this.apiInstance
+      apiInstance: this.apiInstance,
+      filesInstance: this.filesInstance
     })
     return Promise.all([
       currentUser.establishUserSubscription(hooks),

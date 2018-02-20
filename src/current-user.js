@@ -30,10 +30,11 @@ import { RoomSubscription } from './room-subscription'
 import { Message } from './message'
 
 export class CurrentUser {
-  constructor ({ id, apiInstance }) {
+  constructor ({ id, apiInstance, filesInstance }) {
     this.id = id
     this.encodedId = encodeURIComponent(this.id)
     this.apiInstance = apiInstance
+    this.filesInstance = filesInstance
     this.logger = apiInstance.logger
     this.presenceStore = new Store()
     this.userStore = new UserStore({
@@ -182,16 +183,25 @@ export class CurrentUser {
       })
   }
 
-  // TODO attachments
-  sendMessage = ({ text, roomId } = {}) => {
+  sendMessage = ({ text, roomId, attachment }) => {
     typeCheck('text', 'string', text)
     typeCheck('roomId', 'number', roomId)
-    return this.apiInstance
-      .request({
+    return new Promise((resolve, reject) => {
+      if (attachment !== undefined && isDataAttachment(attachment)) {
+        resolve(this.uploadDataAttachment(roomId, attachment))
+      } else if (attachment !== undefined && isLinkAttachment(attachment)) {
+        resolve({ resource_link: attachment.link, type: attachment.type })
+      } else if (attachment !== undefined) {
+        reject(new TypeError('attachment was malformed'))
+      } else {
+        resolve()
+      }
+    })
+      .then(attachment => this.apiInstance.request({
         method: 'POST',
         path: `/rooms/${roomId}/messages`,
-        json: { text }
-      })
+        json: { text, attachment }
+      }))
       .then(pipe(JSON.parse, prop('message_id')))
       .catch(err => {
         this.logger.warn(`error sending message to room ${roomId}:`, err)
@@ -254,6 +264,19 @@ export class CurrentUser {
 
   /* internal */
 
+  uploadDataAttachment = (roomId, { file, name }) => {
+    // TODO some validation on allowed file names?
+    // TODO polyfill FormData?
+    const body = new FormData() // eslint-disable-line no-undef
+    body.append('file', file, name)
+    return this.filesInstance.request({
+      method: 'POST',
+      path: `/rooms/${roomId}/files/${name}`,
+      body
+    })
+      .then(JSON.parse)
+  }
+
   isMemberOf = roomId => contains(roomId, map(prop('id'), this.rooms))
 
   decorateMessage = basicMessage => new Message(
@@ -306,4 +329,22 @@ export class CurrentUser {
         this.userStore.initialize({})
       })
   }
+}
+
+const isDataAttachment = ({ file, name }) => {
+  if (file === undefined || name === undefined) {
+    return false
+  }
+  typeCheck('attachment.file', 'object', file)
+  typeCheck('attachment.name', 'string', name)
+  return true
+}
+
+const isLinkAttachment = ({ link, type }) => {
+  if (link === undefined || type === undefined) {
+    return false
+  }
+  typeCheck('attachment.link', 'string', link)
+  typeCheck('attachment.type', 'string', type)
+  return true
 }

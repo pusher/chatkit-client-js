@@ -2,9 +2,11 @@ import {
   contains,
   filter,
   forEachObjIndexed,
+  fromPairs,
   join,
   map,
   pipe,
+  split,
   toPairs
 } from 'ramda'
 
@@ -21,6 +23,11 @@ export const appendQueryParam = (key, value, url) => {
   const separator = contains('?', url) ? '&' : '?'
   return url + separator + urlEncode({ [key]: value })
 }
+
+export const extractQueryParams = url =>
+  contains('?', url) ? queryStringToObj(split('?', url)[1]) : {}
+
+const queryStringToObj = pipe(split('&'), map(split('=')), fromPairs)
 
 export const typeCheck = (name, expectedType, value) => {
   const type = typeof value

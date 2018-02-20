@@ -4,6 +4,7 @@ export class Message {
     this.senderId = basicMessage.senderId
     this.roomId = basicMessage.roomId
     this.text = basicMessage.text
+    this.attachment = basicMessage.attachment
     this.createdAt = basicMessage.createdAt
     this.updatedAt = basicMessage.updatedAt
     this.userStore = userStore

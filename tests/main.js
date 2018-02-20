@@ -82,17 +82,17 @@ const sendMessages = (user, room, texts) => length(texts) === 0
 // knowledge that we'll always be starting with a blank slate next time
 
 test('[teardown] destroy Alice', t => {
-  server.deleteUser('alice').then(() => t.end()).catch(err => t.end(err))
+  server.deleteUser('alice').then(() => t.end()).catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
 test('[teardown] destroy Bob', t => {
-  server.deleteUser('bob').then(() => t.end()).catch(err => t.end(err))
+  server.deleteUser('bob').then(() => t.end()).catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
 test('[teardown] destroy Carol', t => {
-  server.deleteUser('carol').then(() => t.end()).catch(err => t.end(err))
+  server.deleteUser('carol').then(() => t.end()).catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
@@ -648,6 +648,47 @@ test('subscribe to room and receive sent messages', t => {
       }, 0).then(() => sendMessages(alice, bobsRoom, ['yo', 'yoo', 'yooo']))
     )
     .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('send message with malformed attachment fails', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.sendMessage({
+      roomId: bobsRoom.id,
+      text: 'should fail',
+      attachment: { some: 'rubbish' }
+    }))
+    .catch(err => {
+      t.true(toString(err).match(/attachment/), 'attachment error')
+      t.end()
+    })
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test(`send message with link attachment [sends one message to Bob's room]`, t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.sendMessage({
+      roomId: bobsRoom.id,
+      text: 'see attached',
+      attachment: { link: 'https://cataas.com/cat', type: 'image' }
+    }))
+    .then(() => t.end())
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('receive message with link attachment', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.fetchMessages(bobsRoom.id, { limit: 1 }))
+    .then(([message]) => {
+      t.equal(message.text, 'see attached')
+      t.deepEqual(message.attachment, {
+        link: 'https://cataas.com/cat',
+        type: 'image',
+        fetchRequired: false
+      })
+      t.end()
+    })
   t.timeoutAfter(TEST_TIMEOUT)
 })
 

@@ -35,10 +35,20 @@ export const parseBasicMessage = data => ({
   text: data.text,
   createdAt: data.created_at,
   updatedAt: data.updated_at,
-  attachment: data.attachment && parseAttachment(data.attachment)
+  attachment: data.attachment && parseMessageAttachment(data.attachment)
 })
 
-const parseAttachment = data => ({
+export const parseFetchedAttachment = data => ({
+  file: {
+    name: data.file.name,
+    bytes: data.file.bytes,
+    lastModified: data.file.last_modified
+  },
+  link: data.resource_link,
+  ttl: data.ttl
+})
+
+const parseMessageAttachment = data => ({
   link: data.resource_link,
   type: data.type,
   fetchRequired: extractQueryParams(data.resource_link).chatkit_link === 'true'

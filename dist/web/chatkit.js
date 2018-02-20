@@ -5684,6 +5684,70 @@ function TokenProvider() {
   this.url = url;
 };
 
+var parseBasicRoom = function parseBasicRoom(data) {
+  return {
+    createdAt: data.created_at,
+    createdByUserId: data.created_by_id,
+    deletedAt: data.deletedAt,
+    id: data.id,
+    isPrivate: data.private,
+    name: data.name,
+    updatedAt: data.updated_at,
+    userIds: data.member_user_ids
+  };
+};
+
+var parseUser = function parseUser(data) {
+  return {
+    avatarURL: data.avatar_url,
+    createdAt: data.created_at,
+    customData: data.custom_data,
+    id: data.id,
+    name: data.name,
+    updatedAt: data.updated_at
+  };
+};
+
+var parsePresence = function parsePresence(data) {
+  return {
+    lastSeenAt: data.last_seen_at,
+    state: contains$1(data.state, ['online', 'offline']) ? data.state : 'unknown',
+    userId: data.user_id
+  };
+};
+
+var parseBasicMessage = function parseBasicMessage(data) {
+  return {
+    id: data.id,
+    senderId: data.user_id,
+    roomId: data.room_id,
+    text: data.text,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+    attachment: data.attachment && parseMessageAttachment(data.attachment)
+  };
+};
+
+var parseFetchedAttachment = function parseFetchedAttachment(data) {
+  return {
+    file: {
+      name: data.file.name,
+      bytes: data.file.bytes,
+      lastModified: data.file.last_modified
+    },
+    link: data.resource_link,
+    ttl: data.ttl
+  };
+};
+
+var parseMessageAttachment = function parseMessageAttachment(data) {
+  return {
+    link: data.resource_link,
+    type: data.type,
+    fetchRequired: extractQueryParams(data.resource_link).chatkit_link === 'true'
+  };
+};
+
 var Store = function Store() {
   var _this = this;
 
@@ -5741,58 +5805,6 @@ var Store = function Store() {
 
   this.getSync = function (key) {
     return _this.store ? _this.store[key] : undefined;
-  };
-};
-
-var parseBasicRoom = function parseBasicRoom(data) {
-  return {
-    createdAt: data.created_at,
-    createdByUserId: data.created_by_id,
-    deletedAt: data.deletedAt,
-    id: data.id,
-    isPrivate: data.private,
-    name: data.name,
-    updatedAt: data.updated_at,
-    userIds: data.member_user_ids
-  };
-};
-
-var parseUser = function parseUser(data) {
-  return {
-    avatarURL: data.avatar_url,
-    createdAt: data.created_at,
-    customData: data.custom_data,
-    id: data.id,
-    name: data.name,
-    updatedAt: data.updated_at
-  };
-};
-
-var parsePresence = function parsePresence(data) {
-  return {
-    lastSeenAt: data.last_seen_at,
-    state: contains$1(data.state, ['online', 'offline']) ? data.state : 'unknown',
-    userId: data.user_id
-  };
-};
-
-var parseBasicMessage = function parseBasicMessage(data) {
-  return {
-    id: data.id,
-    senderId: data.user_id,
-    roomId: data.room_id,
-    text: data.text,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-    attachment: data.attachment && parseAttachment(data.attachment)
-  };
-};
-
-var parseAttachment = function parseAttachment(data) {
-  return {
-    link: data.resource_link,
-    type: data.type,
-    fetchRequired: extractQueryParams(data.resource_link).chatkit_link === 'true'
   };
 };
 
@@ -6617,7 +6629,21 @@ var CurrentUser = function () {
           return room;
         });
       }).catch(function (err) {
-        return _this.logger.error('error subscribing to room ' + roomId, err);
+        _this.logger.warn('error subscribing to room ' + roomId + ':', err);
+        throw err;
+      });
+    };
+
+    this.fetchAttachment = function (url) {
+      return _this.filesInstance.tokenProvider.fetchToken().then(function (token) {
+        return pusherPlatform_4({
+          method: 'GET',
+          headers: { Authorization: 'Bearer ' + token },
+          url: url
+        });
+      }).then(pipe(JSON.parse, parseFetchedAttachment)).catch(function (err) {
+        _this.logger.warn('error fetching attachment:', err);
+        throw err;
       });
     };
 

@@ -1,3 +1,4 @@
+import { sendRawRequest } from 'pusher-platform'
 import {
   chain,
   compose,
@@ -19,10 +20,14 @@ import {
   typeCheckObj,
   urlEncode
 } from './utils'
+import {
+  parseBasicMessage,
+  parseBasicRoom,
+  parseFetchedAttachment
+} from './parsers'
 import { Store } from './store'
 import { UserStore } from './user-store'
 import { RoomStore } from './room-store'
-import { parseBasicRoom, parseBasicMessage } from './parsers'
 import { TypingIndicators } from './typing-indicators'
 import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
@@ -256,10 +261,24 @@ export class CurrentUser {
     })
     return this.joinRoom(roomId)
       .then(room => this.roomSubscriptions[roomId].connect().then(() => room))
-      .catch(err => this.logger.error(
-        `error subscribing to room ${roomId}`,
-        err
-      ))
+      .catch(err => {
+        this.logger.warn(`error subscribing to room ${roomId}:`, err)
+        throw err
+      })
+  }
+
+  fetchAttachment = url => {
+    return this.filesInstance.tokenProvider.fetchToken()
+      .then(token => sendRawRequest({
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+        url
+      }))
+      .then(pipe(JSON.parse, parseFetchedAttachment))
+      .catch(err => {
+        this.logger.warn(`error fetching attachment:`, err)
+        throw err
+      })
   }
 
   /* internal */

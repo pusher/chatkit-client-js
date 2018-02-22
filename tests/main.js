@@ -1,3 +1,5 @@
+/* eslint-env browser */
+
 import test from 'tape'
 import {
   any,
@@ -19,7 +21,7 @@ import ChatkitServer from 'pusher-chatkit-server'
 import { TokenProvider, ChatManager } from '../dist/web/chatkit.js'
 import { INSTANCE_LOCATOR, INSTANCE_KEY, TOKEN_PROVIDER_URL } from './config'
 
-let alicesRoom, bobsRoom, carolsRoom, alicesPrivateRoom
+let alicesRoom, bobsRoom, carolsRoom, alicesPrivateRoom, dataAttachmentUrl
 
 const TEST_TIMEOUT = 15 * 1000
 
@@ -286,7 +288,7 @@ test('user came online hook (user sub)', t => {
 // TODO cancel methods so that we can do this, and because we should have them
 // anyway
 
-test('typing indicators (user sub)', t => {
+test.skip('typing indicators (user sub)', t => {
   let started
   Promise.all([
     fetchUser(t, 'alice', {
@@ -665,11 +667,11 @@ test('send message with malformed attachment fails', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test(`send message with link attachment [sends one message to Bob's room]`, t => {
+test(`send message with link attachment [sends a message to Bob's room]`, t => {
   fetchUser(t, 'alice')
     .then(alice => alice.sendMessage({
       roomId: bobsRoom.id,
-      text: 'see attached',
+      text: 'see attached link',
       attachment: { link: 'https://cataas.com/cat', type: 'image' }
     }))
     .then(() => t.end())
@@ -681,7 +683,7 @@ test('receive message with link attachment', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.fetchMessages(bobsRoom.id, { limit: 1 }))
     .then(([message]) => {
-      t.equal(message.text, 'see attached')
+      t.equal(message.text, 'see attached link')
       t.deepEqual(message.attachment, {
         link: 'https://cataas.com/cat',
         type: 'image',
@@ -689,6 +691,55 @@ test('receive message with link attachment', t => {
       })
       t.end()
     })
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test(`send message with data attachment [sends a message to Bob's room]`, t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.sendMessage({
+      roomId: bobsRoom.id,
+      text: 'see attached json',
+      attachment: {
+        file: new File([JSON.stringify({ hello: 'world' })], {
+          type: 'application/json'
+        }),
+        name: 'hello.json'
+      }
+    }))
+    .then(() => t.end())
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('receive message with data attachment', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.fetchMessages(bobsRoom.id, { limit: 1 }))
+    .then(([message]) => {
+      t.equal(message.text, 'see attached json')
+      t.equal(message.attachment.type, 'file')
+      t.equal(message.attachment.fetchRequired, true)
+      dataAttachmentUrl = message.attachment.link
+      t.end()
+    })
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+// FIXME pending proper CORS headers being set up on the rich media S3 buckets
+test.skip('fetch data attachment', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.fetchAttachment(dataAttachmentUrl))
+    .then(attachment => {
+      t.equal(attachment.file.name, 'hello.json')
+      t.equal(attachment.file.bytes, 17)
+      t.comment(attachment.link)
+      return fetch(attachment.link)
+    })
+    .then(json => {
+      t.equal(json, '{"hello":"world"}')
+      t.end()
+    })
+    .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
@@ -759,7 +810,7 @@ test('user came online hook', t => {
 // We can't easily test for the user going offline, because the presence
 // subscription in the above test hangs around until it is garbage collected.
 
-test('typing indicators', t => {
+test.skip('typing indicators', t => {
   let started
   Promise.all([
     fetchUser(t, 'alice')

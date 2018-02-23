@@ -653,6 +653,8 @@ test('subscribe to room and receive sent messages', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+// Attachments
+
 test('send message with malformed attachment fails', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.sendMessage({
@@ -852,6 +854,62 @@ test(`user left hook [removes Carol from Bob's room]`, t => {
       body: { user_ids: ['carol'] },
       jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
     }))
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+// Cursors
+
+test('own read cursor undefined if not set', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.getReadCursor(alicesRoom.id))
+    .then(cursor => {
+      t.equal(cursor, undefined)
+      t.end()
+    })
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('set own read cursor [Alice sets her read cursor in her room]', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.setReadCursor(alicesRoom.id, 42))
+    .then(t.end)
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('get own read cursor', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.getReadCursor(alicesRoom.id))
+    .then(cursor => {
+      t.equal(cursor.position, 42)
+      t.equal(cursor.user.name, 'Alice')
+      t.equal(cursor.room.name, `Alice's new room`)
+      t.end()
+    })
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test(`setup [Bob sets his read cursor in Alice's room]`, t => {
+  fetchUser(t, 'bob')
+    .then(bob => bob.joinRoom(alicesRoom.id).then(() => bob))
+    .then(bob => bob.setReadCursor(alicesRoom.id, 128))
+    .then(t.end)
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test(`get another user's read cursor`, t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.getReadCursor(alicesRoom.id, 'bob'))
+    .then(cursor => {
+      t.equal(cursor.position, 128)
+      t.equal(cursor.user.name, 'Bob')
+      t.equal(cursor.room.name, `Alice's new room`)
+      t.end()
+    })
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })

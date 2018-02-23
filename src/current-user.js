@@ -23,6 +23,7 @@ import {
 import {
   parseBasicMessage,
   parseBasicRoom,
+  parseBasicCursor,
   parseFetchedAttachment
 } from './parsers'
 import { Store } from './store'
@@ -33,13 +34,15 @@ import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
 import { RoomSubscription } from './room-subscription'
 import { Message } from './message'
+import { Cursor } from './cursor'
 
 export class CurrentUser {
-  constructor ({ id, apiInstance, filesInstance }) {
+  constructor ({ id, apiInstance, filesInstance, cursorsInstance }) {
     this.id = id
     this.encodedId = encodeURIComponent(this.id)
     this.apiInstance = apiInstance
     this.filesInstance = filesInstance
+    this.cursorsInstance = cursorsInstance
     this.logger = apiInstance.logger
     this.presenceStore = new Store()
     this.userStore = new UserStore({
@@ -70,7 +73,44 @@ export class CurrentUser {
     return values(this.userStore.snapshot())
   }
 
-  isTypingIn = (roomId) => {
+  setReadCursor = (roomId, position) => {
+    typeCheck('roomId', 'number', roomId)
+    typeCheck('position', 'number', position)
+    return this.cursorsInstance
+      .request({
+        method: 'PUT',
+        path: `/cursors/0/rooms/${roomId}/users/${this.encodedId}`,
+        json: { position }
+      })
+      .then(() => {})
+      .catch(err => {
+        this.logger.warn('error setting cursor:', err)
+        throw err
+      })
+  }
+
+  getReadCursor = (roomId, userId = this.id) => {
+    typeCheck('roomId', 'number', roomId)
+    typeCheck('userId', 'string', userId)
+    return this.cursorsInstance
+      .request({
+        method: 'GET',
+        path: `/cursors/0/rooms/${roomId}/users/${encodeURIComponent(userId)}`
+      })
+      .then(res => {
+        const data = JSON.parse(res)
+        if (data) {
+          return this.decorateCursor(parseBasicCursor(data))
+        }
+        return undefined
+      })
+      .catch(err => {
+        this.logger.warn('error getting cursor:', err)
+        throw err
+      })
+  }
+
+  isTypingIn = roomId => {
     typeCheck('roomId', 'number', roomId)
     return this.typingIndicators.sendThrottledRequest(roomId)
   }
@@ -300,6 +340,12 @@ export class CurrentUser {
 
   decorateMessage = basicMessage => new Message(
     basicMessage,
+    this.userStore,
+    this.roomStore
+  )
+
+  decorateCursor = basicCursor => new Cursor(
+    basicCursor,
     this.userStore,
     this.roomStore
   )

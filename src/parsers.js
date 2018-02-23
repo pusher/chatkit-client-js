@@ -48,6 +48,14 @@ export const parseFetchedAttachment = data => ({
   ttl: data.ttl
 })
 
+export const parseBasicCursor = data => ({
+  position: data.position,
+  updatedAt: data.updated_at,
+  userId: data.user_id,
+  roomId: data.room_id,
+  cursorType: data.cursor_type
+})
+
 const parseMessageAttachment = data => ({
   link: data.resource_link,
   type: data.type,

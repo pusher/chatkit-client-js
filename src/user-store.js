@@ -13,6 +13,7 @@ import { appendQueryParam } from './utils'
 import { Store } from './store'
 import { parseUser } from './parsers'
 
+// TODO user object decorated by presence store
 export class UserStore {
   constructor ({ instance, presenceStore, logger }) {
     this.instance = instance
@@ -44,7 +45,6 @@ export class UserStore {
       })
       .catch(err => {
         this.logger.warn('error fetching user information:', err)
-        throw err
       })
   }
 

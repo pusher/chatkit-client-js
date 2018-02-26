@@ -23,18 +23,17 @@ import {
 import {
   parseBasicMessage,
   parseBasicRoom,
-  parseBasicCursor,
   parseFetchedAttachment
 } from './parsers'
 import { Store } from './store'
 import { UserStore } from './user-store'
 import { RoomStore } from './room-store'
+import { CursorStore } from './cursor-store'
 import { TypingIndicators } from './typing-indicators'
 import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
 import { RoomSubscription } from './room-subscription'
 import { Message } from './message'
-import { Cursor } from './cursor'
 
 export class CurrentUser {
   constructor ({ id, apiInstance, filesInstance, cursorsInstance }) {
@@ -55,6 +54,13 @@ export class CurrentUser {
       userStore: this.userStore,
       logger: this.logger
     })
+    this.cursorStore = new CursorStore({
+      instance: this.cursorsInstance,
+      userStore: this.userStore,
+      roomStore: this.roomStore,
+      logger: this.logger
+    })
+    this.cursorStore.initialize({}) // TODO remove
     this.typingIndicators = new TypingIndicators({
       userId: this.id,
       instance: this.apiInstance,
@@ -92,18 +98,7 @@ export class CurrentUser {
   getReadCursor = (roomId, userId = this.id) => {
     typeCheck('roomId', 'number', roomId)
     typeCheck('userId', 'string', userId)
-    return this.cursorsInstance
-      .request({
-        method: 'GET',
-        path: `/cursors/0/rooms/${roomId}/users/${encodeURIComponent(userId)}`
-      })
-      .then(res => {
-        const data = JSON.parse(res)
-        if (data) {
-          return this.decorateCursor(parseBasicCursor(data))
-        }
-        return undefined
-      })
+    return this.cursorStore.get(userId, roomId)
       .catch(err => {
         this.logger.warn('error getting cursor:', err)
         throw err
@@ -340,12 +335,6 @@ export class CurrentUser {
 
   decorateMessage = basicMessage => new Message(
     basicMessage,
-    this.userStore,
-    this.roomStore
-  )
-
-  decorateCursor = basicCursor => new Cursor(
-    basicCursor,
     this.userStore,
     this.roomStore
   )

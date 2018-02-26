@@ -96,14 +96,10 @@ export class CurrentUser {
       })
   }
 
-  getReadCursor = (roomId, userId = this.id) => {
+  readCursor = (roomId, userId = this.id) => {
     typeCheck('roomId', 'number', roomId)
     typeCheck('userId', 'string', userId)
-    return this.cursorStore.get(userId, roomId)
-      .catch(err => {
-        this.logger.warn('error getting cursor:', err)
-        throw err
-      })
+    return this.cursorStore.getSync(userId, roomId)
   }
 
   isTypingIn = roomId => {

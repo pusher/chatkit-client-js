@@ -242,9 +242,8 @@ test('connection resolves with current user object', t => {
 
 test('own read cursor undefined if not set', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.getReadCursor(alicesRoom.id))
-    .then(cursor => {
-      t.equal(cursor, undefined)
+    .then(alice => {
+      t.equal(alice.readCursor(alicesRoom.id), undefined)
       t.end()
     })
     .catch(endWithErr(t))
@@ -269,8 +268,8 @@ test('new read cursor hook [Alice sets her read cursor in her room]', t => {
 
 test('get own read cursor', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.getReadCursor(alicesRoom.id))
-    .then(cursor => {
+    .then(alice => {
+      const cursor = alice.readCursor(alicesRoom.id)
       t.equal(cursor.position, 42)
       t.equal(cursor.user.name, 'Alice')
       t.equal(cursor.room.name, `Alice's room`)
@@ -923,8 +922,8 @@ test(`new read cursor hook [Bob sets his read cursor in Alice's room]`, t => {
 
 test(`get another user's read cursor`, t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.getReadCursor(alicesRoom.id, 'bob'))
-    .then(cursor => {
+    .then(alice => {
+      const cursor = alice.readCursor(alicesRoom.id, 'bob')
       t.equal(cursor.position, 128)
       t.equal(cursor.user.name, 'Bob')
       t.equal(cursor.room.name, `Alice's new room`)

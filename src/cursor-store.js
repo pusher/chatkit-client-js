@@ -24,6 +24,10 @@ export class CursorStore {
       .then(this.decorate)
   }
 
+  getSync = (userId, roomId) => {
+    return this.decorate(this.store.getSync(key(userId, roomId)))
+  }
+
   fetchBasicCursor = (userId, roomId) => {
     return this.instance
       .request({

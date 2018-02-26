@@ -900,11 +900,23 @@ test(`user left hook [removes Carol from Bob's room]`, t => {
 
 // Cursors
 
-test(`setup [Bob sets his read cursor in Alice's room]`, t => {
-  fetchUser(t, 'bob')
-    .then(bob => bob.joinRoom(alicesRoom.id).then(() => bob))
-    .then(bob => bob.setReadCursor(alicesRoom.id, 128))
-    .then(t.end)
+test(`new read cursor hook [Bob sets his read cursor in Alice's room]`, t => {
+  Promise.all([
+    fetchUser(t, 'bob')
+      .then(bob => bob.joinRoom(alicesRoom.id).then(() => bob)),
+    fetchUser(t, 'alice')
+      .then(alice => alice.subscribeToRoom(alicesRoom.id, {
+        newReadCursor: cursor => {
+          t.equal(cursor.position, 128)
+          t.equal(cursor.user.name, 'Bob')
+          t.equal(cursor.room.name, `Alice's new room`)
+          t.end()
+        }
+      }))
+  ])
+    .then(([bob]) =>
+      bob.setReadCursor(alicesRoom.id, 128)
+    )
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })

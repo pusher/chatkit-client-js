@@ -240,6 +240,46 @@ test('connection resolves with current user object', t => {
 
 // User subscription
 
+test('own read cursor undefined if not set', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.getReadCursor(alicesRoom.id))
+    .then(cursor => {
+      t.equal(cursor, undefined)
+      t.end()
+    })
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('new read cursor hook [Alice sets her read cursor in her room]', t => {
+  Promise.all([fetchUser(t, 'alice'), fetchUser(t, 'alice', {
+    newReadCursor: cursor => {
+      t.equal(cursor.position, 42)
+      t.equal(cursor.user.name, 'Alice')
+      t.equal(cursor.room.name, `Alice's room`)
+      t.end()
+    }
+  })])
+    .then(([mobileAlice, browserAlice]) =>
+      mobileAlice.setReadCursor(alicesRoom.id, 42)
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('get own read cursor', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.getReadCursor(alicesRoom.id))
+    .then(cursor => {
+      t.equal(cursor.position, 42)
+      t.equal(cursor.user.name, 'Alice')
+      t.equal(cursor.room.name, `Alice's room`)
+      t.end()
+    })
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test(`added to room hook [creates Bob & Bob's room]`, t => {
   let alice
   fetchUser(t, 'alice', {
@@ -859,38 +899,6 @@ test(`user left hook [removes Carol from Bob's room]`, t => {
 })
 
 // Cursors
-
-test('own read cursor undefined if not set', t => {
-  fetchUser(t, 'alice')
-    .then(alice => alice.getReadCursor(alicesRoom.id))
-    .then(cursor => {
-      t.equal(cursor, undefined)
-      t.end()
-    })
-    .catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
-})
-
-test('set own read cursor [Alice sets her read cursor in her room]', t => {
-  fetchUser(t, 'alice')
-    .then(alice => alice.setReadCursor(alicesRoom.id, 42))
-    .then(t.end)
-    .catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
-})
-
-test('get own read cursor', t => {
-  fetchUser(t, 'alice')
-    .then(alice => alice.getReadCursor(alicesRoom.id))
-    .then(cursor => {
-      t.equal(cursor.position, 42)
-      t.equal(cursor.user.name, 'Alice')
-      t.equal(cursor.room.name, `Alice's new room`)
-      t.end()
-    })
-    .catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
-})
 
 test(`setup [Bob sets his read cursor in Alice's room]`, t => {
   fetchUser(t, 'bob')

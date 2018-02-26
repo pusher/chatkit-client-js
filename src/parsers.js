@@ -53,7 +53,7 @@ export const parseBasicCursor = data => ({
   updatedAt: data.updated_at,
   userId: data.user_id,
   roomId: data.room_id,
-  cursorType: data.cursor_type
+  type: data.cursor_type
 })
 
 const parseMessageAttachment = data => ({

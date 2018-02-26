@@ -57,8 +57,8 @@ export class ChatManager {
     })
     return Promise.all([
       currentUser.establishUserSubscription(hooks),
-      currentUser.establishPresenceSubscription(hooks)
-      // currentUser.establishCursorsSubscription(hooks)
+      currentUser.establishPresenceSubscription(hooks),
+      currentUser.establishCursorSubscription(hooks)
     ]).then(() => currentUser)
   }
 }

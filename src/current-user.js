@@ -32,6 +32,7 @@ import { CursorStore } from './cursor-store'
 import { TypingIndicators } from './typing-indicators'
 import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
+import { CursorSubscription } from './cursor-subscription'
 import { RoomSubscription } from './room-subscription'
 import { Message } from './message'
 
@@ -60,7 +61,6 @@ export class CurrentUser {
       roomStore: this.roomStore,
       logger: this.logger
     })
-    this.cursorStore.initialize({}) // TODO remove
     this.typingIndicators = new TypingIndicators({
       userId: this.id,
       instance: this.apiInstance,
@@ -370,6 +370,26 @@ export class CurrentUser {
       roomSubscriptions: this.roomSubscriptions
     })
     return this.presenceSubscription.connect()
+  }
+
+  establishCursorSubscription = hooks => {
+    this.cursorSubscription = new CursorSubscription({
+      hooks: {
+        newCursor: cursor => {
+          if (
+            hooks.newReadCursor && cursor.type === 0 &&
+            this.isMemberOf(cursor.roomId)
+          ) {
+            hooks.newReadCursor(cursor)
+          }
+        }
+      },
+      path: `/cursors/0/users/${this.encodedId}`,
+      cursorStore: this.cursorStore,
+      instance: this.cursorsInstance
+    })
+    return this.cursorSubscription.connect()
+      .then(() => this.cursorStore.initialize({}))
   }
 
   initializeUserStore = () => {

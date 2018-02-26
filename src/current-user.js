@@ -67,6 +67,7 @@ export class CurrentUser {
       logger: this.logger
     })
     this.roomSubscriptions = {}
+    this.roomLevelCursorSubscriptions = {}
   }
 
   /* public */
@@ -294,8 +295,26 @@ export class CurrentUser {
       roomStore: this.roomStore,
       logger: this.logger
     })
+    this.roomLevelCursorSubscriptions[roomId] = new CursorSubscription({
+      hooks: {
+        newCursor: cursor => {
+          if (
+            hooks.newReadCursor && cursor.type === 0 &&
+            cursor.userId !== this.id
+          ) {
+            hooks.newReadCursor(cursor)
+          }
+        }
+      },
+      path: `/cursors/0/rooms/${roomId}`,
+      cursorStore: this.cursorStore,
+      instance: this.cursorsInstance
+    })
     return this.joinRoom(roomId)
-      .then(room => this.roomSubscriptions[roomId].connect().then(() => room))
+      .then(room => Promise.all([
+        this.roomSubscriptions[roomId].connect(),
+        this.roomLevelCursorSubscriptions[roomId].connect()
+      ]).then(() => room))
       .catch(err => {
         this.logger.warn(`error subscribing to room ${roomId}:`, err)
         throw err

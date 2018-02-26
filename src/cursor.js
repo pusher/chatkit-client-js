@@ -4,7 +4,7 @@ export class Cursor {
     this.updatedAt = basicCursor.updatedAt
     this.userId = basicCursor.userId
     this.roomId = basicCursor.roomId
-    this.cursorType = basicCursor.cursorType
+    this.type = basicCursor.type
     this.userStore = userStore
     this.roomStore = roomStore
   }

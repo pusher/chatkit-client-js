@@ -1,6 +1,6 @@
 import { map, prop } from 'ramda'
 
-import { parseBasicRoom, parseUser } from './parsers'
+import { parseBasicRoom, parseBasicUser } from './parsers'
 
 export class UserSubscription {
   constructor (options) {
@@ -57,7 +57,7 @@ export class UserSubscription {
 
   onInitialState = ({ current_user: userData, rooms: roomsData }) => {
     this.hooks.subscriptionEstablished({
-      user: parseUser(userData),
+      user: parseBasicUser(userData),
       basicRooms: map(parseBasicRoom, roomsData)
     })
   }

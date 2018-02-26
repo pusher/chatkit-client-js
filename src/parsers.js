@@ -13,7 +13,7 @@ export const parseBasicRoom = data => ({
   userIds: data.member_user_ids
 })
 
-export const parseUser = data => ({
+export const parseBasicUser = data => ({
   avatarURL: data.avatar_url,
   createdAt: data.created_at,
   customData: data.custom_data,

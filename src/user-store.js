@@ -11,9 +11,9 @@ import {
 
 import { appendQueryParam } from './utils'
 import { Store } from './store'
-import { parseUser } from './parsers'
+import { parseBasicUser } from './parsers'
+import { User } from './user'
 
-// TODO user object decorated by presence store
 export class UserStore {
   constructor ({ instance, presenceStore, logger }) {
     this.instance = instance
@@ -29,8 +29,8 @@ export class UserStore {
 
   get = userId => Promise.all([
     this.store.get(userId).then(user => user || this.fetchBasicUser(userId)),
-    this.presenceStore.get(userId)
-  ]).then(([user, presence]) => ({ ...user, presence }))
+    this.presenceStore.get(userId) // Make sure it's safe to getSync
+  ]).then(([user, presence]) => this.decorate(user))
 
   fetchBasicUser = userId => {
     return this.instance
@@ -39,12 +39,13 @@ export class UserStore {
         path: `/users/${encodeURIComponent(userId)}`
       })
       .then(res => {
-        const user = parseUser(JSON.parse(res))
+        const user = parseBasicUser(JSON.parse(res))
         this.set(userId, user)
         return user
       })
       .catch(err => {
         this.logger.warn('error fetching user information:', err)
+        throw err
       })
   }
 
@@ -66,7 +67,7 @@ export class UserStore {
       })
       .then(pipe(
         JSON.parse,
-        map(parseUser),
+        map(parseBasicUser),
         forEach(user => this.set(user.id, user))
       ))
       .catch(err => {
@@ -79,9 +80,9 @@ export class UserStore {
 
   getSync = userId => this.decorate(this.store.getSync(userId))
 
-  decorate = user => {
-    return user
-      ? { ...user, presence: this.presenceStore.getSync(user.id) }
+  decorate = basicUser => {
+    return basicUser
+      ? new User(basicUser, this.presenceStore)
       : undefined
   }
 }

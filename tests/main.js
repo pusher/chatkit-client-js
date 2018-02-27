@@ -58,12 +58,10 @@ const batch = (n, f) => {
 
 const concatBatch = (n, f) => batch(n, compose(f, reduce(concat, [])))
 
-const tokenProvider = new TokenProvider({ url: TOKEN_PROVIDER_URL })
-
 const fetchUser = (t, userId, hooks = {}) => new ChatManager({
   instanceLocator: INSTANCE_LOCATOR,
   userId,
-  tokenProvider,
+  tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
   logger: {
     error: console.log,
     warn: console.log,
@@ -130,7 +128,7 @@ test('instantiate ChatManager with correct params', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
-    tokenProvider
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
   })
   t.equal(typeof chatManager, 'object')
   t.equal(typeof chatManager.connect, 'function')
@@ -141,7 +139,7 @@ test('instantiate ChatManager with non-string instanceLocator fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: 42,
     userId: 'alice',
-    tokenProvider
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
   }), /instanceLocator/)
   t.end()
 })
@@ -150,7 +148,7 @@ test('instantiate ChatManager without userId fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 42,
-    tokenProvider
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
   }), /userId/)
   t.end()
 })
@@ -159,7 +157,7 @@ test('instantiate ChatManager with non-string userId fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 42,
-    tokenProvider
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
   }), /string/)
   t.end()
 })
@@ -177,7 +175,7 @@ test('connection fails if provided with non-function hooks', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
-    tokenProvider
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
   })
   t.throws(
     () => chatManager.connect({ nonFunction: 42 }),
@@ -190,7 +188,7 @@ test('connection fails for nonexistent user', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
-    tokenProvider
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
   })
   chatManager.connect()
     .then(() => {
@@ -913,15 +911,14 @@ test(`new read cursor hook [Bob sets his read cursor in Alice's room]`, t => {
         }
       }))
   ])
-    .then(([bob]) =>
-      bob.setReadCursor(alicesRoom.id, 128)
-    )
+    .then(([bob]) => bob.setReadCursor(alicesRoom.id, 128))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test(`get another user's read cursor`, t => {
+test(`get another user's read cursor after subscribing to a room`, t => {
   fetchUser(t, 'alice')
+    .then(alice => alice.subscribeToRoom(alicesRoom.id).then(() => alice))
     .then(alice => {
       const cursor = alice.readCursor(alicesRoom.id, 'bob')
       t.equal(cursor.position, 128)

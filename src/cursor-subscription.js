@@ -1,3 +1,5 @@
+import { compose, forEach, map } from 'ramda'
+
 import { parseBasicCursor } from './parsers'
 
 export class CursorSubscription {
@@ -10,10 +12,10 @@ export class CursorSubscription {
 
   connect () {
     return new Promise((resolve, reject) => {
+      this.hooks = { ...this.hooks, subscriptionEstablished: resolve }
       this.instance.subscribeNonResuming({
         path: this.path,
         listeners: {
-          onOpen: resolve,
           onError: reject,
           onEvent: this.onEvent
         }
@@ -23,10 +25,21 @@ export class CursorSubscription {
 
   onEvent = ({ body }) => {
     switch (body.event_name) {
+      case 'initial_state':
+        this.onInitialState(body.data)
+        break
       case 'cursor_set':
         this.onCursorSet(body.data)
         break
     }
+  }
+
+  onInitialState = ({ cursors }) => {
+    compose(
+      forEach(c => this.cursorStore.set(c.userId, c.roomId, c)),
+      map(parseBasicCursor)
+    )(cursors)
+    this.hooks.subscriptionEstablished()
   }
 
   onCursorSet = data => {

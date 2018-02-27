@@ -364,14 +364,20 @@ export class CurrentUser {
       typingIndicators: this.typingIndicators,
       roomSubscriptions: this.roomSubscriptions
     })
-    return this.userSubscription.connect().then(({ user, basicRooms }) => {
-      this.avatarURL = user.avatarURL
-      this.createdAt = user.createdAt
-      this.customData = user.customData
-      this.name = user.name
-      this.updatedAt = user.updatedAt
-      this.roomStore.initialize(indexBy(prop('id'), basicRooms))
-    }).then(this.initializeUserStore)
+    return this.userSubscription.connect()
+      .then(({ user, basicRooms }) => {
+        this.avatarURL = user.avatarURL
+        this.createdAt = user.createdAt
+        this.customData = user.customData
+        this.name = user.name
+        this.updatedAt = user.updatedAt
+        this.roomStore.initialize(indexBy(prop('id'), basicRooms))
+      })
+      .then(this.initializeUserStore)
+      .catch(err => {
+        this.logger.error('error establishing user subscription:', err)
+        throw err
+      })
   }
 
   establishPresenceSubscription = hooks => {
@@ -385,6 +391,10 @@ export class CurrentUser {
       roomSubscriptions: this.roomSubscriptions
     })
     return this.presenceSubscription.connect()
+      .catch(err => {
+        this.logger.warn('error establishing presence subscription:', err)
+        throw err
+      })
   }
 
   establishCursorSubscription = hooks => {
@@ -405,6 +415,10 @@ export class CurrentUser {
     })
     return this.cursorSubscription.connect()
       .then(() => this.cursorStore.initialize({}))
+      .catch(err => {
+        this.logger.warn('error establishing cursor subscription:', err)
+        throw err
+      })
   }
 
   initializeUserStore = () => {
@@ -414,9 +428,7 @@ export class CurrentUser {
       .catch(err => {
         this.logger.warn('error fetching initial user information:', err)
       })
-      .then(() => {
-        this.userStore.initialize({})
-      })
+      .then(() => this.userStore.initialize({}))
   }
 }
 

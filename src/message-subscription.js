@@ -4,7 +4,7 @@ import { parseBasicMessage } from './parsers'
 import { urlEncode } from './utils'
 import { Message } from './message'
 
-export class RoomSubscription {
+export class MessageSubscription {
   constructor (options) {
     this.roomId = options.roomId
     this.hooks = options.hooks

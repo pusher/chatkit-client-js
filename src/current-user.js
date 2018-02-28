@@ -33,7 +33,7 @@ import { TypingIndicators } from './typing-indicators'
 import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
 import { CursorSubscription } from './cursor-subscription'
-import { RoomSubscription } from './room-subscription'
+import { MessageSubscription } from './message-subscription'
 import { Message } from './message'
 
 export class CurrentUser {
@@ -67,7 +67,6 @@ export class CurrentUser {
       logger: this.logger
     })
     this.roomSubscriptions = {}
-    this.roomLevelCursorSubscriptions = {}
   }
 
   /* public */
@@ -281,35 +280,38 @@ export class CurrentUser {
     messageLimit && typeCheck('messageLimit', 'number', messageLimit)
     // TODO what is the desired behaviour if there is already a subscription to
     // this room? Close the old one? Throw an error? Merge the hooks?
-    this.roomSubscriptions[roomId] = new RoomSubscription({
-      roomId,
+    this.roomSubscriptions[roomId] = {
       hooks,
-      messageLimit,
-      userId: this.id,
-      instance: this.apiInstance,
-      userStore: this.userStore,
-      roomStore: this.roomStore,
-      logger: this.logger
-    })
-    this.roomLevelCursorSubscriptions[roomId] = new CursorSubscription({
-      hooks: {
-        newCursor: cursor => {
-          if (
-            hooks.newReadCursor && cursor.type === 0 &&
-            cursor.userId !== this.id
-          ) {
-            hooks.newReadCursor(cursor)
+      messageSub: new MessageSubscription({
+        roomId,
+        hooks,
+        messageLimit,
+        userId: this.id,
+        instance: this.apiInstance,
+        userStore: this.userStore,
+        roomStore: this.roomStore,
+        logger: this.logger
+      }),
+      cursorSub: new CursorSubscription({
+        hooks: {
+          newCursor: cursor => {
+            if (
+              hooks.newReadCursor && cursor.type === 0 &&
+              cursor.userId !== this.id
+            ) {
+              hooks.newReadCursor(cursor)
+            }
           }
-        }
-      },
-      path: `/cursors/0/rooms/${roomId}`,
-      cursorStore: this.cursorStore,
-      instance: this.cursorsInstance
-    })
+        },
+        path: `/cursors/0/rooms/${roomId}`,
+        cursorStore: this.cursorStore,
+        instance: this.cursorsInstance
+      })
+    }
     return this.joinRoom(roomId)
       .then(room => Promise.all([
-        this.roomSubscriptions[roomId].connect(),
-        this.roomLevelCursorSubscriptions[roomId].connect()
+        this.roomSubscriptions[roomId].messageSub.connect(),
+        this.roomSubscriptions[roomId].cursorSub.connect()
       ]).then(() => room))
       .catch(err => {
         this.logger.warn(`error subscribing to room ${roomId}:`, err)

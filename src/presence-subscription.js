@@ -6,7 +6,7 @@ import {
   indexBy,
   map,
   prop,
-  values
+  toPairs
 } from 'ramda'
 
 import { parsePresence } from './parsers'
@@ -87,13 +87,13 @@ export class PresenceSubscription {
       this.hooks[hookName](user)
     }
     compose(
-      forEach(sub => this.roomStore.get(sub.roomId).then(room => {
+      forEach(([roomId, sub]) => this.roomStore.get(roomId).then(room => {
         if (contains(user.id, room.userIds)) {
           sub.hooks[hookName](user)
         }
       })),
-      filter(sub => sub.hooks[hookName] !== undefined),
-      values
+      filter(([roomId, sub]) => sub.hooks[hookName] !== undefined),
+      toPairs
     )(this.roomSubscriptions)
   }
 }

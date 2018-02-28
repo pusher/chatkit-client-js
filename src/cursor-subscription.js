@@ -28,8 +28,8 @@ export class CursorSubscription {
       case 'initial_state':
         this.onInitialState(body.data)
         break
-      case 'cursor_set':
-        this.onCursorSet(body.data)
+      case 'new_cursor':
+        this.onNewCursor(body.data)
         break
     }
   }
@@ -42,7 +42,7 @@ export class CursorSubscription {
     this.hooks.subscriptionEstablished()
   }
 
-  onCursorSet = data => {
+  onNewCursor = data => {
     const basicCursor = parseBasicCursor(data)
     this.cursorStore.set(basicCursor.userId, basicCursor.roomId, basicCursor)
       .then(() => {

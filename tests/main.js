@@ -969,7 +969,3 @@ test.skip('non-admin delete room fails gracefully', t => {
 })
 
 // TODO promote Alice to admin and update and delete rooms successfully
-
-// TODO files stuff
-
-// TODO read cursors (perhaps reconsider interface)

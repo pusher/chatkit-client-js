@@ -4,6 +4,7 @@ import {
   compose,
   concat,
   contains,
+  has,
   indexBy,
   map,
   pipe,
@@ -98,6 +99,13 @@ export class CurrentUser {
   readCursor = (roomId, userId = this.id) => {
     typeCheck('roomId', 'number', roomId)
     typeCheck('userId', 'string', userId)
+    if (userId !== this.id && !has(roomId, this.roomSubscriptions)) {
+      const err = new TypeError(
+        `Must be subscribed to room ${roomId} to access member's read cursors`
+      )
+      this.logger.error(err)
+      throw err
+    }
     return this.cursorStore.getSync(userId, roomId)
   }
 

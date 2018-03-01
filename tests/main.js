@@ -325,7 +325,7 @@ test('user came online hook (user sub)', t => {
 // TODO cancel methods so that we can do this, and because we should have them
 // anyway
 
-test.skip('typing indicators (user sub)', t => {
+test('typing indicators (user sub)', t => {
   let started
   Promise.all([
     fetchUser(t, 'alice', {
@@ -343,10 +343,10 @@ test.skip('typing indicators (user sub)', t => {
     }),
     fetchUser(t, 'bob')
   ])
-  // FIXME This test (and the corresponding room sub one) occasionally fail if
-  // isTypingIn is called without this timeout. It would seem that there is a
-  // race condition *somewhere*.
-    .then(([alice, bob]) => setTimeout(() => bob.isTypingIn(bobsRoom.id), 1000))
+  // FIXME This test (and the corresponding room sub one) fail intermittently.
+  // The corresponding server side test fails too so there might be some kind
+  // of race condition in the server. Needs more investigation.
+    .then(([alice, bob]) => bob.isTypingIn(bobsRoom.id))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -849,7 +849,7 @@ test('user came online hook', t => {
 // We can't easily test for the user going offline, because the presence
 // subscription in the above test hangs around until it is garbage collected.
 
-test.skip('typing indicators', t => {
+test('typing indicators', t => {
   let started
   Promise.all([
     fetchUser(t, 'alice')
@@ -868,10 +868,10 @@ test.skip('typing indicators', t => {
       })),
     fetchUser(t, 'carol')
   ])
-  // FIXME This test (and the corresponding user sub one) occasionally fail if
-  // isTypingIn is called without this timeout. It would seem that there is a
-  // race condition *somewhere*.
-    .then(([x, carol]) => setTimeout(() => carol.isTypingIn(bobsRoom.id), 1000))
+  // FIXME This test (and the corresponding room sub one) fail intermittently.
+  // The corresponding server side test fails too so there might be some kind
+  // of race condition in the server. Needs more investigation.
+    .then(([x, carol]) => carol.isTypingIn(bobsRoom.id))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -912,6 +912,16 @@ test(`new read cursor hook [Bob sets his read cursor in Alice's room]`, t => {
       }))
   ])
     .then(([bob]) => bob.setReadCursor(alicesRoom.id, 128))
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test(`get another user's read cursor before subscribing to a room fails`, t => {
+  fetchUser(t, 'alice')
+    .then(alice => {
+      t.throws(() => alice.readCursor(alicesRoom.id, 'bob'), /subscribe/)
+      t.end()
+    })
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })

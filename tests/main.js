@@ -868,7 +868,7 @@ test('typing indicators', t => {
       })),
     fetchUser(t, 'carol')
   ])
-  // FIXME This test (and the corresponding room sub one) fail intermittently.
+  // FIXME This test (and the corresponding user sub one) fail intermittently.
   // The corresponding server side test fails too so there might be some kind
   // of race condition in the server. Needs more investigation.
     .then(([x, carol]) => carol.isTypingIn(bobsRoom.id))

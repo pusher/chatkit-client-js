@@ -13,7 +13,7 @@ export const parseBasicRoom = data => ({
   userIds: data.member_user_ids
 })
 
-export const parseUser = data => ({
+export const parseBasicUser = data => ({
   avatarURL: data.avatar_url,
   createdAt: data.created_at,
   customData: data.custom_data,
@@ -46,6 +46,14 @@ export const parseFetchedAttachment = data => ({
   },
   link: data.resource_link,
   ttl: data.ttl
+})
+
+export const parseBasicCursor = data => ({
+  position: data.position,
+  updatedAt: data.updated_at,
+  userId: data.user_id,
+  roomId: data.room_id,
+  type: data.cursor_type
 })
 
 const parseMessageAttachment = data => ({

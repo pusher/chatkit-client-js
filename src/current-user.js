@@ -4,6 +4,7 @@ import {
   compose,
   concat,
   contains,
+  has,
   indexBy,
   map,
   pipe,
@@ -28,18 +29,21 @@ import {
 import { Store } from './store'
 import { UserStore } from './user-store'
 import { RoomStore } from './room-store'
+import { CursorStore } from './cursor-store'
 import { TypingIndicators } from './typing-indicators'
 import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
-import { RoomSubscription } from './room-subscription'
+import { CursorSubscription } from './cursor-subscription'
+import { MessageSubscription } from './message-subscription'
 import { Message } from './message'
 
 export class CurrentUser {
-  constructor ({ id, apiInstance, filesInstance }) {
+  constructor ({ id, apiInstance, filesInstance, cursorsInstance }) {
     this.id = id
     this.encodedId = encodeURIComponent(this.id)
     this.apiInstance = apiInstance
     this.filesInstance = filesInstance
+    this.cursorsInstance = cursorsInstance
     this.logger = apiInstance.logger
     this.presenceStore = new Store()
     this.userStore = new UserStore({
@@ -50,6 +54,12 @@ export class CurrentUser {
     this.roomStore = new RoomStore({
       instance: this.apiInstance,
       userStore: this.userStore,
+      logger: this.logger
+    })
+    this.cursorStore = new CursorStore({
+      instance: this.cursorsInstance,
+      userStore: this.userStore,
+      roomStore: this.roomStore,
       logger: this.logger
     })
     this.typingIndicators = new TypingIndicators({
@@ -70,7 +80,36 @@ export class CurrentUser {
     return values(this.userStore.snapshot())
   }
 
-  isTypingIn = (roomId) => {
+  setReadCursor = (roomId, position) => {
+    typeCheck('roomId', 'number', roomId)
+    typeCheck('position', 'number', position)
+    return this.cursorsInstance
+      .request({
+        method: 'PUT',
+        path: `/cursors/0/rooms/${roomId}/users/${this.encodedId}`,
+        json: { position }
+      })
+      .then(() => {})
+      .catch(err => {
+        this.logger.warn('error setting cursor:', err)
+        throw err
+      })
+  }
+
+  readCursor = (roomId, userId = this.id) => {
+    typeCheck('roomId', 'number', roomId)
+    typeCheck('userId', 'string', userId)
+    if (userId !== this.id && !has(roomId, this.roomSubscriptions)) {
+      const err = new TypeError(
+        `Must be subscribed to room ${roomId} to access member's read cursors`
+      )
+      this.logger.error(err)
+      throw err
+    }
+    return this.cursorStore.getSync(userId, roomId)
+  }
+
+  isTypingIn = roomId => {
     typeCheck('roomId', 'number', roomId)
     return this.typingIndicators.sendThrottledRequest(roomId)
   }
@@ -249,18 +288,39 @@ export class CurrentUser {
     messageLimit && typeCheck('messageLimit', 'number', messageLimit)
     // TODO what is the desired behaviour if there is already a subscription to
     // this room? Close the old one? Throw an error? Merge the hooks?
-    this.roomSubscriptions[roomId] = new RoomSubscription({
-      roomId,
+    this.roomSubscriptions[roomId] = {
       hooks,
-      messageLimit,
-      userId: this.id,
-      instance: this.apiInstance,
-      userStore: this.userStore,
-      roomStore: this.roomStore,
-      logger: this.logger
-    })
+      messageSub: new MessageSubscription({
+        roomId,
+        hooks,
+        messageLimit,
+        userId: this.id,
+        instance: this.apiInstance,
+        userStore: this.userStore,
+        roomStore: this.roomStore,
+        logger: this.logger
+      }),
+      cursorSub: new CursorSubscription({
+        hooks: {
+          newCursor: cursor => {
+            if (
+              hooks.newReadCursor && cursor.type === 0 &&
+              cursor.userId !== this.id
+            ) {
+              hooks.newReadCursor(cursor)
+            }
+          }
+        },
+        path: `/cursors/0/rooms/${roomId}`,
+        cursorStore: this.cursorStore,
+        instance: this.cursorsInstance
+      })
+    }
     return this.joinRoom(roomId)
-      .then(room => this.roomSubscriptions[roomId].connect().then(() => room))
+      .then(room => Promise.all([
+        this.roomSubscriptions[roomId].messageSub.connect(),
+        this.roomSubscriptions[roomId].cursorSub.connect()
+      ]).then(() => room))
       .catch(err => {
         this.logger.warn(`error subscribing to room ${roomId}:`, err)
         throw err
@@ -314,14 +374,20 @@ export class CurrentUser {
       typingIndicators: this.typingIndicators,
       roomSubscriptions: this.roomSubscriptions
     })
-    return this.userSubscription.connect().then(({ user, basicRooms }) => {
-      this.avatarURL = user.avatarURL
-      this.createdAt = user.createdAt
-      this.customData = user.customData
-      this.name = user.name
-      this.updatedAt = user.updatedAt
-      this.roomStore.initialize(indexBy(prop('id'), basicRooms))
-    }).then(this.initializeUserStore)
+    return this.userSubscription.connect()
+      .then(({ user, basicRooms }) => {
+        this.avatarURL = user.avatarURL
+        this.createdAt = user.createdAt
+        this.customData = user.customData
+        this.name = user.name
+        this.updatedAt = user.updatedAt
+        this.roomStore.initialize(indexBy(prop('id'), basicRooms))
+      })
+      .then(this.initializeUserStore)
+      .catch(err => {
+        this.logger.error('error establishing user subscription:', err)
+        throw err
+      })
   }
 
   establishPresenceSubscription = hooks => {
@@ -335,6 +401,34 @@ export class CurrentUser {
       roomSubscriptions: this.roomSubscriptions
     })
     return this.presenceSubscription.connect()
+      .catch(err => {
+        this.logger.warn('error establishing presence subscription:', err)
+        throw err
+      })
+  }
+
+  establishCursorSubscription = hooks => {
+    this.cursorSubscription = new CursorSubscription({
+      hooks: {
+        newCursor: cursor => {
+          if (
+            hooks.newReadCursor && cursor.type === 0 &&
+            this.isMemberOf(cursor.roomId)
+          ) {
+            hooks.newReadCursor(cursor)
+          }
+        }
+      },
+      path: `/cursors/0/users/${this.encodedId}`,
+      cursorStore: this.cursorStore,
+      instance: this.cursorsInstance
+    })
+    return this.cursorSubscription.connect()
+      .then(() => this.cursorStore.initialize({}))
+      .catch(err => {
+        this.logger.warn('error establishing cursor subscription:', err)
+        throw err
+      })
   }
 
   initializeUserStore = () => {
@@ -344,9 +438,7 @@ export class CurrentUser {
       .catch(err => {
         this.logger.warn('error fetching initial user information:', err)
       })
-      .then(() => {
-        this.userStore.initialize({})
-      })
+      .then(() => this.userStore.initialize({}))
   }
 }
 

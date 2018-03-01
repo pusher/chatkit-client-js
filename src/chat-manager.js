@@ -52,12 +52,13 @@ export class ChatManager {
     const currentUser = new CurrentUser({
       id: this.userId,
       apiInstance: this.apiInstance,
-      filesInstance: this.filesInstance
+      filesInstance: this.filesInstance,
+      cursorsInstance: this.cursorsInstance
     })
     return Promise.all([
       currentUser.establishUserSubscription(hooks),
-      currentUser.establishPresenceSubscription(hooks)
-      // currentUser.initializeCursorStore()
+      currentUser.establishPresenceSubscription(hooks),
+      currentUser.establishCursorSubscription(hooks)
     ]).then(() => currentUser)
   }
 }

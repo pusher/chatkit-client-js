@@ -58,12 +58,10 @@ const batch = (n, f) => {
 
 const concatBatch = (n, f) => batch(n, compose(f, reduce(concat, [])))
 
-const tokenProvider = new TokenProvider({ url: TOKEN_PROVIDER_URL })
-
 const fetchUser = (t, userId, hooks = {}) => new ChatManager({
   instanceLocator: INSTANCE_LOCATOR,
   userId,
-  tokenProvider,
+  tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
   logger: {
     error: console.log,
     warn: console.log,
@@ -130,7 +128,7 @@ test('instantiate ChatManager with correct params', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
-    tokenProvider
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
   })
   t.equal(typeof chatManager, 'object')
   t.equal(typeof chatManager.connect, 'function')
@@ -141,7 +139,7 @@ test('instantiate ChatManager with non-string instanceLocator fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: 42,
     userId: 'alice',
-    tokenProvider
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
   }), /instanceLocator/)
   t.end()
 })
@@ -150,7 +148,7 @@ test('instantiate ChatManager without userId fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 42,
-    tokenProvider
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
   }), /userId/)
   t.end()
 })
@@ -159,7 +157,7 @@ test('instantiate ChatManager with non-string userId fails', t => {
   t.throws(() => new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 42,
-    tokenProvider
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
   }), /string/)
   t.end()
 })
@@ -177,7 +175,7 @@ test('connection fails if provided with non-function hooks', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
-    tokenProvider
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
   })
   t.throws(
     () => chatManager.connect({ nonFunction: 42 }),
@@ -190,7 +188,7 @@ test('connection fails for nonexistent user', t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: 'alice',
-    tokenProvider
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL })
   })
   chatManager.connect()
     .then(() => {
@@ -240,6 +238,45 @@ test('connection resolves with current user object', t => {
 
 // User subscription
 
+test('own read cursor undefined if not set', t => {
+  fetchUser(t, 'alice')
+    .then(alice => {
+      t.equal(alice.readCursor(alicesRoom.id), undefined)
+      t.end()
+    })
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('new read cursor hook [Alice sets her read cursor in her room]', t => {
+  Promise.all([fetchUser(t, 'alice'), fetchUser(t, 'alice', {
+    newReadCursor: cursor => {
+      t.equal(cursor.position, 42)
+      t.equal(cursor.user.name, 'Alice')
+      t.equal(cursor.room.name, `Alice's room`)
+      t.end()
+    }
+  })])
+    .then(([mobileAlice, browserAlice]) =>
+      mobileAlice.setReadCursor(alicesRoom.id, 42)
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test('get own read cursor', t => {
+  fetchUser(t, 'alice')
+    .then(alice => {
+      const cursor = alice.readCursor(alicesRoom.id)
+      t.equal(cursor.position, 42)
+      t.equal(cursor.user.name, 'Alice')
+      t.equal(cursor.room.name, `Alice's room`)
+      t.end()
+    })
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test(`added to room hook [creates Bob & Bob's room]`, t => {
   let alice
   fetchUser(t, 'alice', {
@@ -288,7 +325,7 @@ test('user came online hook (user sub)', t => {
 // TODO cancel methods so that we can do this, and because we should have them
 // anyway
 
-test.skip('typing indicators (user sub)', t => {
+test('typing indicators (user sub)', t => {
   let started
   Promise.all([
     fetchUser(t, 'alice', {
@@ -306,10 +343,10 @@ test.skip('typing indicators (user sub)', t => {
     }),
     fetchUser(t, 'bob')
   ])
-  // FIXME This test (and the corresponding room sub one) occasionally fail if
-  // isTypingIn is called without this timeout. It would seem that there is a
-  // race condition *somewhere*.
-    .then(([alice, bob]) => setTimeout(() => bob.isTypingIn(bobsRoom.id), 1000))
+  // FIXME This test (and the corresponding room sub one) fail intermittently.
+  // The corresponding server side test fails too so there might be some kind
+  // of race condition in the server. Needs more investigation.
+    .then(([alice, bob]) => bob.isTypingIn(bobsRoom.id))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -653,6 +690,8 @@ test('subscribe to room and receive sent messages', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+// Attachments
+
 test('send message with malformed attachment fails', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.sendMessage({
@@ -810,7 +849,7 @@ test('user came online hook', t => {
 // We can't easily test for the user going offline, because the presence
 // subscription in the above test hangs around until it is garbage collected.
 
-test.skip('typing indicators', t => {
+test('typing indicators', t => {
   let started
   Promise.all([
     fetchUser(t, 'alice')
@@ -829,10 +868,10 @@ test.skip('typing indicators', t => {
       })),
     fetchUser(t, 'carol')
   ])
-  // FIXME This test (and the corresponding user sub one) occasionally fail if
-  // isTypingIn is called without this timeout. It would seem that there is a
-  // race condition *somewhere*.
-    .then(([x, carol]) => setTimeout(() => carol.isTypingIn(bobsRoom.id), 1000))
+  // FIXME This test (and the corresponding user sub one) fail intermittently.
+  // The corresponding server side test fails too so there might be some kind
+  // of race condition in the server. Needs more investigation.
+    .then(([x, carol]) => carol.isTypingIn(bobsRoom.id))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -852,6 +891,51 @@ test(`user left hook [removes Carol from Bob's room]`, t => {
       body: { user_ids: ['carol'] },
       jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
     }))
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+// Cursors
+
+test(`new read cursor hook [Bob sets his read cursor in Alice's room]`, t => {
+  Promise.all([
+    fetchUser(t, 'bob')
+      .then(bob => bob.joinRoom(alicesRoom.id).then(() => bob)),
+    fetchUser(t, 'alice')
+      .then(alice => alice.subscribeToRoom(alicesRoom.id, {
+        newReadCursor: cursor => {
+          t.equal(cursor.position, 128)
+          t.equal(cursor.user.name, 'Bob')
+          t.equal(cursor.room.name, `Alice's new room`)
+          t.end()
+        }
+      }))
+  ])
+    .then(([bob]) => bob.setReadCursor(alicesRoom.id, 128))
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test(`get another user's read cursor before subscribing to a room fails`, t => {
+  fetchUser(t, 'alice')
+    .then(alice => {
+      t.throws(() => alice.readCursor(alicesRoom.id, 'bob'), /subscribe/)
+      t.end()
+    })
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test(`get another user's read cursor after subscribing to a room`, t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.subscribeToRoom(alicesRoom.id).then(() => alice))
+    .then(alice => {
+      const cursor = alice.readCursor(alicesRoom.id, 'bob')
+      t.equal(cursor.position, 128)
+      t.equal(cursor.user.name, 'Bob')
+      t.equal(cursor.room.name, `Alice's new room`)
+      t.end()
+    })
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })

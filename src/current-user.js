@@ -341,6 +341,38 @@ export class CurrentUser {
       })
   }
 
+  updateRoom = (roomId, options = {}) => {
+    typeCheck('roomId', 'number', roomId)
+    options.name && typeCheck('name', 'string', options.name)
+    options.private && typeCheck('private', 'boolean', options.private)
+    return this.apiInstance.request({
+      method: 'PUT',
+      path: `/rooms/${roomId}`,
+      json: {
+        name: options.name,
+        private: options.private
+      }
+    })
+      .then(() => {})
+      .catch(err => {
+        this.logger.warn('error updating room:', err)
+        throw err
+      })
+  }
+
+  deleteRoom = roomId => {
+    typeCheck('roomId', 'number', roomId)
+    return this.apiInstance.request({
+      method: 'DELETE',
+      path: `/rooms/${roomId}`
+    })
+      .then(() => {})
+      .catch(err => {
+        this.logger.warn('error deleting room:', err)
+        throw err
+      })
+  }
+
   /* internal */
 
   uploadDataAttachment = (roomId, { file, name }) => {

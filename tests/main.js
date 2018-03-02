@@ -940,32 +940,72 @@ test(`get another user's read cursor after subscribing to a room`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-// FIXME
+// FIXME platform request method should not resolve on failed requests
 test.skip('non-admin update room fails gracefully', t => {
-  fetchUser(t, 'alice').then(alice => alice.updateRoom(
-    alicesRoom.id,
-    { name: `Alice's updated room` },
-    () => t.end(`onSuccess shouldn't be called`),
-    err => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.updateRoom(bobsRoom.id, {
+      name: `Bob's updated room`
+    }))
+    .then(() => t.end(`updateRoom should not resolve`))
+    .catch(err => {
       t.true(toString(err).match(/permission/), 'permission error')
       t.end()
     }
-  ))
+    )
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-// FIXME
+// FIXME platform request method should not resolve on failed requests
 test.skip('non-admin delete room fails gracefully', t => {
-  fetchUser(t, 'alice').then(alice => alice.updateRoom(
-    alicesRoom.id,
-    { name: `Alice's updated room` },
-    () => t.end(`onSuccess shouldn't be called`),
-    err => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.deleteRoom(bobsRoom.id))
+    .then(() => t.end(`deleteRoom should not resolve`))
+    .catch(err => {
       t.true(toString(err).match(/permission/), 'permission error')
       t.end()
-    }
-  ))
+    })
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-// TODO promote Alice to admin and update and delete rooms successfully
+test('[setup] promote Alice to admin', t => {
+  server.assignGlobalRoleToUser('alice', 'admin')
+    .then(() => t.end())
+    .catch(endWithErr(t))
+})
+
+test(`update room [renames Bob's room]`, t => {
+  fetchUser(t, 'alice', {
+    roomUpdated: room => {
+      t.equal(room.id, bobsRoom.id)
+      t.equal(room.name, `Bob's updated room`)
+      t.end()
+    }
+  })
+    .then(alice => alice.updateRoom(bobsRoom.id, {
+      name: `Bob's updated room`
+    }))
+    .then(res => t.equal(res, undefined))
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test(`delete room [deletes Bob's room]`, t => {
+  let alice
+  fetchUser(t, 'alice', {
+    roomDeleted: room => {
+      t.equal(room.id, bobsRoom.id)
+      t.false(
+        any(r => r.id === bobsRoom.id, alice.rooms),
+        `alice.rooms doesn't contain Bob's room`
+      )
+      t.end()
+    }
+  })
+    .then(a => {
+      alice = a
+      alice.deleteRoom(bobsRoom.id)
+    })
+    .then(res => t.equal(res, undefined))
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})

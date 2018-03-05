@@ -764,18 +764,17 @@ test('receive message with data attachment', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-// FIXME pending proper CORS headers being set up on the rich media S3 buckets
-test.skip('fetch data attachment', t => {
+test('fetch data attachment', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.fetchAttachment(dataAttachmentUrl))
     .then(attachment => {
       t.equal(attachment.file.name, 'hello.json')
       t.equal(attachment.file.bytes, 17)
-      t.comment(attachment.link)
       return fetch(attachment.link)
     })
-    .then(json => {
-      t.equal(json, '{"hello":"world"}')
+    .then(res => res.json())
+    .then(data => {
+      t.deepEqual(data, { hello: 'world' })
       t.end()
     })
     .catch(endWithErr(t))

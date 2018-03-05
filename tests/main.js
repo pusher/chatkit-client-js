@@ -19,7 +19,11 @@ import {
 
 import ChatkitServer from 'pusher-chatkit-server'
 import { TokenProvider, ChatManager } from '../dist/web/chatkit.js'
-import { INSTANCE_LOCATOR, INSTANCE_KEY, TOKEN_PROVIDER_URL } from './config'
+import {
+  INSTANCE_LOCATOR,
+  INSTANCE_KEY,
+  TOKEN_PROVIDER_URL
+} from './config/production'
 
 let alicesRoom, bobsRoom, carolsRoom, alicesPrivateRoom, dataAttachmentUrl
 

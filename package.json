@@ -48,7 +48,8 @@
     "test:raw": "browserify tests/main.js -t babelify | tape-run",
     "lint:build": "clear && yarn lint && clear && yarn build",
     "lint:build:test": "yarn lint:build && clear && yarn test",
-    "lint:build:test:raw": "yarn lint:build && clear && yarn test:raw"
+    "lint:build:test:raw": "yarn lint:build && clear && yarn test:raw",
+    "test-context": "f () { sed -i \"s/\\.\\/config\\/[a-z]\\+/\\.\\/config\\/$1/g\" tests/main.js; }; f"
   },
   "babel": {
     "presets": [

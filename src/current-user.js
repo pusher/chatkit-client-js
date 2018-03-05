@@ -38,12 +38,13 @@ import { MessageSubscription } from './message-subscription'
 import { Message } from './message'
 
 export class CurrentUser {
-  constructor ({ id, apiInstance, filesInstance, cursorsInstance }) {
+  constructor ({ id, apiInstance, filesInstance, cursorsInstance, presenceInstance }) {
     this.id = id
     this.encodedId = encodeURIComponent(this.id)
     this.apiInstance = apiInstance
     this.filesInstance = filesInstance
     this.cursorsInstance = cursorsInstance
+    this.presenceInstance = presenceInstance
     this.logger = apiInstance.logger
     this.presenceStore = new Store()
     this.userStore = new UserStore({
@@ -426,7 +427,7 @@ export class CurrentUser {
     this.presenceSubscription = new PresenceSubscription({
       hooks,
       userId: this.id,
-      instance: this.apiInstance,
+      instance: this.presenceInstance,
       userStore: this.userStore,
       roomStore: this.roomStore,
       presenceStore: this.presenceStore,

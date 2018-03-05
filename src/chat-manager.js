@@ -44,6 +44,11 @@ export class ChatManager {
       serviceVersion: 'v1',
       ...instanceOptions
     })
+    this.presenceInstance = new Instance({
+      serviceName: 'chatkit_presence',
+      serviceVersion: 'v1',
+      ...instanceOptions
+    })
     this.userId = userId
   }
 
@@ -53,7 +58,8 @@ export class ChatManager {
       id: this.userId,
       apiInstance: this.apiInstance,
       filesInstance: this.filesInstance,
-      cursorsInstance: this.cursorsInstance
+      cursorsInstance: this.cursorsInstance,
+      presenceInstance: this.presenceInstance
     })
     return Promise.all([
       currentUser.establishUserSubscription(hooks),

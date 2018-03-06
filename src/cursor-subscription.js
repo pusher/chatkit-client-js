@@ -13,7 +13,7 @@ export class CursorSubscription {
   connect () {
     return new Promise((resolve, reject) => {
       this.hooks = { ...this.hooks, subscriptionEstablished: resolve }
-      this.instance.subscribeNonResuming({
+      this.sub = this.instance.subscribeNonResuming({
         path: this.path,
         listeners: {
           onError: reject,
@@ -21,6 +21,10 @@ export class CursorSubscription {
         }
       })
     })
+  }
+
+  cancel () {
+    this.sub && this.sub.unsubscribe()
   }
 
   onEvent = ({ body }) => {

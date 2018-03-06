@@ -35,6 +35,7 @@ import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
 import { CursorSubscription } from './cursor-subscription'
 import { MessageSubscription } from './message-subscription'
+import { RoomSubscription } from './room-subscription'
 import { Message } from './message'
 
 export class CurrentUser {
@@ -287,9 +288,10 @@ export class CurrentUser {
     typeCheck('roomId', 'number', roomId)
     typeCheckObj('hooks', 'function', hooks)
     messageLimit && typeCheck('messageLimit', 'number', messageLimit)
-    // TODO what is the desired behaviour if there is already a subscription to
-    // this room? Close the old one? Throw an error? Merge the hooks?
-    this.roomSubscriptions[roomId] = {
+    if (this.roomSubscriptions[roomId]) {
+      this.roomSubscriptions[roomId].cancel()
+    }
+    this.roomSubscriptions[roomId] = new RoomSubscription({
       hooks,
       messageSub: new MessageSubscription({
         roomId,
@@ -316,7 +318,7 @@ export class CurrentUser {
         cursorStore: this.cursorStore,
         instance: this.cursorsInstance
       })
-    }
+    })
     return this.joinRoom(roomId)
       .then(room => Promise.all([
         this.roomSubscriptions[roomId].messageSub.connect(),

@@ -18,7 +18,7 @@ export class MessageSubscription {
 
   connect () {
     return new Promise((resolve, reject) => {
-      this.instance.subscribeNonResuming({
+      this.sub = this.instance.subscribeNonResuming({
         path: `/rooms/${this.roomId}?${urlEncode({
           message_limit: this.messageLimit
         })}`,
@@ -29,6 +29,10 @@ export class MessageSubscription {
         }
       })
     })
+  }
+
+  cancel () {
+    this.sub && this.sub.unsubscribe()
   }
 
   onEvent = ({ body }) => {

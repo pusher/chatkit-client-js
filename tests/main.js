@@ -220,6 +220,14 @@ test('[setup] create Alice', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+// this shouldn't be necessary once the server-side bug is fixed such
+// that user deletion also leads to relevant user role deletion(s)
+test('[setup] assign default role to Alice', t => {
+  server.assignGlobalRoleToUser('alice', 'default')
+    .then(() => t.end())
+    .catch(endWithErr(t))
+})
+
 test('connection resolves with current user object', t => {
   fetchUser(t, 'alice')
     .then(alice => {
@@ -981,8 +989,7 @@ test(`get another user's read cursor after subscribing to a room`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-// FIXME platform request method should not resolve on failed requests
-test.skip('non-admin update room fails gracefully', t => {
+test('non-admin update room fails gracefully', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.updateRoom(bobsRoom.id, {
       name: `Bob's updated room`
@@ -996,8 +1003,7 @@ test.skip('non-admin update room fails gracefully', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-// FIXME platform request method should not resolve on failed requests
-test.skip('non-admin delete room fails gracefully', t => {
+test('non-admin delete room fails gracefully', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.deleteRoom(bobsRoom.id))
     .then(() => t.end(`deleteRoom should not resolve`))

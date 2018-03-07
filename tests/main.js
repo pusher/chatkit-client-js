@@ -25,7 +25,8 @@ import {
   TOKEN_PROVIDER_URL
 } from './config/production'
 
-let alicesRoom, bobsRoom, carolsRoom, alicesPrivateRoom, dataAttachmentUrl
+let alicesRoom, bobsRoom, carolsRoom, alicesPrivateRoom
+let dataAttachmentUrl, bob, carol
 
 const TEST_TIMEOUT = 15 * 1000
 
@@ -319,15 +320,23 @@ test('user came online hook (user sub)', t => {
       t.end()
     }
   })
-    .then(() => fetchUser(t, 'bob'))
+    .then(() => fetchUser(t, 'bob').then(b => { bob = b }))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-// We can't easily test for the user going offline, because the presence
-// subscription in the above test hangs around until it is garbage collected.
-// TODO cancel methods so that we can do this, and because we should have them
-// anyway
+test('user went offline hook (user sub)', t => {
+  fetchUser(t, 'alice', {
+    userWentOffline: user => {
+      t.equal(user.id, 'bob')
+      t.equal(user.presence.state, 'offline')
+      t.end()
+    }
+  })
+    .then(() => bob.presenceSubscription.cancel())
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
 
 test('typing indicators (user sub)', t => {
   let started
@@ -857,16 +866,29 @@ test('user came online hook', t => {
       userCameOnline: once(user => {
         t.equal(user.id, 'carol')
         t.equal(user.name, 'Carol')
+        t.equal(user.presence.state, 'online')
         t.end()
       })
     }))
-    .then(() => fetchUser(t, 'carol'))
+    .then(() => fetchUser(t, 'carol').then(c => { carol = c }))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-// We can't easily test for the user going offline, because the presence
-// subscription in the above test hangs around until it is garbage collected.
+test('user went offline hook', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.subscribeToRoom(bobsRoom.id, {
+      userWentOffline: once(user => {
+        t.equal(user.id, 'carol')
+        t.equal(user.name, 'Carol')
+        t.equal(user.presence.state, 'offline')
+        t.end()
+      })
+    }))
+    .then(() => carol.presenceSubscription.cancel())
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
 
 test('typing indicators', t => {
   let started

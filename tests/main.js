@@ -694,6 +694,22 @@ test('subscribe to room and receive sent messages', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+test('unsubscribe from room', t => {
+  fetchUser(t, 'alice')
+    .then(alice => alice.subscribeToRoom(bobsRoom.id,
+      {
+        newMessage: once(m => {
+          endWithErr(t, 'should not be called after unsubscribe')
+        })
+      }, 0)
+      .then(() => alice.roomSubscriptions[bobsRoom.id].cancel())
+      .then(() => sendMessages(alice, bobsRoom, ['yoooo']))
+      .then(() => setTimeout(t.end, 1000))
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 // Attachments
 
 test('send message with malformed attachment fails', t => {

@@ -16,7 +16,7 @@ export class UserSubscription {
   connect () {
     return new Promise((resolve, reject) => {
       this.hooks = { ...this.hooks, subscriptionEstablished: resolve }
-      this.instance.subscribeNonResuming({
+      this.sub = this.instance.subscribeNonResuming({
         path: '/users',
         listeners: {
           onError: reject,
@@ -24,6 +24,10 @@ export class UserSubscription {
         }
       })
     })
+  }
+
+  cancel () {
+    this.sub && this.sub.unsubscribe()
   }
 
   onEvent = ({ body }) => {

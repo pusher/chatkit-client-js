@@ -3342,9 +3342,9 @@ pusher-platform-node@~0.11.1:
     jsonwebtoken "^7.4.1"
     request "^2.81.0"
 
-pusher-platform@^0.14.0:
-  version "0.14.0"
-  resolved "https://registry.yarnpkg.com/pusher-platform/-/pusher-platform-0.14.0.tgz#81b410b51c4b1cc31e24d79295af8ef947c3c307"
+pusher-platform@^0.15.0:
+  version "0.15.0"
+  resolved "https://registry.yarnpkg.com/pusher-platform/-/pusher-platform-0.15.0.tgz#d94c63ceeef5e05e5fc09504f3c7d0971cd218a3"
 
 qs@6.5.1, qs@~6.5.1:
   version "6.5.1"

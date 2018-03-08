@@ -1,0 +1,94 @@
+body {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+}
+
+#messages {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  width: 100%;
+  text-align: center;
+  padding-bottom: 50px;
+}
+
+.message {
+  margin: 8px 0;
+}
+
+.attachment {
+  margin-top: 4px;
+}
+
+.choose-file {
+  position: relative;
+  display: inline-block;
+  border-left: 1px solid #ebebeb;
+  border-right: 1px solid #ebebeb;
+  width: 40px;
+  height: 40px;
+  font-size: 30px;
+  color: #7f7f7f;
+  background: white;
+  text-align: center;
+  float: left;
+  overflow: hidden;
+}
+
+.choose-file:hover {
+  cursor: pointer;
+}
+
+.choose-file input[type="file"] {
+  /* -webkit-appearance: none; */
+  /* position: absolute; */
+  top: 0;
+  left: 0;
+  opacity: 0;
+  height: 0;
+  width: 0;
+}
+
+#compose-wrapper {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  border-top: 1px solid #ebebeb;
+}
+
+#text-input {
+  height: 100%;
+  /* full width minus send-button width minus choose-file width
+     (including border * 2 and padding * 2)
+  */
+  width: calc(100% - 70px - 40px - 2px - 8px);
+  border: none;
+  font-size: 28px;
+  padding: 2px 4px;
+  float: left;
+}
+
+#text-input:focus {
+  outline: none;
+}
+
+#send-button {
+  height: 100%;
+  width: 70px;
+  font-weight: 500;
+  display: inline-block;
+  text-align: center;
+  transition: all 0.3s;
+  padding-top: 10px;
+  float: left;
+}
+
+#send-button:hover {
+  cursor: pointer;
+  color: red;
+}
+
+input[name=testfile] {
+  display: none;
+}

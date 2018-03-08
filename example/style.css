@@ -59,7 +59,10 @@ body {
 
 #text-input {
   height: 100%;
-  width: calc(100% - 70px - 42px);
+  /* full width minus send-button width minus choose-file width
+     (including border * 2 and padding * 2)
+  */
+  width: calc(100% - 70px - 40px - 2px - 8px);
   border: none;
   font-size: 28px;
   padding: 2px 4px;

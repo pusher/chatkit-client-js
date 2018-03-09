@@ -10,7 +10,6 @@ import {
   toPairs
 } from 'ramda'
 
-// urlEncode :: Object -> String
 export const urlEncode = pipe(
   filter(x => x !== undefined),
   toPairs,
@@ -18,10 +17,9 @@ export const urlEncode = pipe(
   join('&')
 )
 
-// appendQueryParam :: String -> String -> String -> String
-export const appendQueryParam = (key, value, url) => {
+export const appendQueryParams = (queryParams, url) => {
   const separator = contains('?', url) ? '&' : '?'
-  return url + separator + urlEncode({ [key]: value })
+  return url + separator + urlEncode(queryParams)
 }
 
 export const extractQueryParams = url =>

@@ -1,12 +1,15 @@
 import { sendRawRequest } from 'pusher-platform'
 
-import { appendQueryParam, typeCheck, unixSeconds, urlEncode } from './utils'
+import { appendQueryParams, typeCheck, unixSeconds, urlEncode } from './utils'
 
 export class TokenProvider {
-  // TODO authContext
-  constructor ({ url } = {}) {
+  constructor ({ url, queryParams, headers } = {}) {
     typeCheck('url', 'string', url)
+    queryParams && typeCheck('queryParams', 'object', queryParams)
+    headers && typeCheck('headers', 'object', headers)
     this.url = url
+    this.queryParams = queryParams
+    this.headers = headers
   }
 
   fetchToken = () => !this.cacheIsStale()
@@ -19,10 +22,14 @@ export class TokenProvider {
   fetchFreshToken = () => {
     this.req = sendRawRequest({
       method: 'POST',
-      url: appendQueryParam('user_id', this.userId, this.url),
+      url: appendQueryParams(
+        { user_id: this.userId, ...this.queryParams },
+        this.url
+      ),
       body: urlEncode({ grant_type: 'client_credentials' }),
       headers: {
-        'content-type': 'application/x-www-form-urlencoded'
+        'content-type': 'application/x-www-form-urlencoded',
+        ...this.headers
       }
     })
       .then(res => {

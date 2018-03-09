@@ -9,7 +9,7 @@ import {
   values
 } from 'ramda'
 
-import { appendQueryParam } from './utils'
+import { appendQueryParams } from './utils'
 import { Store } from './store'
 import { parseBasicUser } from './parsers'
 import { User } from './user'
@@ -63,7 +63,10 @@ export class UserStore {
     return this.instance
       .request({
         method: 'GET',
-        path: appendQueryParam('user_ids', join(',', missing), '/users_by_ids')
+        path: appendQueryParams(
+          { user_ids: join(',', missing) },
+          '/users_by_ids'
+        )
       })
       .then(pipe(
         JSON.parse,

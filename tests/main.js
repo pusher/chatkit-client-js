@@ -220,14 +220,6 @@ test('[setup] create Alice', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-// this shouldn't be necessary once the server-side bug is fixed such
-// that user deletion also leads to relevant user role deletion(s)
-test('[setup] assign default role to Alice', t => {
-  server.assignGlobalRoleToUser('alice', 'default')
-    .then(() => t.end())
-    .catch(endWithErr(t))
-})
-
 test('connection resolves with current user object', t => {
   fetchUser(t, 'alice')
     .then(alice => {
@@ -989,6 +981,15 @@ test(`get another user's read cursor after subscribing to a room`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+// this shouldn't be necessary once the server-side bug is fixed such
+// that user deletion also leads to relevant user role deletion(s)
+test('[setup] assign default role to Alice', t => {
+  server.assignGlobalRoleToUser('alice', 'default')
+    .then(() => t.end())
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test('non-admin update room fails gracefully', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.updateRoom(bobsRoom.id, {
@@ -1018,6 +1019,7 @@ test('[setup] promote Alice to admin', t => {
   server.assignGlobalRoleToUser('alice', 'admin')
     .then(() => t.end())
     .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
 })
 
 test(`update room [renames Bob's room]`, t => {

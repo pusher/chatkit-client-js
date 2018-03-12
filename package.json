@@ -2,7 +2,7 @@
   "name": "pusher-chatkit-client",
   "description": "Pusher Chatkit client library for browsers and react native",
   "main": "dist/web/chatkit.js",
-  "version": "0.7.0-alpha.6",
+  "version": "0.7.0-alpha.7.react-native.1",
   "author": "Pusher",
   "license": "MIT",
   "homepage": "https://github.com/pusher/chatkit-client-js",
@@ -46,19 +46,11 @@
     "build:web": "rollup -c rollup/web.js",
     "build:react-native": "rollup -c rollup/react-native.js",
     "test": "yarn test:raw | faucet",
-    "test:raw": "browserify tests/main.js -t babelify | tape-run",
+    "test:raw": "browserify tests/main.js -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run",
     "lint:build": "clear && yarn lint && clear && yarn build",
     "lint:build:test": "yarn lint:build && clear && yarn test",
     "lint:build:test:raw": "yarn lint:build && clear && yarn test:raw",
     "test-context": "f () { sed -i \"s/\\.\\/config\\/[a-z]\\+/\\.\\/config\\/$1/g\" tests/main.js; }; f"
-  },
-  "babel": {
-    "presets": [
-      "env"
-    ],
-    "plugins": [
-      "transform-object-rest-spread"
-    ]
   },
   "standard": {
     "ignore": "example"

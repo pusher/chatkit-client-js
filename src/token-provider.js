@@ -11,22 +11,31 @@ export class TokenProvider {
 
   fetchToken = () => !this.cacheIsStale()
     ? Promise.resolve(this.cachedToken)
-    : this.fetchFreshToken().then(({ token, expiresIn }) => {
+    : (this.req || this.fetchFreshToken()).then(({ token, expiresIn }) => {
       this.cache(token, expiresIn)
       return token
     })
 
-  fetchFreshToken = () => sendRawRequest({
-    method: 'POST',
-    url: appendQueryParam('user_id', this.userId, this.url),
-    body: urlEncode({ grant_type: 'client_credentials' }),
-    headers: {
-      'content-type': 'application/x-www-form-urlencoded'
-    }
-  }).then(res => {
-    const { access_token: token, expires_in: expiresIn } = JSON.parse(res)
-    return { token, expiresIn }
-  })
+  fetchFreshToken = () => {
+    this.req = sendRawRequest({
+      method: 'POST',
+      url: appendQueryParam('user_id', this.userId, this.url),
+      body: urlEncode({ grant_type: 'client_credentials' }),
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
+      }
+    })
+      .then(res => {
+        const { access_token: token, expires_in: expiresIn } = JSON.parse(res)
+        this.req = undefined
+        return { token, expiresIn }
+      })
+      .catch(err => {
+        this.req = undefined
+        throw err
+      })
+    return this.req
+  }
 
   cacheIsStale = () => !this.cachedToken || unixSeconds() > this.cacheExpiresAt
 

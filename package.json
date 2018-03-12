@@ -2,7 +2,6 @@
   "name": "pusher-chatkit-client",
   "description": "Pusher Chatkit client library for browsers and react native",
   "main": "dist/web/chatkit.js",
-  "types": "dist/web/declarations/index.d.ts",
   "version": "0.7.0-alpha.6",
   "author": "Pusher",
   "license": "MIT",
@@ -15,7 +14,8 @@
     "url": "git+https://github.com/pusher/chatkit-client-js.git"
   },
   "dependencies": {
-    "pusher-platform": "^0.15.0"
+    "pusher-platform": "^0.15.0",
+    "ramda": "^0.25.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -29,11 +29,12 @@
     "browserify": "^15.2.0",
     "faucet": "^0.0.1",
     "pusher-chatkit-server": "^0.9.1",
-    "ramda": "^0.25.0",
     "rollup": "^0.55.3",
+    "rollup-plugin-alias": "^1.4.0",
     "rollup-plugin-babel": "^3.0.3",
     "rollup-plugin-commonjs": "^8.3.0",
     "rollup-plugin-node-resolve": "^3.0.2",
+    "rollup-plugin-uglify": "^3.0.0",
     "snazzy": "^7.0.0",
     "standard": "^10.0.3",
     "tape": "^4.8.0",
@@ -41,9 +42,9 @@
   },
   "scripts": {
     "lint": "standard --parser babel-eslint --verbose | snazzy",
-    "build": "yarn build:all",
-    "build:all": "yarn build:web",
+    "build": "yarn build:web && yarn build:react-native",
     "build:web": "rollup -c rollup/web.js",
+    "build:react-native": "rollup -c rollup/react-native.js",
     "test": "yarn test:raw | faucet",
     "test:raw": "browserify tests/main.js -t babelify | tape-run",
     "lint:build": "clear && yarn lint && clear && yarn build",

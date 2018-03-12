@@ -14,7 +14,6 @@ export default {
   input: 'src/main.js',
   plugins: [
     babel({
-      babelrc: false,
       presets: [
         [
           'env',

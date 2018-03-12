@@ -3,7 +3,7 @@
   "description": "Pusher Chatkit client library for browsers and react native",
   "main": "dist/web/chatkit.js",
   "types": "dist/web/declarations/index.d.ts",
-  "version": "0.7.0-alpha.4",
+  "version": "0.7.0-alpha.5",
   "author": "Pusher",
   "license": "MIT",
   "homepage": "https://github.com/pusher/chatkit-client-js",

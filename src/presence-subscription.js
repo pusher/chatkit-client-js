@@ -82,9 +82,9 @@ export class PresenceSubscription {
     map(parsePresence, userStates)
   )
 
-  onCameOnline = user => this.callRelevantHooks('userCameOnline', user)
+  onCameOnline = user => this.callRelevantHooks('onUserCameOnline', user)
 
-  onWentOffline = user => this.callRelevantHooks('userWentOffline', user)
+  onWentOffline = user => this.callRelevantHooks('onUserWentOffline', user)
 
   callRelevantHooks = (hookName, user) => {
     if (this.hooks[hookName]) {

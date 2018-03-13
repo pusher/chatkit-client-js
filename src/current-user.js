@@ -313,10 +313,10 @@ export class CurrentUser {
         hooks: {
           newCursor: cursor => {
             if (
-              hooks.newReadCursor && cursor.type === 0 &&
+              hooks.onNewReadCursor && cursor.type === 0 &&
               cursor.userId !== this.id
             ) {
-              hooks.newReadCursor(cursor)
+              hooks.onNewReadCursor(cursor)
             }
           }
         },
@@ -452,10 +452,10 @@ export class CurrentUser {
       hooks: {
         newCursor: cursor => {
           if (
-            hooks.newReadCursor && cursor.type === 0 &&
+            hooks.onNewReadCursor && cursor.type === 0 &&
             this.isMemberOf(cursor.roomId)
           ) {
-            hooks.newReadCursor(cursor)
+            hooks.onNewReadCursor(cursor)
           }
         }
       },

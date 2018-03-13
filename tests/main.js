@@ -255,7 +255,7 @@ test('own read cursor undefined if not set', t => {
 
 test('new read cursor hook [Alice sets her read cursor in her room]', t => {
   Promise.all([fetchUser(t, 'alice'), fetchUser(t, 'alice', {
-    newReadCursor: cursor => {
+    onNewReadCursor: cursor => {
       t.equal(cursor.position, 42)
       t.equal(cursor.user.name, 'Alice')
       t.equal(cursor.room.name, `Alice's room`)
@@ -285,7 +285,7 @@ test('get own read cursor', t => {
 test(`added to room hook [creates Bob & Bob's room]`, t => {
   let alice
   fetchUser(t, 'alice', {
-    addedToRoom: room => {
+    onAddedToRoom: room => {
       t.equal(room.name, `Bob's room`)
       t.true(
         any(r => r.id === room.id, alice.rooms),
@@ -314,7 +314,7 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
 // (since then he will already be online)
 test('user came online hook (user sub)', t => {
   fetchUser(t, 'alice', {
-    userCameOnline: user => {
+    onUserCameOnline: user => {
       t.equal(user.id, 'bob')
       t.equal(user.presence.state, 'online')
       t.end()
@@ -327,7 +327,7 @@ test('user came online hook (user sub)', t => {
 
 test('user went offline hook (user sub)', t => {
   fetchUser(t, 'alice', {
-    userWentOffline: user => {
+    onUserWentOffline: user => {
       t.equal(user.id, 'bob')
       t.equal(user.presence.state, 'offline')
       t.end()
@@ -342,12 +342,12 @@ test('typing indicators (user sub)', t => {
   let started
   Promise.all([
     fetchUser(t, 'alice', {
-      userStartedTyping: (room, user) => {
+      onUserStartedTyping: (room, user) => {
         started = Date.now()
         t.equal(room.id, bobsRoom.id)
         t.equal(user.id, 'bob')
       },
-      userStoppedTyping: (room, user) => {
+      onUserStoppedTyping: (room, user) => {
         t.equal(room.id, bobsRoom.id)
         t.equal(user.id, 'bob')
         t.true(Date.now() - started > 1000, 'fired more than 1s after start')
@@ -366,7 +366,7 @@ test('typing indicators (user sub)', t => {
 
 test('user left room hook (user sub) [removes Bob from his own room]', t => {
   fetchUser(t, 'alice', {
-    userLeftRoom: (room, user) => {
+    onUserLeftRoom: (room, user) => {
       t.equal(room.id, bobsRoom.id)
       t.equal(user.id, 'bob')
       t.end()
@@ -384,7 +384,7 @@ test('user left room hook (user sub) [removes Bob from his own room]', t => {
 
 test('user joined room hook (user sub) [Bob rejoins his own room]', t => {
   fetchUser(t, 'alice', {
-    userJoinedRoom: (room, user) => {
+    onUserJoinedRoom: (room, user) => {
       t.equal(room.id, bobsRoom.id)
       t.equal(user.id, 'bob')
       t.end()
@@ -402,7 +402,7 @@ test('user joined room hook (user sub) [Bob rejoins his own room]', t => {
 
 test('room updated hook', t => {
   fetchUser(t, 'alice', {
-    roomUpdated: room => {
+    onRoomUpdated: room => {
       t.equal(room.id, bobsRoom.id)
       t.equal(room.name, `Bob's renamed room`)
       t.end()
@@ -420,7 +420,7 @@ test('room updated hook', t => {
 
 test(`removed from room hook [removes Alice from Bob's room]`, t => {
   fetchUser(t, 'alice', {
-    removedFromRoom: room => {
+    onRemovedFromRoom: room => {
       t.equal(room.id, bobsRoom.id)
       t.end()
     }
@@ -437,7 +437,7 @@ test(`removed from room hook [removes Alice from Bob's room]`, t => {
 
 test(`room deleted hook [destroys Alice's room]`, t => {
   fetchUser(t, 'alice', {
-    roomDeleted: room => {
+    onRoomDeleted: room => {
       t.equal(room.id, alicesRoom.id)
       t.end()
     }
@@ -668,7 +668,7 @@ test('subscribe to room and fetch initial messages', t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        newMessage: concatBatch(4, messages => {
+        onNewMessage: concatBatch(4, messages => {
           t.deepEqual(map(m => m.text, messages), ['hello', 'hey', 'hi', 'ho'])
           t.equal(messages[0].sender.name, 'Alice')
           t.equal(messages[0].room.name, `Bob's new room`)
@@ -685,7 +685,7 @@ test('subscribe to room and fetch last two message only', t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        newMessage: concatBatch(2, messages => {
+        onNewMessage: concatBatch(2, messages => {
           t.deepEqual(map(m => m.text, messages), ['hi', 'ho'])
           t.end()
         })
@@ -701,7 +701,7 @@ test('subscribe to room and receive sent messages', t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        newMessage: concatBatch(3, messages => {
+        onNewMessage: concatBatch(3, messages => {
           t.deepEqual(map(m => m.text, messages), ['yo', 'yoo', 'yooo'])
           t.equal(messages[0].sender.name, 'Alice')
           t.equal(messages[0].room.name, `Bob's new room`)
@@ -720,7 +720,7 @@ test('unsubscribe from room', t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        newMessage: once(m => {
+        onNewMessage: once(m => {
           endWithErr(t, 'should not be called after unsubscribe')
         })
       },
@@ -859,7 +859,7 @@ test(`user joined hook [Carol joins Bob's room]`, t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        userJoined: once(user => {
+        onUserJoined: once(user => {
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
           t.end()
@@ -883,7 +883,7 @@ test('user came online hook', t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        userCameOnline: once(user => {
+        onUserCameOnline: once(user => {
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
           t.equal(user.presence.state, 'online')
@@ -901,7 +901,7 @@ test('user went offline hook', t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        userWentOffline: once(user => {
+        onUserWentOffline: once(user => {
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
           t.equal(user.presence.state, 'offline')
@@ -921,12 +921,12 @@ test('typing indicators', t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        userStartedTyping: once(user => {
+        onUserStartedTyping: once(user => {
           started = Date.now()
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
         }),
-        userStoppedTyping: once(user => {
+        onUserStoppedTyping: once(user => {
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
           t.true(Date.now() - started > 1000, 'fired more than 1s after start')
@@ -949,7 +949,7 @@ test(`user left hook [removes Carol from Bob's room]`, t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        userLeft: once(user => {
+        onUserLeft: once(user => {
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
           t.end()
@@ -976,7 +976,7 @@ test(`new read cursor hook [Bob sets his read cursor in Alice's room]`, t => {
     .then(alice => alice.subscribeToRoom({
       roomId: alicesRoom.id,
       hooks: {
-        newReadCursor: cursor => {
+        onNewReadCursor: cursor => {
           t.equal(cursor.position, 128)
           t.equal(cursor.user.name, 'Bob')
           t.equal(cursor.room.name, `Alice's new room`)
@@ -1070,7 +1070,7 @@ test('[setup] promote Alice to admin', t => {
 
 test(`update room [renames Bob's room]`, t => {
   fetchUser(t, 'alice', {
-    roomUpdated: room => {
+    onRoomUpdated: room => {
       t.equal(room.id, bobsRoom.id)
       t.equal(room.name, `Bob's updated room`)
       t.end()
@@ -1088,7 +1088,7 @@ test(`update room [renames Bob's room]`, t => {
 test(`delete room [deletes Bob's room]`, t => {
   let alice
   fetchUser(t, 'alice', {
-    roomDeleted: room => {
+    onRoomDeleted: room => {
       t.equal(room.id, bobsRoom.id)
       t.false(
         any(r => r.id === bobsRoom.id, alice.rooms),

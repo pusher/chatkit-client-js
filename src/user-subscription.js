@@ -69,8 +69,8 @@ export class UserSubscription {
   onAddedToRoom = ({ room: roomData }) => {
     const basicRoom = parseBasicRoom(roomData)
     this.roomStore.set(basicRoom.id, basicRoom).then(room => {
-      if (this.hooks.addedToRoom) {
-        this.hooks.addedToRoom(room)
+      if (this.hooks.onAddedToRoom) {
+        this.hooks.onAddedToRoom(room)
       }
     })
   }
@@ -78,8 +78,8 @@ export class UserSubscription {
   onRemovedFromRoom = ({ room_id: roomId }) => {
     this.roomStore.pop(roomId).then(room => {
       // room will be undefined if we left with leaveRoom
-      if (room && this.hooks.removedFromRoom) {
-        this.hooks.removedFromRoom(room)
+      if (room && this.hooks.onRemovedFromRoom) {
+        this.hooks.onRemovedFromRoom(room)
       }
     })
   }
@@ -87,14 +87,14 @@ export class UserSubscription {
   onUserJoined = ({ room_id: roomId, user_id: userId }) => {
     this.roomStore.addUserToRoom(roomId, userId).then(room => {
       this.userStore.get(userId).then(user => {
-        if (this.hooks.userJoinedRoom) {
-          this.hooks.userJoinedRoom(room, user)
+        if (this.hooks.onUserJoinedRoom) {
+          this.hooks.onUserJoinedRoom(room, user)
         }
         if (
           this.roomSubscriptions[roomId] &&
-          this.roomSubscriptions[roomId].hooks.userJoined
+          this.roomSubscriptions[roomId].hooks.onUserJoined
         ) {
-          this.roomSubscriptions[roomId].hooks.userJoined(user)
+          this.roomSubscriptions[roomId].hooks.onUserJoined(user)
         }
       })
     })
@@ -103,14 +103,14 @@ export class UserSubscription {
   onUserLeft = ({ room_id: roomId, user_id: userId }) => {
     this.roomStore.removeUserFromRoom(roomId, userId).then(room => {
       this.userStore.get(userId).then(user => {
-        if (this.hooks.userLeftRoom) {
-          this.hooks.userLeftRoom(room, user)
+        if (this.hooks.onUserLeftRoom) {
+          this.hooks.onUserLeftRoom(room, user)
         }
         if (
           this.roomSubscriptions[roomId] &&
-          this.roomSubscriptions[roomId].hooks.userLeft
+          this.roomSubscriptions[roomId].hooks.onUserLeft
         ) {
-          this.roomSubscriptions[roomId].hooks.userLeft(user)
+          this.roomSubscriptions[roomId].hooks.onUserLeft(user)
         }
       })
     })
@@ -119,16 +119,16 @@ export class UserSubscription {
   onRoomUpdated = ({ room: roomData }) => {
     const updates = parseBasicRoom(roomData)
     this.roomStore.update(updates.id, updates).then(room => {
-      if (this.hooks.roomUpdated) {
-        this.hooks.roomUpdated(room)
+      if (this.hooks.onRoomUpdated) {
+        this.hooks.onRoomUpdated(room)
       }
     })
   }
 
   onRoomDeleted = ({ room_id: roomId }) => {
     this.roomStore.pop(roomId).then(room => {
-      if (room && this.hooks.roomDeleted) {
-        this.hooks.roomDeleted(room)
+      if (room && this.hooks.onRoomDeleted) {
+        this.hooks.onRoomDeleted(room)
       }
     })
   }

@@ -26,7 +26,7 @@ chatManager.connect()
       currentUser.subscribeToRoom(
         roomToSubscribeTo.id,
         {
-          newMessage: message => {
+          onNewMessage: message => {
             console.log('new message:', message)
             const messagesList = document.getElementById('messages')
             const messageItem = document.createElement('li')

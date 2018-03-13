@@ -51,20 +51,20 @@ export class TypingIndicators {
   }
 
   onStarted = (room, user, hooks, roomHooks) => {
-    if (hooks.userStartedTyping) {
-      hooks.userStartedTyping(room, user)
+    if (hooks.onUserStartedTyping) {
+      hooks.onUserStartedTyping(room, user)
     }
-    if (roomHooks[room.id] && roomHooks[room.id].userStartedTyping) {
-      roomHooks[room.id].userStartedTyping(user)
+    if (roomHooks[room.id] && roomHooks[room.id].onUserStartedTyping) {
+      roomHooks[room.id].onUserStartedTyping(user)
     }
   }
 
   onStopped = (room, user, hooks, roomHooks) => {
-    if (hooks.userStoppedTyping) {
-      hooks.userStoppedTyping(room, user)
+    if (hooks.onUserStoppedTyping) {
+      hooks.onUserStoppedTyping(room, user)
     }
-    if (roomHooks[room.id] && roomHooks[room.id].userStoppedTyping) {
-      roomHooks[room.id].userStoppedTyping(user)
+    if (roomHooks[room.id] && roomHooks[room.id].onUserStoppedTyping) {
+      roomHooks[room.id].onUserStoppedTyping(user)
     }
   }
 }

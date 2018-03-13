@@ -190,7 +190,7 @@ export class CurrentUser {
       })
   }
 
-  addUser = (userId, roomId) => {
+  addUserToRoom = (userId, roomId) => {
     typeCheck('userId', 'string', userId)
     typeCheck('roomId', 'number', roomId)
     return this.apiInstance
@@ -208,7 +208,7 @@ export class CurrentUser {
       })
   }
 
-  removeUser = (userId, roomId) => {
+  removeUserFromRoom = (userId, roomId) => {
     typeCheck('userId', 'string', userId)
     typeCheck('roomId', 'number', roomId)
     return this.apiInstance

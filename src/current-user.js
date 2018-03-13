@@ -39,7 +39,13 @@ import { RoomSubscription } from './room-subscription'
 import { Message } from './message'
 
 export class CurrentUser {
-  constructor ({ id, apiInstance, filesInstance, cursorsInstance, presenceInstance }) {
+  constructor ({
+    apiInstance,
+    cursorsInstance,
+    filesInstance,
+    id,
+    presenceInstance
+  }) {
     this.id = id
     this.encodedId = encodeURIComponent(this.id)
     this.apiInstance = apiInstance
@@ -82,7 +88,7 @@ export class CurrentUser {
     return values(this.userStore.snapshot())
   }
 
-  setReadCursor = (roomId, position) => {
+  setReadCursor = ({ roomId, position } = {}) => {
     typeCheck('roomId', 'number', roomId)
     typeCheck('position', 'number', position)
     return this.cursorsInstance
@@ -98,7 +104,7 @@ export class CurrentUser {
       })
   }
 
-  readCursor = (roomId, userId = this.id) => {
+  readCursor = ({ roomId, userId = this.id } = {}) => {
     typeCheck('roomId', 'number', roomId)
     typeCheck('userId', 'string', userId)
     if (userId !== this.id && !has(roomId, this.roomSubscriptions)) {
@@ -111,7 +117,7 @@ export class CurrentUser {
     return this.cursorStore.getSync(userId, roomId)
   }
 
-  isTypingIn = roomId => {
+  isTypingIn = ({ roomId } = {}) => {
     typeCheck('roomId', 'number', roomId)
     return this.typingIndicators.sendThrottledRequest(roomId)
   }
@@ -156,7 +162,7 @@ export class CurrentUser {
     return this.getJoinableRooms().then(concat(this.rooms))
   }
 
-  joinRoom = roomId => {
+  joinRoom = ({ roomId } = {}) => {
     typeCheck('roomId', 'number', roomId)
     if (this.isMemberOf(roomId)) {
       return this.roomStore.get(roomId)
@@ -176,7 +182,7 @@ export class CurrentUser {
       })
   }
 
-  leaveRoom = roomId => {
+  leaveRoom = ({ roomId } = {}) => {
     typeCheck('roomId', 'number', roomId)
     return this.apiInstance
       .request({
@@ -190,7 +196,7 @@ export class CurrentUser {
       })
   }
 
-  addUserToRoom = (userId, roomId) => {
+  addUserToRoom = ({ userId, roomId } = {}) => {
     typeCheck('userId', 'string', userId)
     typeCheck('roomId', 'number', roomId)
     return this.apiInstance
@@ -208,7 +214,7 @@ export class CurrentUser {
       })
   }
 
-  removeUserFromRoom = (userId, roomId) => {
+  removeUserFromRoom = ({ userId, roomId } = {}) => {
     typeCheck('userId', 'string', userId)
     typeCheck('roomId', 'number', roomId)
     return this.apiInstance
@@ -229,7 +235,7 @@ export class CurrentUser {
       })
   }
 
-  sendMessage = ({ text, roomId, attachment }) => {
+  sendMessage = ({ text, roomId, attachment } = {}) => {
     typeCheck('text', 'string', text)
     typeCheck('roomId', 'number', roomId)
     return new Promise((resolve, reject) => {
@@ -255,7 +261,7 @@ export class CurrentUser {
       })
   }
 
-  fetchMessages = (roomId, { initialId, limit, direction } = {}) => {
+  fetchMessages = ({ roomId, initialId, limit, direction } = {}) => {
     typeCheck('roomId', 'number', roomId)
     initialId && typeCheck('initialId', 'number', initialId)
     limit && typeCheck('limit', 'number', limit)
@@ -284,7 +290,7 @@ export class CurrentUser {
       })
   }
 
-  subscribeToRoom = (roomId, hooks = {}, messageLimit) => {
+  subscribeToRoom = ({ roomId, hooks = {}, messageLimit } = {}) => {
     typeCheck('roomId', 'number', roomId)
     typeCheckObj('hooks', 'function', hooks)
     messageLimit && typeCheck('messageLimit', 'number', messageLimit)
@@ -319,7 +325,7 @@ export class CurrentUser {
         instance: this.cursorsInstance
       })
     })
-    return this.joinRoom(roomId)
+    return this.joinRoom({ roomId })
       .then(room => Promise.all([
         this.roomSubscriptions[roomId].messageSub.connect(),
         this.roomSubscriptions[roomId].cursorSub.connect()
@@ -330,7 +336,7 @@ export class CurrentUser {
       })
   }
 
-  fetchAttachment = url => {
+  fetchAttachment = ({ url } = {}) => {
     return this.filesInstance.tokenProvider.fetchToken()
       .then(token => sendRawRequest({
         method: 'GET',
@@ -344,16 +350,15 @@ export class CurrentUser {
       })
   }
 
-  updateRoom = (roomId, options = {}) => {
+  updateRoom = ({ roomId, name, ...rest } = {}) => {
     typeCheck('roomId', 'number', roomId)
-    options.name && typeCheck('name', 'string', options.name)
-    options.private && typeCheck('private', 'boolean', options.private)
+    name && typeCheck('name', 'string', name)
     return this.apiInstance.request({
       method: 'PUT',
       path: `/rooms/${roomId}`,
       json: {
-        name: options.name,
-        private: options.private
+        name: name,
+        private: !!rest.private // private is a reserved word in strict mode!
       }
     })
       .then(() => {})
@@ -363,7 +368,7 @@ export class CurrentUser {
       })
   }
 
-  deleteRoom = roomId => {
+  deleteRoom = ({ roomId } = {}) => {
     typeCheck('roomId', 'number', roomId)
     return this.apiInstance.request({
       method: 'DELETE',

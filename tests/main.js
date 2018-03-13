@@ -246,7 +246,7 @@ test('connection resolves with current user object', t => {
 test('own read cursor undefined if not set', t => {
   fetchUser(t, 'alice')
     .then(alice => {
-      t.equal(alice.readCursor(alicesRoom.id), undefined)
+      t.equal(alice.readCursor({ roomId: alicesRoom.id }), undefined)
       t.end()
     })
     .catch(endWithErr(t))
@@ -263,7 +263,7 @@ test('new read cursor hook [Alice sets her read cursor in her room]', t => {
     }
   })])
     .then(([mobileAlice, browserAlice]) =>
-      mobileAlice.setReadCursor(alicesRoom.id, 42)
+      mobileAlice.setReadCursor({ roomId: alicesRoom.id, position: 42 })
     )
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
@@ -272,7 +272,7 @@ test('new read cursor hook [Alice sets her read cursor in her room]', t => {
 test('get own read cursor', t => {
   fetchUser(t, 'alice')
     .then(alice => {
-      const cursor = alice.readCursor(alicesRoom.id)
+      const cursor = alice.readCursor({ roomId: alicesRoom.id })
       t.equal(cursor.position, 42)
       t.equal(cursor.user.name, 'Alice')
       t.equal(cursor.room.name, `Alice's room`)
@@ -359,7 +359,7 @@ test('typing indicators (user sub)', t => {
   // FIXME This test (and the corresponding room sub one) fail intermittently.
   // The corresponding server side test fails too so there might be some kind
   // of race condition in the server. Needs more investigation.
-    .then(([alice, bob]) => bob.isTypingIn(bobsRoom.id))
+    .then(([alice, bob]) => bob.isTypingIn({ roomId: bobsRoom.id }))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -550,7 +550,7 @@ test('get all rooms', t => {
 
 test(`join room [Bob joins Alice's room]`, t => {
   fetchUser(t, 'bob')
-    .then(bob => bob.joinRoom(alicesRoom.id)
+    .then(bob => bob.joinRoom({ roomId: alicesRoom.id })
       .then(room => {
         t.equal(room.id, alicesRoom.id)
         t.equal(room.createdByUserId, 'alice')
@@ -573,7 +573,7 @@ test(`leave room [Bob leaves Alice's room]`, t => {
         any(r => r.id === alicesRoom.id, bob.rooms),
         `should include Bob's room`
       )
-      bob.leaveRoom(alicesRoom.id)
+      bob.leaveRoom({ roomId: alicesRoom.id })
         .then(() => {
           t.false(
             any(r => r.id === alicesRoom.id, bob.rooms),
@@ -588,7 +588,10 @@ test(`leave room [Bob leaves Alice's room]`, t => {
 
 test('add user [Alice adds Bob to her room]', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.addUserToRoom('bob', alicesRoom.id)
+    .then(alice => alice.addUserToRoom({
+      userId: 'bob',
+      roomId: alicesRoom.id
+    })
       .then(() => {
         const room = find(r => r.id === alicesRoom.id, alice.rooms)
         t.deepEqual(room.userIds.sort(), ['alice', 'bob'])
@@ -601,7 +604,10 @@ test('add user [Alice adds Bob to her room]', t => {
 
 test('remove user [Alice removes Bob from her room]', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.removeUserFromRoom('bob', alicesRoom.id)
+    .then(alice => alice.removeUserFromRoom({
+      userId: 'bob',
+      roomId: alicesRoom.id
+    })
       .then(() => {
         const room = find(r => r.id === alicesRoom.id, alice.rooms)
         t.deepEqual(room.userIds.sort(), ['alice'])
@@ -624,7 +630,7 @@ test(`send messages [sends four messages to Bob's room]`, t => {
 
 test('fetch messages', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.fetchMessages(bobsRoom.id))
+    .then(alice => alice.fetchMessages({ roomId: bobsRoom.id }))
     .then(messages => {
       t.deepEqual(messages.map(m => m.text), ['hello', 'hey', 'hi', 'ho'])
       t.equal(messages[0].sender.id, 'alice')
@@ -639,12 +645,15 @@ test('fetch messages', t => {
 
 test('fetch messages with pagination', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.fetchMessages(bobsRoom.id, { limit: 2 })
+    .then(alice => alice.fetchMessages({ roomId: bobsRoom.id, limit: 2 })
       .then(messages => {
         t.deepEqual(messages.map(m => m.text), ['hi', 'ho'])
         return messages[0].id
       })
-      .then(initialId => alice.fetchMessages(bobsRoom.id, { initialId }))
+      .then(initialId => alice.fetchMessages({
+        roomId: bobsRoom.id,
+        initialId
+      }))
       .then(messages => {
         t.deepEqual(messages.map(m => m.text), ['hello', 'hey'])
         t.end()
@@ -656,9 +665,9 @@ test('fetch messages with pagination', t => {
 
 test('subscribe to room and fetch initial messages', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.subscribeToRoom(
-      bobsRoom.id,
-      {
+    .then(alice => alice.subscribeToRoom({
+      roomId: bobsRoom.id,
+      hooks: {
         newMessage: concatBatch(4, messages => {
           t.deepEqual(map(m => m.text, messages), ['hello', 'hey', 'hi', 'ho'])
           t.equal(messages[0].sender.name, 'Alice')
@@ -666,38 +675,41 @@ test('subscribe to room and fetch initial messages', t => {
           t.end()
         })
       }
-    ))
+    }))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
 test('subscribe to room and fetch last two message only', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.subscribeToRoom(
-      bobsRoom.id,
-      {
+    .then(alice => alice.subscribeToRoom({
+      roomId: bobsRoom.id,
+      hooks: {
         newMessage: concatBatch(2, messages => {
           t.deepEqual(map(m => m.text, messages), ['hi', 'ho'])
           t.end()
         })
       },
-      2
-    ))
+      messageLimit: 2
+    }))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
 test('subscribe to room and receive sent messages', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.subscribeToRoom(bobsRoom.id,
-      {
+    .then(alice => alice.subscribeToRoom({
+      roomId: bobsRoom.id,
+      hooks: {
         newMessage: concatBatch(3, messages => {
           t.deepEqual(map(m => m.text, messages), ['yo', 'yoo', 'yooo'])
           t.equal(messages[0].sender.name, 'Alice')
           t.equal(messages[0].room.name, `Bob's new room`)
           t.end()
         })
-      }, 0).then(() => sendMessages(alice, bobsRoom, ['yo', 'yoo', 'yooo']))
+      },
+      messageLimit: 0
+    }).then(() => sendMessages(alice, bobsRoom, ['yo', 'yoo', 'yooo']))
     )
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
@@ -705,12 +717,15 @@ test('subscribe to room and receive sent messages', t => {
 
 test('unsubscribe from room', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.subscribeToRoom(bobsRoom.id,
-      {
+    .then(alice => alice.subscribeToRoom({
+      roomId: bobsRoom.id,
+      hooks: {
         newMessage: once(m => {
           endWithErr(t, 'should not be called after unsubscribe')
         })
-      }, 0)
+      },
+      messageLimit: 0
+    })
       .then(() => alice.roomSubscriptions[bobsRoom.id].cancel())
       .then(() => sendMessages(alice, bobsRoom, ['yoooo']))
       .then(() => setTimeout(t.end, 1000))
@@ -749,7 +764,7 @@ test(`send message with link attachment [sends a message to Bob's room]`, t => {
 
 test('receive message with link attachment', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.fetchMessages(bobsRoom.id, { limit: 1 }))
+    .then(alice => alice.fetchMessages({ roomId: bobsRoom.id, limit: 1 }))
     .then(([message]) => {
       t.equal(message.text, 'see attached link')
       t.deepEqual(message.attachment, {
@@ -781,7 +796,7 @@ test(`send message with data attachment [sends a message to Bob's room]`, t => {
 
 test('receive message with data attachment', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.fetchMessages(bobsRoom.id, { limit: 1 }))
+    .then(alice => alice.fetchMessages({ roomId: bobsRoom.id, limit: 1 }))
     .then(([message]) => {
       t.equal(message.text, 'see attached json')
       t.equal(message.attachment.type, 'file')
@@ -795,7 +810,7 @@ test('receive message with data attachment', t => {
 
 test('fetch data attachment', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.fetchAttachment(dataAttachmentUrl))
+    .then(alice => alice.fetchAttachment({ url: dataAttachmentUrl }))
     .then(attachment => {
       t.equal(attachment.file.name, 'hello.json')
       t.equal(attachment.file.bytes, 17)
@@ -823,7 +838,7 @@ test('[setup] create Carol', t => {
 
 test('subscribe to room implicitly joins', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.subscribeToRoom(carolsRoom.id)
+    .then(alice => alice.subscribeToRoom({ roomId: carolsRoom.id })
       .then(room => {
         t.equal(room.id, carolsRoom.id)
         t.true(room.name, `Carol's room`)
@@ -841,12 +856,15 @@ test('subscribe to room implicitly joins', t => {
 
 test(`user joined hook [Carol joins Bob's room]`, t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.subscribeToRoom(bobsRoom.id, {
-      userJoined: once(user => {
-        t.equal(user.id, 'carol')
-        t.equal(user.name, 'Carol')
-        t.end()
-      })
+    .then(alice => alice.subscribeToRoom({
+      roomId: bobsRoom.id,
+      hooks: {
+        userJoined: once(user => {
+          t.equal(user.id, 'carol')
+          t.equal(user.name, 'Carol')
+          t.end()
+        })
+      }
     }))
     .then(() => server.apiRequest({
       method: 'PUT',
@@ -862,13 +880,16 @@ test(`user joined hook [Carol joins Bob's room]`, t => {
 // subscription (since then she will already be online)
 test('user came online hook', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.subscribeToRoom(bobsRoom.id, {
-      userCameOnline: once(user => {
-        t.equal(user.id, 'carol')
-        t.equal(user.name, 'Carol')
-        t.equal(user.presence.state, 'online')
-        t.end()
-      })
+    .then(alice => alice.subscribeToRoom({
+      roomId: bobsRoom.id,
+      hooks: {
+        userCameOnline: once(user => {
+          t.equal(user.id, 'carol')
+          t.equal(user.name, 'Carol')
+          t.equal(user.presence.state, 'online')
+          t.end()
+        })
+      }
     }))
     .then(() => fetchUser(t, 'carol').then(c => { carol = c }))
     .catch(endWithErr(t))
@@ -877,13 +898,16 @@ test('user came online hook', t => {
 
 test('user went offline hook', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.subscribeToRoom(bobsRoom.id, {
-      userWentOffline: once(user => {
-        t.equal(user.id, 'carol')
-        t.equal(user.name, 'Carol')
-        t.equal(user.presence.state, 'offline')
-        t.end()
-      })
+    .then(alice => alice.subscribeToRoom({
+      roomId: bobsRoom.id,
+      hooks: {
+        userWentOffline: once(user => {
+          t.equal(user.id, 'carol')
+          t.equal(user.name, 'Carol')
+          t.equal(user.presence.state, 'offline')
+          t.end()
+        })
+      }
     }))
     .then(() => carol.presenceSubscription.cancel())
     .catch(endWithErr(t))
@@ -894,7 +918,9 @@ test('typing indicators', t => {
   let started
   Promise.all([
     fetchUser(t, 'alice')
-      .then(alice => alice.subscribeToRoom(bobsRoom.id, {
+    .then(alice => alice.subscribeToRoom({
+      roomId: bobsRoom.id,
+      hooks: {
         userStartedTyping: once(user => {
           started = Date.now()
           t.equal(user.id, 'carol')
@@ -906,25 +932,29 @@ test('typing indicators', t => {
           t.true(Date.now() - started > 1000, 'fired more than 1s after start')
           t.end()
         })
-      })),
+      }
+    })),
     fetchUser(t, 'carol')
   ])
   // FIXME This test (and the corresponding user sub one) fail intermittently.
   // The corresponding server side test fails too so there might be some kind
   // of race condition in the server. Needs more investigation.
-    .then(([x, carol]) => carol.isTypingIn(bobsRoom.id))
+    .then(([x, carol]) => carol.isTypingIn({ roomId: bobsRoom.id }))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
 test(`user left hook [removes Carol from Bob's room]`, t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.subscribeToRoom(bobsRoom.id, {
-      userLeft: once(user => {
-        t.equal(user.id, 'carol')
-        t.equal(user.name, 'Carol')
-        t.end()
-      })
+    .then(alice => alice.subscribeToRoom({
+      roomId: bobsRoom.id,
+      hooks: {
+        userLeft: once(user => {
+          t.equal(user.id, 'carol')
+          t.equal(user.name, 'Carol')
+          t.end()
+        })
+      }
     }))
     .then(() => server.apiRequest({
       method: 'PUT',
@@ -941,18 +971,24 @@ test(`user left hook [removes Carol from Bob's room]`, t => {
 test(`new read cursor hook [Bob sets his read cursor in Alice's room]`, t => {
   Promise.all([
     fetchUser(t, 'bob')
-      .then(bob => bob.joinRoom(alicesRoom.id).then(() => bob)),
+      .then(bob => bob.joinRoom({ roomId: alicesRoom.id }).then(() => bob)),
     fetchUser(t, 'alice')
-      .then(alice => alice.subscribeToRoom(alicesRoom.id, {
+    .then(alice => alice.subscribeToRoom({
+      roomId: alicesRoom.id,
+      hooks: {
         newReadCursor: cursor => {
           t.equal(cursor.position, 128)
           t.equal(cursor.user.name, 'Bob')
           t.equal(cursor.room.name, `Alice's new room`)
           t.end()
         }
-      }))
+      }
+    }))
   ])
-    .then(([bob]) => bob.setReadCursor(alicesRoom.id, 128))
+    .then(([bob]) => bob.setReadCursor({
+      roomId: alicesRoom.id,
+      position: 128
+    }))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -960,7 +996,10 @@ test(`new read cursor hook [Bob sets his read cursor in Alice's room]`, t => {
 test(`get another user's read cursor before subscribing to a room fails`, t => {
   fetchUser(t, 'alice')
     .then(alice => {
-      t.throws(() => alice.readCursor(alicesRoom.id, 'bob'), /subscribe/)
+      t.throws(() => alice.readCursor({
+        roomId: alicesRoom.id,
+        userId: 'bob'
+      }), /subscribe/)
       t.end()
     })
     .catch(endWithErr(t))
@@ -969,9 +1008,15 @@ test(`get another user's read cursor before subscribing to a room fails`, t => {
 
 test(`get another user's read cursor after subscribing to a room`, t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.subscribeToRoom(alicesRoom.id).then(() => alice))
+    .then(alice => alice
+      .subscribeToRoom({ roomId: alicesRoom.id })
+      .then(() => alice)
+    )
     .then(alice => {
-      const cursor = alice.readCursor(alicesRoom.id, 'bob')
+      const cursor = alice.readCursor({
+        roomId: alicesRoom.id,
+        userId: 'bob'
+      })
       t.equal(cursor.position, 128)
       t.equal(cursor.user.name, 'Bob')
       t.equal(cursor.room.name, `Alice's new room`)
@@ -992,7 +1037,8 @@ test('[setup] assign default role to Alice', t => {
 
 test('non-admin update room fails gracefully', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.updateRoom(bobsRoom.id, {
+    .then(alice => alice.updateRoom({
+      roomId: bobsRoom.id,
       name: `Bob's updated room`
     }))
     .then(() => t.end(`updateRoom should not resolve`))
@@ -1006,7 +1052,7 @@ test('non-admin update room fails gracefully', t => {
 
 test('non-admin delete room fails gracefully', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.deleteRoom(bobsRoom.id))
+    .then(alice => alice.deleteRoom({ roomId: bobsRoom.id }))
     .then(() => t.end(`deleteRoom should not resolve`))
     .catch(err => {
       t.true(toString(err).match(/permission/), 'permission error')
@@ -1030,7 +1076,8 @@ test(`update room [renames Bob's room]`, t => {
       t.end()
     }
   })
-    .then(alice => alice.updateRoom(bobsRoom.id, {
+    .then(alice => alice.updateRoom({
+      roomId: bobsRoom.id,
       name: `Bob's updated room`
     }))
     .then(res => t.equal(res, undefined))
@@ -1052,7 +1099,7 @@ test(`delete room [deletes Bob's room]`, t => {
   })
     .then(a => {
       alice = a
-      alice.deleteRoom(bobsRoom.id)
+      alice.deleteRoom({ roomId: bobsRoom.id })
     })
     .then(res => t.equal(res, undefined))
     .catch(endWithErr(t))

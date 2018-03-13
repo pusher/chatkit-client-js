@@ -588,7 +588,7 @@ test(`leave room [Bob leaves Alice's room]`, t => {
 
 test('add user [Alice adds Bob to her room]', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.addUser('bob', alicesRoom.id)
+    .then(alice => alice.addUserToRoom('bob', alicesRoom.id)
       .then(() => {
         const room = find(r => r.id === alicesRoom.id, alice.rooms)
         t.deepEqual(room.userIds.sort(), ['alice', 'bob'])
@@ -601,7 +601,7 @@ test('add user [Alice adds Bob to her room]', t => {
 
 test('remove user [Alice removes Bob from her room]', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.removeUser('bob', alicesRoom.id)
+    .then(alice => alice.removeUserFromRoom('bob', alicesRoom.id)
       .then(() => {
         const room = find(r => r.id === alicesRoom.id, alice.rooms)
         t.deepEqual(room.userIds.sort(), ['alice'])

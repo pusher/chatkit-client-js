@@ -1,9 +1,8 @@
 {
-  "name": "pusher-chatkit-client",
+  "name": "@pusher/chatkit",
   "description": "Pusher Chatkit client library for browsers and react native",
   "main": "dist/web/chatkit.js",
-  "types": "dist/web/declarations/index.d.ts",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "author": "Pusher",
   "license": "MIT",
   "homepage": "https://github.com/pusher/chatkit-client-js",
@@ -14,30 +13,46 @@
     "type": "git",
     "url": "git+https://github.com/pusher/chatkit-client-js.git"
   },
-  "scripts": {
-    "build": "yarn build:all",
-    "build:all": "yarn clean && yarn build:web && yarn build:react-native && yarn build:worker",
-    "build:web": "webpack --config=webpack/config.web.js",
-    "build:react-native": "webpack --config=webpack/config.react-native.js",
-    "build:worker": "webpack --config=webpack/config.worker.js",
-    "clean": "rm -rf dist",
-    "format": "yarn prettier --write",
-    "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "prettier": "prettier 'src/**/*.ts'"
-  },
   "dependencies": {
-    "pusher-platform": "^0.14.0",
-    "tslint-config-prettier": "^1.6.0"
+    "pusher-platform": "^0.15.0",
+    "ramda": "^0.25.0"
   },
   "devDependencies": {
-    "babel-core": "^6.25.0",
-    "babel-loader": "^7.0.0",
-    "babel-preset-env": "^1.6.0",
-    "prettier": "^1.9.1",
-    "ts-loader": "^2.1.0",
-    "tslint": "^5.8.0",
-    "tslint-config-prettier": "^1.6.0",
-    "typescript": "^2.6.1",
-    "webpack": "^3.8.1"
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-eslint": "^7.0.0",
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babelify": "^8.0.0",
+    "browserify": "^15.2.0",
+    "faucet": "^0.0.1",
+    "pusher-chatkit-server": "^0.9.1",
+    "rollup": "^0.55.3",
+    "rollup-plugin-alias": "^1.4.0",
+    "rollup-plugin-babel": "^3.0.3",
+    "rollup-plugin-commonjs": "^8.3.0",
+    "rollup-plugin-node-resolve": "^3.0.2",
+    "rollup-plugin-uglify": "^3.0.0",
+    "snazzy": "^7.0.0",
+    "standard": "^10.0.3",
+    "tape": "^4.8.0",
+    "tape-run": "^3.0.2"
+  },
+  "scripts": {
+    "lint": "standard --parser babel-eslint --verbose | snazzy",
+    "build": "yarn build:web && yarn build:react-native",
+    "build:web": "rollup -c rollup/web.js",
+    "build:react-native": "rollup -c rollup/react-native.js",
+    "test": "yarn test:raw | faucet",
+    "test:raw": "browserify tests/main.js -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run",
+    "lint:build": "clear && yarn lint && clear && yarn build",
+    "lint:build:test": "yarn lint:build && clear && yarn test",
+    "lint:build:test:raw": "yarn lint:build && clear && yarn test:raw",
+    "test-context": "f () { sed -i \"s/\\.\\/config\\/[a-z]\\+/\\.\\/config\\/$1/g\" tests/main.js; }; f"
+  },
+  "standard": {
+    "ignore": "example"
   }
 }

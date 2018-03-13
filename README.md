@@ -15,13 +15,13 @@ For more information on the Chatkit service, [see here](https://pusher.com/chatk
 [yarn](https://yarnpkg.com/):
 
 ```sh
-$ yarn add pusher-chatkit-client
+$ yarn add @pusher/chatkit
 ```
 
 ## Script tag
 
 ```html
-<script src="https://unpkg.com/pusher-chatkit-client"></script>
+<script src="https://unpkg.com/@pusher/chatkit"></script>
 ```
 
 ## Getting started

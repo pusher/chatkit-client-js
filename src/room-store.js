@@ -32,9 +32,27 @@ export class RoomStore {
     room || this.fetchBasicRoom(roomId).then(this.decorate)
   )
 
-  update = (roomId, updates) => this.store.pop(roomId).then(r =>
-    this.set(roomId, mergeWith((x, y) => y || x, r, updates))
-  )
+  addUserToRoom = (roomId, userId) => this.store.update(roomId, r => {
+    r.userIds = uniq(append(userId, r.userIds))
+    return r
+  })
+
+  removeUserFromRoom = (roomId, userId) => this.store.update(roomId, r => {
+    r.userIds = filter(id => id !== userId, r.userIds)
+    return r
+  })
+
+  update = (roomId, updates) => this.store.update(roomId, r => {
+    r.createdAt = updates.createdAt || r.createdAt
+    r.createdByUserId = updates.createdByUserId || r.createdByUserId
+    r.deletedAt = updates.deletedAt || r.deletedAt
+    r.id = updates.id || r.id
+    r.isPrivate = updates.isPrivate || r.isPrivate
+    r.name = updates.name || r.name
+    r.updatedAt = updates.updatedAt || r.updatedAt
+    r.userIds = updates.userIds || r.userIds
+    return r
+  })
 
   fetchBasicRoom = roomId => {
     return this.instance

@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.0...HEAD)
 
+### Changes
+
+ - Subobjects of the current user (Rooms, Users, etc) are now mutated instead
+   of replaced, so any reference to a room will represent the up to date state
+   of that room.
+
 ## 0.7.0 -- 2018-03-13
 
 This version represents a radical departure from 0.6.X. The interface is very

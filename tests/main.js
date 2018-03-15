@@ -5,6 +5,7 @@ import {
   any,
   compose,
   concat,
+  contains,
   curry,
   find,
   head,
@@ -395,17 +396,21 @@ test('user left room hook (user sub) [removes Bob from his own room]', t => {
 test('user joined room hook (user sub) [Bob rejoins his own room]', t => {
   fetchUser(t, 'alice', {
     onUserJoinedRoom: (room, user) => {
-      t.equal(room.id, bobsRoom.id)
       t.equal(user.id, 'bob')
+      t.equal(room, bobsRoom)
+      t.true(contains('bob', bobsRoom.userIds), `bob's room updated`)
       t.end()
     }
   })
-    .then(() => server.apiRequest({
-      method: 'PUT',
-      path: `/rooms/${bobsRoom.id}/users/add`,
-      body: { user_ids: ['bob'] },
-      jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
-    }))
+    .then(alice => {
+      bobsRoom = find(r => r.id === bobsRoom.id, alice.rooms)
+      server.apiRequest({
+        method: 'PUT',
+        path: `/rooms/${bobsRoom.id}/users/add`,
+        body: { user_ids: ['bob'] },
+        jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
+      })
+    })
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })

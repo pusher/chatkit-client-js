@@ -18,7 +18,10 @@ import {
 } from 'ramda'
 
 import ChatkitServer from 'pusher-chatkit-server'
+/* eslint-disable import/no-duplicates */
 import { TokenProvider, ChatManager } from '../dist/web/chatkit.js'
+import Chatkit from '../dist/web/chatkit.js'
+/* eslint-enable import/no-duplicates */
 import {
   INSTANCE_LOCATOR,
   INSTANCE_KEY,
@@ -110,6 +113,13 @@ test('can import TokenProvider', t => {
 
 test('can import ChatManager', t => {
   t.equal(typeof ChatManager, 'function')
+  t.end()
+})
+
+test('can import default', t => {
+  t.equal(typeof Chatkit, 'object')
+  t.equal(typeof Chatkit.TokenProvider, 'function')
+  t.equal(typeof Chatkit.ChatManager, 'function')
   t.end()
 })
 

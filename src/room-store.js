@@ -1,4 +1,4 @@
-import { append, map, mergeWith, filter, uniq, curry, pipe } from 'ramda'
+import { append, map, filter, uniq, curry, pipe } from 'ramda'
 
 import { Store } from './store'
 import { parseBasicRoom } from './parsers'
@@ -13,30 +13,23 @@ export class RoomStore {
 
   store = new Store()
 
-  initialize = this.store.initialize
+  initialize = initial => {
+    this.store.initialize(map(this.decorate, initial))
+  }
 
   set = curry((roomId, basicRoom) => {
-    return this.store.set(roomId, basicRoom)
-      .then(this.decorate)
+    return this.store.set(roomId, this.decorate(basicRoom))
       .then(room =>
         this.userStore.fetchMissingUsers(room.userIds).then(() => room)
       )
   })
 
-  get = roomId => this.store.get(roomId).then(basicRoom =>
-    basicRoom || this.fetchBasicRoom(roomId).then(this.set(roomId))
-  ).then(this.decorate)
-
-  pop = roomId => this.store.pop(roomId).then(basicRoom =>
-    basicRoom || this.fetchBasicRoom(roomId)
-  ).then(this.decorate)
-
-  addUserToRoom = (roomId, userId) => this.pop(roomId).then(r =>
-    this.set(roomId, { ...r, userIds: uniq(append(userId, r.userIds)) })
+  get = roomId => this.store.get(roomId).then(room =>
+    room || this.fetchBasicRoom(roomId).then(this.set(roomId))
   )
 
-  removeUserFromRoom = (roomId, userId) => this.pop(roomId).then(r =>
-    this.set(roomId, { ...r, userIds: filter(id => id !== userId, r.userIds) })
+  pop = roomId => this.store.pop(roomId).then(room =>
+    room || this.fetchBasicRoom(roomId).then(this.decorate)
   )
 
   update = (roomId, updates) => this.store.pop(roomId).then(r =>
@@ -55,9 +48,9 @@ export class RoomStore {
       })
   }
 
-  snapshot = () => map(this.decorate, this.store.snapshot())
+  snapshot = this.store.snapshot
 
-  getSync = roomId => this.decorate(this.store.getSync(roomId))
+  getSync = this.store.getSync
 
   decorate = basicRoom => {
     return basicRoom

@@ -23,14 +23,16 @@ export class UserStore {
 
   store = new Store()
 
-  initialize = this.store.initialize
+  initialize = initial => {
+    this.store.initialize(map(this.decorate, initial))
+  }
 
-  set = this.store.set
+  set = (userId, basicUser) => this.store.set(userId, this.decorate(basicUser))
 
   get = userId => Promise.all([
     this.store.get(userId).then(user => user || this.fetchBasicUser(userId)),
     this.presenceStore.get(userId) // Make sure it's safe to getSync
-  ]).then(([user, presence]) => this.decorate(user))
+  ]).then(([user, _presence]) => user)
 
   fetchBasicUser = userId => {
     return this.instance
@@ -79,9 +81,9 @@ export class UserStore {
       })
   }
 
-  snapshot = () => map(this.decorate, this.store.snapshot())
+  snapshot = this.store.snapshot
 
-  getSync = userId => this.decorate(this.store.getSync(userId))
+  getSync = this.store.getSync
 
   decorate = basicUser => {
     return basicUser

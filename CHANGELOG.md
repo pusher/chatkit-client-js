@@ -41,7 +41,7 @@ currentUser.subscribeToRoom({
 })
 ```
 
-- Hooks all prefixed with `on`. e.g. `onNewMessage`, `onStartedTyping`
+- Hooks all prefixed with `on`. e.g. `onNewMessage`, `onUserStartedTyping`
 
 - `cursorSet` hook renamed to `onNewCursor`
 

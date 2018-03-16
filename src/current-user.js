@@ -295,7 +295,11 @@ export class CurrentUser {
     typeCheckObj('hooks', 'function', hooks)
     messageLimit && typeCheck('messageLimit', 'number', messageLimit)
     if (this.roomSubscriptions[roomId]) {
-      this.roomSubscriptions[roomId].cancel()
+      try {
+        this.roomSubscriptions[roomId].cancel()
+      } catch (err) {
+        this.logger.debug('error when cancelling room subscription', err)
+      }
     }
     this.roomSubscriptions[roomId] = new RoomSubscription({
       hooks,

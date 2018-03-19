@@ -28,9 +28,7 @@ export class RoomStore {
     room || this.fetchBasicRoom(roomId).then(this.set(roomId))
   )
 
-  pop = roomId => this.store.pop(roomId).then(room =>
-    room || this.fetchBasicRoom(roomId).then(this.decorate)
-  )
+  pop = this.store.pop
 
   addUserToRoom = (roomId, userId) => this.store.update(roomId, r => {
     r.userIds = uniq(append(userId, r.userIds))

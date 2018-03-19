@@ -4,13 +4,19 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.0...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.2...HEAD)
+
+## 0.7.2 -- 2018-03-19
 
 ### Changes
 
- - Subobjects of the current user (Rooms, Users, etc) are now mutated instead
-   of replaced, so any reference to a room will represent the up to date state
-   of that room.
+- Subobjects of the current user (Rooms, Users, etc) are now mutated instead of
+  replaced, so any reference to a room will represent the up to date state of
+  that room.
+
+### Fixes
+
+- Remove chatty logs about requiring room membership after leaving a room
 
 ## 0.7.0 -- 2018-03-13
 

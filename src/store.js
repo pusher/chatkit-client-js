@@ -1,11 +1,11 @@
-import { clone, forEach } from 'ramda'
+import { forEach } from 'ramda'
 
 export class Store {
   pendingSets = [] // [{ key, value, resolve }]
   pendingGets = [] // [{ key, resolve }]
 
   initialize = initialStore => {
-    this.store = clone(initialStore)
+    this.store = initialStore
     forEach(({ key, value, resolve }) => {
       resolve(this.store[key] = value)
     }, this.pendingSets)
@@ -38,6 +38,8 @@ export class Store {
     delete this.store[key]
     return value
   })
+
+  update = (key, f) => this.get(key).then(value => this.set(key, f(value)))
 
   // snapshot and getSync are useful for building synchronous interfaces, but
   // should only be used when we can guarantee that the information we want is

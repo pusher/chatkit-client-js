@@ -1,3 +1,5 @@
+import { map } from 'ramda'
+
 import { Store } from './store'
 import { Cursor } from './cursor'
 import { parseBasicCursor } from './parsers'
@@ -12,20 +14,24 @@ export class CursorStore {
 
   store = new Store()
 
-  initialize = this.store.initialize
+  initialize = initial => {
+    this.store.initialize(map(this.decorate, initial))
+  }
 
-  set = (userId, roomId, cursor) => this.store.set(key(userId, roomId), cursor)
+  set = (userId, roomId, cursor) => this.store.set(
+    key(userId, roomId),
+    this.decorate(cursor)
+  )
 
   get = (userId, roomId) => {
     return this.store.get(key(userId, roomId))
       .then(cursor => cursor || this.fetchBasicCursor(userId, roomId)
         .then(cursor => this.set(userId, roomId, cursor))
       )
-      .then(this.decorate)
   }
 
   getSync = (userId, roomId) => {
-    return this.decorate(this.store.getSync(key(userId, roomId)))
+    return this.store.getSync(key(userId, roomId))
   }
 
   fetchBasicCursor = (userId, roomId) => {
@@ -37,7 +43,7 @@ export class CursorStore {
       .then(res => {
         const data = JSON.parse(res)
         if (data) {
-          return this.decorate(parseBasicCursor(data))
+          return parseBasicCursor(data)
         }
         return undefined
       })

@@ -4,7 +4,26 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.2...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.3...HEAD)
+
+## 0.7.3 -- 2018-03-20
+
+### Changes
+
+- removed `getAllRooms` from the current user. It only causes confusion. Anyone
+  using `getAllRooms` can replace swap it out for something like the following:
+
+```javascript
+// instead of this
+currentUser.getAllRooms().then(allRooms => {
+  doTheThing(allRooms)
+})
+
+// do this
+currentUser.getJoinableRooms().then(joinable => {
+  doTheThing(joinable.concat(currentUser.rooms))
+})
+```
 
 ## 0.7.2 -- 2018-03-19
 

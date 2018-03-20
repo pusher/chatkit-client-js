@@ -546,23 +546,6 @@ test('get joinable rooms', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('get all rooms', t => {
-  fetchUser(t, 'bob')
-    .then(bob => bob.getAllRooms())
-    .then(rooms => {
-      const ids = rooms.map(r => r.id)
-      t.true(ids.includes(alicesRoom.id), `should include Alice's room`)
-      t.true(ids.includes(bobsRoom.id), `should include Bob's room`)
-      t.false(
-        ids.includes(alicesPrivateRoom.id),
-        `shouldn't include Alice's private room`
-      )
-      t.end()
-    })
-    .catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
-})
-
 test(`join room [Bob joins Alice's room]`, t => {
   fetchUser(t, 'bob')
     .then(bob => bob.joinRoom({ roomId: alicesRoom.id })

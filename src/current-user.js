@@ -2,7 +2,6 @@ import { sendRawRequest } from 'pusher-platform'
 import {
   chain,
   compose,
-  concat,
   contains,
   has,
   indexBy,
@@ -156,10 +155,6 @@ export class CurrentUser {
         this.logger.warn('error getting joinable rooms:', err)
         throw err
       })
-  }
-
-  getAllRooms = () => {
-    return this.getJoinableRooms().then(concat(this.rooms))
   }
 
   joinRoom = ({ roomId } = {}) => {

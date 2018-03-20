@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.3...HEAD)
 
+## 0.7.4 -- 2018-03-20
+
+## Added
+
+- es module build for named imports and tree shaking when consuming the SDK
+  with rollup
+
 ## 0.7.3 -- 2018-03-20
 
 ### Changes

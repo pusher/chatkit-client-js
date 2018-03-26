@@ -352,12 +352,13 @@ export class CurrentUser {
   updateRoom = ({ roomId, name, ...rest } = {}) => {
     typeCheck('roomId', 'number', roomId)
     name && typeCheck('name', 'string', name)
+    rest.private && typeCheck('private', 'boolean', rest.private)
     return this.apiInstance.request({
       method: 'PUT',
       path: `/rooms/${roomId}`,
       json: {
-        name: name,
-        private: !!rest.private // private is a reserved word in strict mode!
+        name,
+        private: rest.private // private is a reserved word in strict mode!
       }
     })
       .then(() => {})

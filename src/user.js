@@ -10,6 +10,10 @@ export class User {
   }
 
   get presence () {
-    return this.presenceStore.getSync(this.id)
+    return this.presenceStore.getSync(this.id) || {
+      lastSeenAt: undefined,
+      state: 'unknown',
+      userId: this.id
+    }
   }
 }

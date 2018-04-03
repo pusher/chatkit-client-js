@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.3...HEAD)
 
+## 0.7.6 -- 2018-04-03
+
+## Changes
+
+- Fill in a sensible default for missing presence data so we don't have to
+  explicitly check for undefined.
+- Use ES5 syntax in `es.js` to satisfy `create-react-app`'s build script.
+
 ## 0.7.5 -- 2018-03-26
 
 ## Changes

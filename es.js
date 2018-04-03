@@ -1,4 +1,5 @@
-import Chatkit from './dist/es/chatkit.js'
+const Chatkit = require('./dist/web/chatkit')
 
-export const { ChatManager, TokenProvider } = Chatkit
+export const ChatManager = Chatkit.ChatManager
+export const TokenProvider = Chatkit.TokenProvider
 export default Chatkit

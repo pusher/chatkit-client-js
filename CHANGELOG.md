@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.3...HEAD)
 
+## 0.7.8 -- 2018-04-04
+
+## Changes
+
+- Remove the es build because it was causing problems with webpack. If we want
+  to add it back later more investigation and testing will be required.
+
 ## 0.7.7 -- 2018-04-03
 
 ## Changes

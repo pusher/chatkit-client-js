@@ -2,6 +2,7 @@ import babel from 'rollup-plugin-babel'
 import commonjs from 'rollup-plugin-commonjs'
 import resolve from 'rollup-plugin-node-resolve'
 import uglify from 'rollup-plugin-uglify'
+import json from 'rollup-plugin-json'
 
 const pusherPlatformExports = [
   'BaseClient',
@@ -13,6 +14,7 @@ const pusherPlatformExports = [
 export default {
   input: 'src/main.js',
   plugins: [
+    json(),
     babel({
       presets: [
         [

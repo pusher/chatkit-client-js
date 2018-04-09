@@ -4,6 +4,8 @@ import { split } from 'ramda'
 import { CurrentUser } from './current-user'
 import { typeCheck, typeCheckObj } from './utils'
 
+import { version } from '../package.json'
+
 export class ChatManager {
   constructor ({ instanceLocator, tokenProvider, userId, ...options } = {}) {
     typeCheck('instanceLocator', 'string', instanceLocator)
@@ -18,7 +20,9 @@ export class ChatManager {
     }
     const baseClient = options.baseClient || new BaseClient({
       host: `${cluster}.${HOST_BASE}`,
-      logger: options.logger
+      logger: options.logger,
+      sdkProduct: 'chatkit',
+      sdkVersion: version
     })
     if (typeof tokenProvider.setUserId === 'function') {
       tokenProvider.setUserId(userId)

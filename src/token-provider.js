@@ -34,11 +34,11 @@ export class TokenProvider {
     })
       .then(res => {
         const { access_token: token, expires_in: expiresIn } = JSON.parse(res)
-        this.req = undefined
+        delete this.req
         return { token, expiresIn }
       })
       .catch(err => {
-        this.req = undefined
+        delete this.req
         throw err
       })
     return this.req

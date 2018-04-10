@@ -2,9 +2,10 @@ import {
   difference,
   forEach,
   join,
+  keys,
   length,
   map,
-  pipe,
+  pick,
   prop,
   values
 } from 'ramda'
@@ -19,6 +20,7 @@ export class UserStore {
     this.instance = instance
     this.presenceStore = presenceStore
     this.logger = logger
+    this.reqs = {} // ongoing requests by userId
   }
 
   store = new Store()
@@ -30,25 +32,12 @@ export class UserStore {
   set = (userId, basicUser) => this.store.set(userId, this.decorate(basicUser))
 
   get = userId => Promise.all([
-    this.store.get(userId).then(user => user || this.fetchBasicUser(userId)),
+    this.fetchUser(userId),
     this.presenceStore.get(userId) // Make sure it's safe to getSync
   ]).then(([user, _presence]) => user)
 
-  fetchBasicUser = userId => {
-    return this.instance
-      .request({
-        method: 'GET',
-        path: `/users/${encodeURIComponent(userId)}`
-      })
-      .then(res => {
-        const user = parseBasicUser(JSON.parse(res))
-        this.set(userId, user)
-        return user
-      })
-      .catch(err => {
-        this.logger.warn('error fetching user information:', err)
-        throw err
-      })
+  fetchUser = userId => {
+    return this.fetchMissingUsers([userId]).then(() => this.store.get(userId))
   }
 
   fetchMissingUsers = userIds => {
@@ -56,29 +45,37 @@ export class UserStore {
       userIds,
       map(prop('id'), values(this.store.snapshot()))
     )
-    if (length(missing) === 0) {
-      return Promise.resolve()
+    const missingNotInProgress = difference(missing, keys(this.reqs))
+    if (length(missingNotInProgress) > 0) {
+      this.fetchBasicUsers(missingNotInProgress)
     }
-    // TODO don't make simulatneous requests for the same users (question: what
-    // will actually cause this situation to arise? Receiving lots of messages
-    // in a room from a user who is no longer a member of said room?)
-    return this.instance
+    return Promise.all(values(pick(userIds, this.reqs)))
+  }
+
+  fetchBasicUsers = userIds => {
+    const req = this.instance
       .request({
         method: 'GET',
         path: appendQueryParams(
-          { user_ids: join(',', missing) },
+          { user_ids: join(',', userIds) },
           '/users_by_ids'
         )
       })
-      .then(pipe(
-        JSON.parse,
-        map(parseBasicUser),
-        forEach(user => this.set(user.id, user))
-      ))
+      .then(res => {
+        const users = map(parseBasicUser, JSON.parse(res))
+        forEach(user => this.set(user.id, user), users)
+        forEach(userId => {
+          delete this.reqs[userId]
+        }, userIds)
+        return users
+      })
       .catch(err => {
         this.logger.warn('error fetching missing users:', err)
         throw err
       })
+    forEach(userId => {
+      this.reqs[userId] = req
+    }, userIds)
   }
 
   snapshot = this.store.snapshot

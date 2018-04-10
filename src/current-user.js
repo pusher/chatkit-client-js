@@ -290,11 +290,7 @@ export class CurrentUser {
     typeCheckObj('hooks', 'function', hooks)
     messageLimit && typeCheck('messageLimit', 'number', messageLimit)
     if (this.roomSubscriptions[roomId]) {
-      try {
-        this.roomSubscriptions[roomId].cancel()
-      } catch (err) {
-        this.logger.debug('error when cancelling room subscription', err)
-      }
+      this.roomSubscriptions[roomId].cancel()
     }
     this.roomSubscriptions[roomId] = new RoomSubscription({
       hooks,
@@ -321,7 +317,8 @@ export class CurrentUser {
         },
         path: `/cursors/0/rooms/${roomId}`,
         cursorStore: this.cursorStore,
-        instance: this.cursorsInstance
+        instance: this.cursorsInstance,
+        logger: this.logger
       })
     })
     return this.joinRoom({ roomId })
@@ -412,7 +409,8 @@ export class CurrentUser {
       userStore: this.userStore,
       roomStore: this.roomStore,
       typingIndicators: this.typingIndicators,
-      roomSubscriptions: this.roomSubscriptions
+      roomSubscriptions: this.roomSubscriptions,
+      logger: this.logger
     })
     return this.userSubscription.connect()
       .then(({ user, basicRooms }) => {
@@ -438,7 +436,8 @@ export class CurrentUser {
       userStore: this.userStore,
       roomStore: this.roomStore,
       presenceStore: this.presenceStore,
-      roomSubscriptions: this.roomSubscriptions
+      roomSubscriptions: this.roomSubscriptions,
+      logger: this.logger
     })
     return this.presenceSubscription.connect()
       .catch(err => {
@@ -461,7 +460,8 @@ export class CurrentUser {
       },
       path: `/cursors/0/users/${this.encodedId}`,
       cursorStore: this.cursorStore,
-      instance: this.cursorsInstance
+      instance: this.cursorsInstance,
+      logger: this.logger
     })
     return this.cursorSubscription.connect()
       .then(() => this.cursorStore.initialize({}))

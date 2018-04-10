@@ -3,11 +3,12 @@ import { compose, forEach, map } from 'ramda'
 import { parseBasicCursor } from './parsers'
 
 export class CursorSubscription {
-  constructor ({ hooks, path, cursorStore, instance }) {
+  constructor ({ hooks, path, cursorStore, instance, logger }) {
     this.hooks = hooks
     this.path = path
     this.cursorStore = cursorStore
     this.instance = instance
+    this.logger = logger
   }
 
   connect () {
@@ -24,7 +25,11 @@ export class CursorSubscription {
   }
 
   cancel () {
-    this.sub && this.sub.unsubscribe()
+    try {
+      this.sub && this.sub.unsubscribe()
+    } catch (err) {
+      this.logger.debug('error when cancelling cursor subscription', err)
+    }
   }
 
   onEvent = ({ body }) => {

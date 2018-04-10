@@ -14,6 +14,7 @@ export class MessageSubscription {
     this.userStore = options.userStore
     this.roomStore = options.roomStore
     this.messageBuffer = [] // { message, ready }
+    this.logger = options.logger
   }
 
   connect () {
@@ -32,7 +33,11 @@ export class MessageSubscription {
   }
 
   cancel () {
-    this.sub && this.sub.unsubscribe()
+    try {
+      this.sub && this.sub.unsubscribe()
+    } catch (err) {
+      this.logger.debug('error when cancelling message subscription', err)
+    }
   }
 
   onEvent = ({ body }) => {

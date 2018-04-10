@@ -20,6 +20,7 @@ export class PresenceSubscription {
     this.roomStore = options.roomStore
     this.presenceStore = options.presenceStore
     this.roomSubscriptions = options.roomSubscriptions
+    this.logger = options.logger
   }
 
   connect () {
@@ -36,7 +37,11 @@ export class PresenceSubscription {
   }
 
   cancel () {
-    this.sub && this.sub.unsubscribe()
+    try {
+      this.sub && this.sub.unsubscribe()
+    } catch (err) {
+      this.logger.debug('error when cancelling presence subscription', err)
+    }
   }
 
   onEvent = ({ body }) => {

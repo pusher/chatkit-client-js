@@ -11,6 +11,7 @@ export class UserSubscription {
     this.roomStore = options.roomStore
     this.typingIndicators = options.typingIndicators
     this.roomSubscriptions = options.roomSubscriptions
+    this.logger = options.logger
   }
 
   connect () {
@@ -27,7 +28,11 @@ export class UserSubscription {
   }
 
   cancel () {
-    this.sub && this.sub.unsubscribe()
+    try {
+      this.sub && this.sub.unsubscribe()
+    } catch (err) {
+      this.logger.debug('error when cancelling user subscription', err)
+    }
   }
 
   onEvent = ({ body }) => {

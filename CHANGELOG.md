@@ -4,7 +4,14 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.3...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.9...HEAD)
+
+## 0.7.9 -- 2018-04-10
+
+## Additions
+
+- De-duplicate user information requests.
+- Send SDK info headers along with every request (version, platform, etc).
 
 ## 0.7.8 -- 2018-04-04
 

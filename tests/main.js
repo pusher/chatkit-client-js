@@ -96,19 +96,15 @@ const teardown = currentUser => {
   map(sub => sub.cancel(), currentUser.roomSubscriptions)
 }
 
-test('[teardown] destroy Alice', t => {
-  server.deleteUser('alice').then(() => t.end()).catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
-})
-
-test('[teardown] destroy Bob', t => {
-  server.deleteUser('bob').then(() => t.end()).catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
-})
-
-test('[teardown] destroy Carol', t => {
-  server.deleteUser('carol').then(() => t.end()).catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
+test('[teardown]', t => {
+  server.apiRequest({
+    method: 'DELETE',
+    path: '/resources',
+    jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
+  })
+    .then(() => t.end())
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT * 10)
 })
 
 // Imports

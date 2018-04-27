@@ -6,6 +6,7 @@ import {
   has,
   indexBy,
   map,
+  max,
   pipe,
   prop,
   sort,
@@ -36,6 +37,7 @@ import { CursorSubscription } from './cursor-subscription'
 import { MessageSubscription } from './message-subscription'
 import { RoomSubscription } from './room-subscription'
 import { Message } from './message'
+import { SET_CURSOR_WAIT } from './constants'
 
 export class CurrentUser {
   constructor ({
@@ -75,6 +77,7 @@ export class CurrentUser {
       logger: this.logger
     })
     this.roomSubscriptions = {}
+    this.readCursorBuffer = {} // roomId -> { position, [{ resolve, reject }] }
   }
 
   /* public */
@@ -90,17 +93,25 @@ export class CurrentUser {
   setReadCursor = ({ roomId, position } = {}) => {
     typeCheck('roomId', 'number', roomId)
     typeCheck('position', 'number', position)
-    return this.cursorsInstance
-      .request({
-        method: 'PUT',
-        path: `/cursors/0/rooms/${roomId}/users/${this.encodedId}`,
-        json: { position }
-      })
-      .then(() => {})
-      .catch(err => {
-        this.logger.warn('error setting cursor:', err)
-        throw err
-      })
+    return new Promise((resolve, reject) => {
+      if (this.readCursorBuffer[roomId] !== undefined) {
+        this.readCursorBuffer[roomId].position =
+          max(this.readCursorBuffer[roomId].position, position)
+        this.readCursorBuffer[roomId].callbacks.push({ resolve, reject })
+      } else {
+        this.readCursorBuffer[roomId] = {
+          position,
+          callbacks: [{ resolve, reject }]
+        }
+        setTimeout(() => {
+          this.setReadCursorRequest({
+            roomId,
+            ...this.readCursorBuffer[roomId]
+          })
+          delete this.readCursorBuffer[roomId]
+        }, SET_CURSOR_WAIT)
+      }
+    })
   }
 
   readCursor = ({ roomId, userId = this.id } = {}) => {
@@ -379,6 +390,20 @@ export class CurrentUser {
   }
 
   /* internal */
+
+  setReadCursorRequest = ({ roomId, position, callbacks }) => {
+    return this.cursorsInstance
+      .request({
+        method: 'PUT',
+        path: `/cursors/0/rooms/${roomId}/users/${this.encodedId}`,
+        json: { position }
+      })
+      .then(() => map(x => x.resolve(), callbacks))
+      .catch(err => {
+        this.logger.warn('error setting cursor:', err)
+        map(x => x.reject(err), callbacks)
+      })
+  }
 
   uploadDataAttachment = (roomId, { file, name }) => {
     // TODO some validation on allowed file names?

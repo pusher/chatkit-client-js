@@ -4,6 +4,12 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
+## 0.7.12 -- 2018-04-30
+
+## Changes
+
+- Uploads files to path scoped by user ID (no external change)
+
 ## 0.7.11 -- 2018-04-30
 
 ## Changes

@@ -412,7 +412,7 @@ export class CurrentUser {
     body.append('file', file, name)
     return this.filesInstance.request({
       method: 'POST',
-      path: `/rooms/${roomId}/files/${name}`,
+      path: `/rooms/${roomId}/users/${this.encodedId}/files/${name}`,
       body
     })
       .then(JSON.parse)

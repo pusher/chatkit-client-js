@@ -9,7 +9,6 @@ export class UserSubscription {
     this.instance = options.instance
     this.userStore = options.userStore
     this.roomStore = options.roomStore
-    this.typingIndicators = options.typingIndicators
     this.roomSubscriptions = options.roomSubscriptions
     this.logger = options.logger
   }
@@ -57,9 +56,6 @@ export class UserSubscription {
         break
       case 'room_deleted':
         this.onRoomDeleted(body.data)
-        break
-      case 'typing_start': // soon to be 'is_typing'
-        this.onIsTyping(body.data)
         break
     }
   }
@@ -136,10 +132,5 @@ export class UserSubscription {
         this.hooks.global.onRoomDeleted(room)
       }
     })
-  }
-
-  onIsTyping = ({ room_id: roomId, user_id: userId }) => {
-    Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
-      .then(([room, user]) => this.typingIndicators.onIsTyping(room, user))
   }
 }

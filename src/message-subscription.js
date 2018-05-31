@@ -13,6 +13,7 @@ export class MessageSubscription {
     this.instance = options.instance
     this.userStore = options.userStore
     this.roomStore = options.roomStore
+    this.typingIndicators = options.typingIndicators
     this.messageBuffer = [] // { message, ready }
     this.logger = options.logger
   }
@@ -44,6 +45,9 @@ export class MessageSubscription {
     switch (body.event_name) {
       case 'new_message':
         this.onNewMessage(body.data)
+        break
+      case 'is_typing':
+        this.onIsTyping(body.data)
         break
     }
   }
@@ -78,5 +82,10 @@ export class MessageSubscription {
         this.hooks.rooms[this.roomId].onNewMessage(message)
       }
     }
+  }
+
+  onIsTyping = ({ user_id: userId }) => {
+    Promise.all([this.roomStore.get(this.roomId), this.userStore.get(userId)])
+      .then(([room, user]) => this.typingIndicators.onIsTyping(room, user))
   }
 }

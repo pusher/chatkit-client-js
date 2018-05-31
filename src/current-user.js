@@ -319,6 +319,7 @@ export class CurrentUser {
         instance: this.apiInstance,
         userStore: this.userStore,
         roomStore: this.roomStore,
+        typingIndicators: this.typingIndicators,
         logger: this.logger
       }),
       cursorSub: new CursorSubscription({
@@ -438,7 +439,6 @@ export class CurrentUser {
       instance: this.apiInstance,
       userStore: this.userStore,
       roomStore: this.roomStore,
-      typingIndicators: this.typingIndicators,
       logger: this.logger
     })
     return this.userSubscription.connect()

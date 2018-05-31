@@ -20,16 +20,12 @@ export class TypingIndicators {
     return this.instance
       .request({
         method: 'POST',
-        path: `/rooms/${roomId}/events`,
-        json: {
-          name: 'typing_start', // soon to be 'is_typing'
-          user_id: this.userId
-        }
+        path: `/rooms/${roomId}/typing_indicators`
       })
       .catch(err => {
         delete this.typingRequestSent[roomId]
         this.logger.warn(
-          `Error sending is_typing event in room ${roomId}`,
+          `Error sending typing indicator in room ${roomId}`,
           err
         )
         throw err

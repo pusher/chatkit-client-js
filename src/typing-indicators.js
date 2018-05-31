@@ -1,7 +1,8 @@
 import { TYPING_INDICATOR_TTL, TYPING_INDICATOR_LEEWAY } from './constants'
 
 export class TypingIndicators {
-  constructor ({ userId, instance, logger }) {
+  constructor ({ hooks, userId, instance, logger }) {
+    this.hooks = hooks
     this.userId = userId
     this.instance = instance
     this.logger = logger
@@ -35,36 +36,42 @@ export class TypingIndicators {
       })
   }
 
-  onIsTyping = (room, user, hooks, roomHooks) => {
+  onIsTyping = (room, user) => {
     if (!this.timers[room.id]) {
       this.timers[room.id] = {}
     }
     if (this.timers[room.id][user.id]) {
       clearTimeout(this.timers[room.id][user.id])
     } else {
-      this.onStarted(room, user, hooks, roomHooks)
+      this.onStarted(room, user)
     }
     this.timers[room.id][user.id] = setTimeout(() => {
-      this.onStopped(room, user, hooks, roomHooks)
+      this.onStopped(room, user)
       delete this.timers[room.id][user.id]
     }, TYPING_INDICATOR_TTL)
   }
 
-  onStarted = (room, user, hooks, roomHooks) => {
-    if (hooks.onUserStartedTyping) {
-      hooks.onUserStartedTyping(room, user)
+  onStarted = (room, user) => {
+    if (this.hooks.global.onUserStartedTyping) {
+      this.hooks.global.onUserStartedTyping(room, user)
     }
-    if (roomHooks[room.id] && roomHooks[room.id].onUserStartedTyping) {
-      roomHooks[room.id].onUserStartedTyping(user)
+    if (
+      this.hooks.rooms[room.id] &&
+      this.hooks.rooms[room.id].onUserStartedTyping
+    ) {
+      this.hooks.rooms[room.id].onUserStartedTyping(user)
     }
   }
 
-  onStopped = (room, user, hooks, roomHooks) => {
-    if (hooks.onUserStoppedTyping) {
-      hooks.onUserStoppedTyping(room, user)
+  onStopped = (room, user) => {
+    if (this.hooks.global.onUserStoppedTyping) {
+      this.hooks.global.onUserStoppedTyping(room, user)
     }
-    if (roomHooks[room.id] && roomHooks[room.id].onUserStoppedTyping) {
-      roomHooks[room.id].onUserStoppedTyping(user)
+    if (
+      this.hooks.rooms[room.id] &&
+      this.hooks.rooms[room.id].onUserStoppedTyping
+    ) {
+      this.hooks.rooms[room.id].onUserStoppedTyping(user)
     }
   }
 }

@@ -59,6 +59,7 @@ export class ChatManager {
   connect = (hooks = {}) => {
     typeCheckObj('hooks', 'function', hooks)
     const currentUser = new CurrentUser({
+      hooks,
       id: this.userId,
       apiInstance: this.apiInstance,
       filesInstance: this.filesInstance,
@@ -66,9 +67,9 @@ export class ChatManager {
       presenceInstance: this.presenceInstance
     })
     return Promise.all([
-      currentUser.establishUserSubscription(hooks),
-      currentUser.establishPresenceSubscription(hooks),
-      currentUser.establishCursorSubscription(hooks)
+      currentUser.establishUserSubscription(),
+      currentUser.establishPresenceSubscription(),
+      currentUser.establishCursorSubscription()
     ]).then(() => currentUser)
   }
 }

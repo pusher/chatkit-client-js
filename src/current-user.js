@@ -44,9 +44,14 @@ export class CurrentUser {
     apiInstance,
     cursorsInstance,
     filesInstance,
+    hooks,
     id,
     presenceInstance
   }) {
+    this.hooks = {
+      global: hooks,
+      rooms: {}
+    }
     this.id = id
     this.encodedId = encodeURIComponent(this.id)
     this.apiInstance = apiInstance
@@ -72,6 +77,7 @@ export class CurrentUser {
       logger: this.logger
     })
     this.typingIndicators = new TypingIndicators({
+      hooks: this.hooks,
       userId: this.id,
       instance: this.apiInstance,
       logger: this.logger
@@ -303,11 +309,11 @@ export class CurrentUser {
     if (this.roomSubscriptions[roomId]) {
       this.roomSubscriptions[roomId].cancel()
     }
+    this.hooks.rooms[roomId] = hooks
     this.roomSubscriptions[roomId] = new RoomSubscription({
-      hooks,
       messageSub: new MessageSubscription({
         roomId,
-        hooks,
+        hooks: this.hooks,
         messageLimit,
         userId: this.id,
         instance: this.apiInstance,
@@ -316,14 +322,13 @@ export class CurrentUser {
         logger: this.logger
       }),
       cursorSub: new CursorSubscription({
-        hooks: {
-          newCursor: cursor => {
-            if (
-              hooks.onNewReadCursor && cursor.type === 0 &&
-              cursor.userId !== this.id
-            ) {
-              hooks.onNewReadCursor(cursor)
-            }
+        onNewCursorHook: cursor => {
+          if (
+            this.hooks.rooms[roomId] &&
+            this.hooks.rooms[roomId].onNewReadCursor && cursor.type === 0 &&
+            cursor.userId !== this.id
+          ) {
+            this.hooks.rooms[roomId].onNewReadCursor(cursor)
           }
         },
         path: `/cursors/0/rooms/${roomId}`,
@@ -426,15 +431,14 @@ export class CurrentUser {
     this.roomStore
   )
 
-  establishUserSubscription = hooks => {
+  establishUserSubscription = () => {
     this.userSubscription = new UserSubscription({
-      hooks,
+      hooks: this.hooks,
       userId: this.id,
       instance: this.apiInstance,
       userStore: this.userStore,
       roomStore: this.roomStore,
       typingIndicators: this.typingIndicators,
-      roomSubscriptions: this.roomSubscriptions,
       logger: this.logger
     })
     return this.userSubscription.connect()
@@ -453,15 +457,14 @@ export class CurrentUser {
       })
   }
 
-  establishPresenceSubscription = hooks => {
+  establishPresenceSubscription = () => {
     this.presenceSubscription = new PresenceSubscription({
-      hooks,
+      hooks: this.hooks,
       userId: this.id,
       instance: this.presenceInstance,
       userStore: this.userStore,
       roomStore: this.roomStore,
       presenceStore: this.presenceStore,
-      roomSubscriptions: this.roomSubscriptions,
       logger: this.logger
     })
     return this.presenceSubscription.connect()
@@ -471,16 +474,14 @@ export class CurrentUser {
       })
   }
 
-  establishCursorSubscription = hooks => {
+  establishCursorSubscription = () => {
     this.cursorSubscription = new CursorSubscription({
-      hooks: {
-        newCursor: cursor => {
-          if (
-            hooks.onNewReadCursor && cursor.type === 0 &&
-            this.isMemberOf(cursor.roomId)
-          ) {
-            hooks.onNewReadCursor(cursor)
-          }
+      onNewCursorHook: cursor => {
+        if (
+          this.hooks.global.onNewReadCursor && cursor.type === 0 &&
+          this.isMemberOf(cursor.roomId)
+        ) {
+          this.hooks.global.onNewReadCursor(cursor)
         }
       },
       path: `/cursors/0/users/${this.encodedId}`,

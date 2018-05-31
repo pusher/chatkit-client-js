@@ -71,8 +71,11 @@ export class MessageSubscription {
   flushBuffer = () => {
     while (!isEmpty(this.messageBuffer) && head(this.messageBuffer).ready) {
       const message = this.messageBuffer.shift().message
-      if (this.hooks.onNewMessage) {
-        this.hooks.onNewMessage(message)
+      if (
+        this.hooks.rooms[this.roomId] &&
+        this.hooks.rooms[this.roomId].onNewMessage
+      ) {
+        this.hooks.rooms[this.roomId].onNewMessage(message)
       }
     }
   }

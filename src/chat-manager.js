@@ -35,7 +35,7 @@ export class ChatManager {
     }
     this.apiInstance = new Instance({
       serviceName: 'chatkit',
-      serviceVersion: 'v1',
+      serviceVersion: 'v2',
       ...instanceOptions
     })
     this.filesInstance = new Instance({

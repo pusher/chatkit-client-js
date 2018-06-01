@@ -3,8 +3,8 @@ import { compose, forEach, map } from 'ramda'
 import { parseBasicCursor } from './parsers'
 
 export class CursorSubscription {
-  constructor ({ hooks, path, cursorStore, instance, logger }) {
-    this.hooks = hooks
+  constructor ({ onNewCursorHook, path, cursorStore, instance, logger }) {
+    this.onNewCursorHook = onNewCursorHook
     this.path = path
     this.cursorStore = cursorStore
     this.instance = instance
@@ -13,7 +13,7 @@ export class CursorSubscription {
 
   connect () {
     return new Promise((resolve, reject) => {
-      this.hooks = { ...this.hooks, subscriptionEstablished: resolve }
+      this.onSubscriptionEstablished = resolve
       this.sub = this.instance.subscribeNonResuming({
         path: this.path,
         listeners: {
@@ -48,17 +48,17 @@ export class CursorSubscription {
       forEach(c => this.cursorStore.set(c.userId, c.roomId, c)),
       map(parseBasicCursor)
     )(cursors)
-    this.hooks.subscriptionEstablished()
+    this.onSubscriptionEstablished()
   }
 
   onNewCursor = data => {
     const basicCursor = parseBasicCursor(data)
-    this.cursorStore.set(basicCursor.userId, basicCursor.roomId, basicCursor)
+    this.cursorStore
+      .set(basicCursor.userId, basicCursor.roomId, basicCursor)
       .then(() => {
-        if (this.hooks.newCursor) {
-          this.cursorStore.get(basicCursor.userId, basicCursor.roomId)
-            .then(cursor => this.hooks.newCursor(cursor))
-        }
+        this.cursorStore
+          .get(basicCursor.userId, basicCursor.roomId)
+          .then(this.onNewCursorHook)
       })
   }
 }

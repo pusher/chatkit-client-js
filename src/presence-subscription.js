@@ -19,13 +19,12 @@ export class PresenceSubscription {
     this.userStore = options.userStore
     this.roomStore = options.roomStore
     this.presenceStore = options.presenceStore
-    this.roomSubscriptions = options.roomSubscriptions
     this.logger = options.logger
   }
 
   connect () {
     return new Promise((resolve, reject) => {
-      this.hooks = { ...this.hooks, subscriptionEstablished: resolve }
+      this.onSubscriptionEstablished = resolve
       this.sub = this.instance.subscribeNonResuming({
         path: `/users/${encodeURIComponent(this.userId)}/presence`,
         listeners: {
@@ -62,7 +61,7 @@ export class PresenceSubscription {
     this.presenceStore.initialize(
       indexBy(prop('userId'), map(parsePresence, userStates))
     )
-    this.hooks.subscriptionEstablished()
+    this.onSubscriptionEstablished()
   }
 
   onPresenceUpdate = data => {
@@ -92,17 +91,17 @@ export class PresenceSubscription {
   onWentOffline = user => this.callRelevantHooks('onUserWentOffline', user)
 
   callRelevantHooks = (hookName, user) => {
-    if (this.hooks[hookName]) {
-      this.hooks[hookName](user)
+    if (this.hooks.global[hookName]) {
+      this.hooks.global[hookName](user)
     }
     compose(
-      forEach(([roomId, sub]) => this.roomStore.get(roomId).then(room => {
+      forEach(([roomId, hooks]) => this.roomStore.get(roomId).then(room => {
         if (contains(user.id, room.userIds)) {
-          sub.hooks[hookName](user)
+          hooks[hookName](user)
         }
       })),
-      filter(([roomId, sub]) => sub.hooks[hookName] !== undefined),
+      filter(([roomId, hooks]) => hooks[hookName] !== undefined),
       toPairs
-    )(this.roomSubscriptions)
+    )(this.hooks.rooms)
   }
 }

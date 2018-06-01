@@ -35,6 +35,7 @@ import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
 import { CursorSubscription } from './cursor-subscription'
 import { MessageSubscription } from './message-subscription'
+import { MembershipSubscription } from './membership-subscription'
 import { RoomSubscription } from './room-subscription'
 import { Message } from './message'
 import { SET_CURSOR_WAIT } from './constants'
@@ -450,9 +451,30 @@ export class CurrentUser {
         this.updatedAt = user.updatedAt
         this.roomStore.initialize(indexBy(prop('id'), basicRooms))
       })
-      .then(this.initializeUserStore)
       .catch(err => {
         this.logger.error('error establishing user subscription:', err)
+        throw err
+      })
+  }
+
+  establishMembershipSubscriptions = () => {
+    this.membershipSubscriptions = map(
+      ({ id }) => new MembershipSubscription({
+        roomId: id,
+        hooks: this.hooks,
+        instance: this.apiInstance,
+        userStore: this.userStore,
+        roomStore: this.roomStore,
+        logger: this.logger
+      }),
+      this.roomStore.snapshot()
+    )
+    return Promise.all(
+      map(s => s.connect(), values(this.membershipSubscriptions))
+    )
+      .then(this.initializeUserStore)
+      .catch(err => {
+        this.logger.error('error establishing membership subscriptions:', err)
         throw err
       })
   }

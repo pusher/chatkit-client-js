@@ -194,6 +194,7 @@ export class CurrentUser {
         const basicRoom = parseBasicRoom(JSON.parse(res))
         return this.roomStore.set(basicRoom.id, basicRoom)
       })
+      .then(room => this.addMembershipSubscription(roomId).then(() => room))
       .catch(err => {
         this.logger.warn(`error joining room ${roomId}:`, err)
         throw err
@@ -207,6 +208,7 @@ export class CurrentUser {
         method: 'POST',
         path: `/users/${this.encodedId}/rooms/${roomId}/leave`
       })
+      .then(() => this.removeMembershipSubscription(roomId))
       .then(() => this.roomStore.pop(roomId))
       .catch(err => {
         this.logger.warn(`error leaving room ${roomId}:`, err)

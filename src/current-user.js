@@ -51,6 +51,10 @@ export class CurrentUser {
   }) {
     this.hooks = {
       global: hooks,
+      internal: {
+        onAddedToRoom: roomId => this.addMembershipSubscription(roomId),
+        onRemovedFromRoom: roomId => this.removeMembershipSubscription(roomId)
+      },
       rooms: {}
     }
     this.id = id
@@ -84,6 +88,7 @@ export class CurrentUser {
       logger: this.logger
     })
     this.roomSubscriptions = {}
+    this.membershipSubscriptions = {}
     this.readCursorBuffer = {} // roomId -> { position, [{ resolve, reject }] }
   }
 
@@ -458,19 +463,8 @@ export class CurrentUser {
   }
 
   establishMembershipSubscriptions = () => {
-    this.membershipSubscriptions = map(
-      ({ id }) => new MembershipSubscription({
-        roomId: id,
-        hooks: this.hooks,
-        instance: this.apiInstance,
-        userStore: this.userStore,
-        roomStore: this.roomStore,
-        logger: this.logger
-      }),
-      this.roomStore.snapshot()
-    )
     return Promise.all(
-      map(s => s.connect(), values(this.membershipSubscriptions))
+      map(({ id }) => this.addMembershipSubscription(id), this.rooms)
     )
       .then(this.initializeUserStore)
       .catch(err => {
@@ -527,6 +521,28 @@ export class CurrentUser {
         this.logger.warn('error fetching initial user information:', err)
       })
       .then(() => this.userStore.initialize({}))
+  }
+
+  addMembershipSubscription = roomId => {
+    if (this.membershipSubscriptions[roomId]) {
+      return Promise.resolve()
+    }
+    this.membershipSubscriptions[roomId] = new MembershipSubscription({
+      roomId,
+      hooks: this.hooks,
+      instance: this.apiInstance,
+      userStore: this.userStore,
+      roomStore: this.roomStore,
+      logger: this.logger
+    })
+    return this.membershipSubscriptions[roomId].connect()
+  }
+
+  removeMembershipSubscription = roomId => {
+    if (this.membershipSubscriptions[roomId]) {
+      this.membershipSubscriptions[roomId].cancel()
+      delete this.membershipSubscriptions[roomId]
+    }
   }
 }
 

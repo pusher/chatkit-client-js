@@ -35,6 +35,7 @@ import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
 import { CursorSubscription } from './cursor-subscription'
 import { MessageSubscription } from './message-subscription'
+import { MembershipSubscription } from './membership-subscription'
 import { RoomSubscription } from './room-subscription'
 import { Message } from './message'
 import { SET_CURSOR_WAIT } from './constants'
@@ -50,6 +51,10 @@ export class CurrentUser {
   }) {
     this.hooks = {
       global: hooks,
+      internal: {
+        onAddedToRoom: roomId => this.addMembershipSubscription(roomId),
+        onRemovedFromRoom: roomId => this.removeMembershipSubscription(roomId)
+      },
       rooms: {}
     }
     this.id = id
@@ -83,6 +88,7 @@ export class CurrentUser {
       logger: this.logger
     })
     this.roomSubscriptions = {}
+    this.membershipSubscriptions = {}
     this.readCursorBuffer = {} // roomId -> { position, [{ resolve, reject }] }
   }
 
@@ -188,6 +194,7 @@ export class CurrentUser {
         const basicRoom = parseBasicRoom(JSON.parse(res))
         return this.roomStore.set(basicRoom.id, basicRoom)
       })
+      .then(room => this.addMembershipSubscription(roomId).then(() => room))
       .catch(err => {
         this.logger.warn(`error joining room ${roomId}:`, err)
         throw err
@@ -201,6 +208,7 @@ export class CurrentUser {
         method: 'POST',
         path: `/users/${this.encodedId}/rooms/${roomId}/leave`
       })
+      .then(() => this.removeMembershipSubscription(roomId))
       .then(() => this.roomStore.pop(roomId))
       .catch(err => {
         this.logger.warn(`error leaving room ${roomId}:`, err)
@@ -450,9 +458,19 @@ export class CurrentUser {
         this.updatedAt = user.updatedAt
         this.roomStore.initialize(indexBy(prop('id'), basicRooms))
       })
-      .then(this.initializeUserStore)
       .catch(err => {
         this.logger.error('error establishing user subscription:', err)
+        throw err
+      })
+  }
+
+  establishMembershipSubscriptions = () => {
+    return Promise.all(
+      map(({ id }) => this.addMembershipSubscription(id), this.rooms)
+    )
+      .then(this.initializeUserStore)
+      .catch(err => {
+        this.logger.error('error establishing membership subscriptions:', err)
         throw err
       })
   }
@@ -505,6 +523,29 @@ export class CurrentUser {
         this.logger.warn('error fetching initial user information:', err)
       })
       .then(() => this.userStore.initialize({}))
+  }
+
+  addMembershipSubscription = roomId => {
+    if (this.membershipSubscriptions[roomId]) {
+      return Promise.resolve()
+    }
+    this.membershipSubscriptions[roomId] = new MembershipSubscription({
+      roomId,
+      hooks: this.hooks,
+      instance: this.apiInstance,
+      userStore: this.userStore,
+      roomStore: this.roomStore,
+      logger: this.logger
+    })
+    return this.membershipSubscriptions[roomId].connect()
+  }
+
+  removeMembershipSubscription = roomId => {
+    if (this.membershipSubscriptions[roomId]) {
+      this.membershipSubscriptions[roomId].cancel()
+      delete this.membershipSubscriptions[roomId]
+    }
+    return Promise.resolve()
   }
 }
 

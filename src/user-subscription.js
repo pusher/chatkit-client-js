@@ -45,12 +45,6 @@ export class UserSubscription {
       case 'removed_from_room':
         this.onRemovedFromRoom(body.data)
         break
-      case 'user_joined':
-        this.onUserJoined(body.data)
-        break
-      case 'user_left':
-        this.onUserLeft(body.data)
-        break
       case 'room_updated':
         this.onRoomUpdated(body.data)
         break
@@ -70,48 +64,20 @@ export class UserSubscription {
   onAddedToRoom = ({ room: roomData }) => {
     const basicRoom = parseBasicRoom(roomData)
     this.roomStore.set(basicRoom.id, basicRoom).then(room => {
-      if (this.hooks.global.onAddedToRoom) {
-        this.hooks.global.onAddedToRoom(room)
-      }
-    })
-  }
-
-  onRemovedFromRoom = ({ room_id: roomId }) => {
-    this.roomStore.pop(roomId).then(room => {
-      // room will be undefined if we left with leaveRoom
-      if (room && this.hooks.global.onRemovedFromRoom) {
-        this.hooks.global.onRemovedFromRoom(room)
-      }
-    })
-  }
-
-  onUserJoined = ({ room_id: roomId, user_id: userId }) => {
-    this.roomStore.addUserToRoom(roomId, userId).then(room => {
-      this.userStore.get(userId).then(user => {
-        if (this.hooks.global.onUserJoinedRoom) {
-          this.hooks.global.onUserJoinedRoom(room, user)
-        }
-        if (
-          this.hooks.rooms[roomId] &&
-          this.hooks.rooms[roomId].onUserJoined
-        ) {
-          this.hooks.rooms[roomId].onUserJoined(user)
+      this.hooks.internal.onAddedToRoom(basicRoom.id).then(() => {
+        if (this.hooks.global.onAddedToRoom) {
+          this.hooks.global.onAddedToRoom(room)
         }
       })
     })
   }
 
-  onUserLeft = ({ room_id: roomId, user_id: userId }) => {
-    this.roomStore.removeUserFromRoom(roomId, userId).then(room => {
-      this.userStore.get(userId).then(user => {
-        if (this.hooks.global.onUserLeftRoom) {
-          this.hooks.global.onUserLeftRoom(room, user)
-        }
-        if (
-          this.hooks.rooms[roomId] &&
-          this.hooks.rooms[roomId].onUserLeft
-        ) {
-          this.hooks.rooms[roomId].onUserLeft(user)
+  onRemovedFromRoom = ({ room_id: roomId }) => {
+    this.roomStore.pop(roomId).then(room => {
+      this.hooks.internal.onRemovedFromRoom(roomId).then(() => {
+        // room will be undefined if we left with leaveRoom
+        if (room && this.hooks.global.onRemovedFromRoom) {
+          this.hooks.global.onRemovedFromRoom(room)
         }
       })
     })

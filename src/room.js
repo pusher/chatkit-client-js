@@ -9,7 +9,7 @@ export class Room {
     this.isPrivate = basicRoom.isPrivate
     this.name = basicRoom.name
     this.updatedAt = basicRoom.updatedAt
-    this.userIds = basicRoom.userIds
+    this.userIds = []
     this.userStore = userStore
   }
 

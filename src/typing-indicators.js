@@ -1,9 +1,8 @@
 import { TYPING_INDICATOR_TTL, TYPING_INDICATOR_LEEWAY } from './constants'
 
 export class TypingIndicators {
-  constructor ({ hooks, userId, instance, logger }) {
+  constructor ({ hooks, instance, logger }) {
     this.hooks = hooks
-    this.userId = userId
     this.instance = instance
     this.logger = logger
     this.lastSentRequests = {}

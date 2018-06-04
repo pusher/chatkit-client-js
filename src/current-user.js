@@ -83,7 +83,6 @@ export class CurrentUser {
     })
     this.typingIndicators = new TypingIndicators({
       hooks: this.hooks,
-      userId: this.id,
       instance: this.apiInstance,
       logger: this.logger
     })

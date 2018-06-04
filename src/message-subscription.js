@@ -85,7 +85,9 @@ export class MessageSubscription {
   }
 
   onIsTyping = ({ user_id: userId }) => {
-    Promise.all([this.roomStore.get(this.roomId), this.userStore.get(userId)])
-      .then(([room, user]) => this.typingIndicators.onIsTyping(room, user))
+    if (userId !== this.userId) {
+      Promise.all([this.roomStore.get(this.roomId), this.userStore.get(userId)])
+        .then(([room, user]) => this.typingIndicators.onIsTyping(room, user))
+    }
   }
 }

@@ -74,11 +74,12 @@ export class UserSubscription {
 
   onRemovedFromRoom = ({ room_id: roomId }) => {
     this.roomStore.pop(roomId).then(room => {
-      // room will be undefined if we left with leaveRoom
-      this.hooks.internal.onRemovedFromRoom(roomId)
-      if (room && this.hooks.global.onRemovedFromRoom) {
-        this.hooks.global.onRemovedFromRoom(room)
-      }
+      this.hooks.internal.onRemovedFromRoom(roomId).then(() => {
+        // room will be undefined if we left with leaveRoom
+        if (room && this.hooks.global.onRemovedFromRoom) {
+          this.hooks.global.onRemovedFromRoom(room)
+        }
+      })
     })
   }
 

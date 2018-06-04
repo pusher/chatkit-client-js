@@ -545,6 +545,7 @@ export class CurrentUser {
       this.membershipSubscriptions[roomId].cancel()
       delete this.membershipSubscriptions[roomId]
     }
+    return Promise.resolve()
   }
 }
 

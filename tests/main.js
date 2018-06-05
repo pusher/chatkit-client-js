@@ -17,7 +17,7 @@ import {
   toString
 } from 'ramda'
 
-import ChatkitServer from 'pusher-chatkit-server'
+import ChatkitServer from '@pusher/chatkit-server'
 /* eslint-disable import/no-duplicates */
 import { TokenProvider, ChatManager } from '../dist/web/chatkit.js'
 import Chatkit from '../dist/web/chatkit.js'
@@ -102,6 +102,58 @@ test('[teardown]', t => {
     path: '/resources',
     jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
   })
+    .then(() => t.end())
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT * 10)
+})
+
+test('[setup] create permissions', t => {
+  Promise.all([
+    server.createGlobalRole({
+      name: 'default',
+      permissions: [
+        'message:create',
+        'room:join',
+        'room:leave',
+        'room:members:add',
+        'room:members:remove',
+        'room:get',
+        'room:create',
+        'room:messages:get',
+        'room:typing_indicator:create',
+        'presence:subscribe',
+        'user:get',
+        'user:rooms:get',
+        'file:get',
+        'file:create',
+        'cursors:read:get',
+        'cursors:read:set'
+      ]
+    }),
+    server.createGlobalRole({
+      name: 'admin',
+      permissions: [
+        'message:create',
+        'room:join',
+        'room:leave',
+        'room:members:add',
+        'room:members:remove',
+        'room:get',
+        'room:create',
+        'room:messages:get',
+        'room:typing_indicator:create',
+        'presence:subscribe',
+        'user:get',
+        'user:rooms:get',
+        'file:get',
+        'file:create',
+        'cursors:read:get',
+        'cursors:read:set',
+        'room:delete',
+        'room:update'
+      ]
+    })
+  ])
     .then(() => t.end())
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT * 10)
@@ -223,8 +275,8 @@ test('connection fails for nonexistent user', t => {
 })
 
 test('[setup] create Alice', t => {
-  server.createUser('alice', 'Alice')
-    .then(() => server.createRoom('alice', { name: `Alice's room` }))
+  server.createUser({ id: 'alice', name: 'Alice' })
+    .then(() => server.createRoom({ creatorId: 'alice', name: `Alice's room` }))
     .then(room => {
       alicesRoom = room // we'll want this in the following tests
       t.end()
@@ -320,8 +372,9 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
     }
   })
     .then(a => { alice = a })
-    .then(() => server.createUser('bob', 'Bob'))
-    .then(() => server.createRoom('bob', {
+    .then(() => server.createUser({ id: 'bob', name: 'Bob' }))
+    .then(() => server.createRoom({
+      creatorId: 'bob',
       name: `Bob's room`,
       userIds: ['alice']
     }))
@@ -909,8 +962,8 @@ test('fetch data attachment', t => {
 })
 
 test('[setup] create Carol', t => {
-  server.createUser('carol', 'Carol')
-    .then(() => server.createRoom('carol', { name: `Carol's room` }))
+  server.createUser({ id: 'carol', name: 'Carol' })
+    .then(() => server.createRoom({ creatorId: 'carol', name: `Carol's room` }))
     .then(room => {
       carolsRoom = room // we'll want this in the following tests
       t.end()
@@ -1118,15 +1171,6 @@ test(`get another user's read cursor after subscribing to a room`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-// this shouldn't be necessary once the server-side bug is fixed such
-// that user deletion also leads to relevant user role deletion(s)
-test('[setup] assign default role to Alice', t => {
-  server.assignGlobalRoleToUser('alice', 'default')
-    .then(() => t.end())
-    .catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
-})
-
 test('non-admin update room fails gracefully', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.updateRoom({
@@ -1157,7 +1201,7 @@ test('non-admin delete room fails gracefully', t => {
 })
 
 test('[setup] promote Alice to admin', t => {
-  server.assignGlobalRoleToUser('alice', 'admin')
+  server.assignGlobalRoleToUser({ userId: 'alice', roleName: 'admin' })
     .then(() => t.end())
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)

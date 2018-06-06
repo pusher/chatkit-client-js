@@ -19,7 +19,7 @@ export class MessageSubscription {
 
   connect () {
     return new Promise((resolve, reject) => {
-      this.sub = this.instance.subscribeNonResuming({
+      this.sub = this.instance.subscribeResuming({
         path: `/rooms/${this.roomId}?${urlEncode({
           message_limit: this.messageLimit
         })}`,

@@ -1,6 +1,7 @@
 import { compose, forEach, map } from 'ramda'
 
 import { parseBasicCursor } from './parsers'
+import { SUBSCRIPTION_TIMEOUT } from './constants'
 
 export class CursorSubscription {
   constructor ({ onNewCursorHook, path, cursorStore, instance, logger }) {
@@ -13,11 +14,20 @@ export class CursorSubscription {
 
   connect () {
     return new Promise((resolve, reject) => {
-      this.onSubscriptionEstablished = resolve
+      this.timeout = setTimeout(() => {
+        reject(new Error('cursor subscription timed out'))
+      }, SUBSCRIPTION_TIMEOUT)
+      this.onSubscriptionEstablished = initialState => {
+        clearTimeout(this.timeout)
+        resolve(initialState)
+      }
       this.sub = this.instance.subscribeNonResuming({
         path: this.path,
         listeners: {
-          onError: reject,
+          onError: err => {
+            clearTimeout(this.timeout)
+            reject(err)
+          },
           onEvent: this.onEvent
         }
       })
@@ -25,6 +35,7 @@ export class CursorSubscription {
   }
 
   cancel () {
+    clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {

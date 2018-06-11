@@ -469,7 +469,7 @@ export class CurrentUser {
     })
     return this.presenceSubscription.connect()
       .catch(err => {
-        this.logger.warn('error establishing presence subscription:', err)
+        this.logger.error('error establishing presence subscription:', err)
         throw err
       })
   }
@@ -492,7 +492,7 @@ export class CurrentUser {
     return this.cursorSubscription.connect()
       .then(() => this.cursorStore.initialize({}))
       .catch(err => {
-        this.logger.warn('error establishing cursor subscription:', err)
+        this.logger.error('error establishing cursor subscription:', err)
         throw err
       })
   }

@@ -10,6 +10,7 @@ import {
 } from 'ramda'
 
 import { parsePresence } from './parsers'
+import { SUBSCRIPTION_TIMEOUT } from './constants'
 
 export class PresenceSubscription {
   constructor (options) {
@@ -24,11 +25,20 @@ export class PresenceSubscription {
 
   connect () {
     return new Promise((resolve, reject) => {
-      this.onSubscriptionEstablished = resolve
+      this.timeout = setTimeout(() => {
+        reject(new Error('presence subscription timed out'))
+      }, SUBSCRIPTION_TIMEOUT)
+      this.onSubscriptionEstablished = initialState => {
+        clearTimeout(this.timeout)
+        resolve(initialState)
+      }
       this.sub = this.instance.subscribeNonResuming({
         path: `/users/${encodeURIComponent(this.userId)}/presence`,
         listeners: {
-          onError: reject,
+          onError: err => {
+            clearTimeout(this.timeout)
+            reject(err)
+          },
           onEvent: this.onEvent
         }
       })
@@ -36,6 +46,7 @@ export class PresenceSubscription {
   }
 
   cancel () {
+    clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {

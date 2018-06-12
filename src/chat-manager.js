@@ -70,6 +70,11 @@ export class ChatManager {
       currentUser.establishUserSubscription(),
       currentUser.establishPresenceSubscription(),
       currentUser.establishCursorSubscription()
-    ]).then(() => currentUser)
+    ]).then(() => {
+      this.currentUser = currentUser
+      return currentUser
+    })
   }
+
+  disconnect = () => { if (this.currentUser) this.currentUser.disconnect() }
 }

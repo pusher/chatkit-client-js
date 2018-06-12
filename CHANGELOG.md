@@ -4,6 +4,12 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
+## 0.7.14 -- 2018-06-12
+
+## Changes
+
+- Adds a `disconnect` method to `ChatManager` which disconnects a user from Chatkit.
+
 ## 0.7.13 -- 2018-06-12
 
 ## Changes

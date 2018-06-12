@@ -4,6 +4,12 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
+## 0.7.13 -- 2018-06-12
+
+## Changes
+
+- Subscriptions will now time out after 5s if no initial state is received.
+
 ## 0.7.12 -- 2018-04-30
 
 ## Changes

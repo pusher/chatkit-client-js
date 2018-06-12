@@ -6,6 +6,7 @@ import {
   has,
   indexBy,
   map,
+  forEachObjIndexed,
   max,
   pipe,
   prop,
@@ -505,6 +506,13 @@ export class CurrentUser {
         this.logger.warn('error fetching initial user information:', err)
       })
       .then(() => this.userStore.initialize({}))
+  }
+
+  disconnect = () => {
+    this.userSubscription.cancel()
+    this.presenceSubscription.cancel()
+    this.cursorSubscription.cancel()
+    forEachObjIndexed(sub => sub.cancel(), this.roomSubscriptions)
   }
 }
 

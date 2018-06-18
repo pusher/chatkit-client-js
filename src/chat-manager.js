@@ -3,7 +3,7 @@ import { split } from 'ramda'
 
 import { CurrentUser } from './current-user'
 import { typeCheck, typeCheckObj } from './utils'
-import { CONNECTION_TIMEOUT } from './constants'
+import { DEFAULT_CONNECTION_TIMEOUT } from './constants'
 
 import { version } from '../package.json'
 
@@ -55,7 +55,8 @@ export class ChatManager {
       ...instanceOptions
     })
     this.userId = userId
-    this.connectionTimeout = options.connectionTimeout || CONNECTION_TIMEOUT
+    this.connectionTimeout =
+      options.connectionTimeout || DEFAULT_CONNECTION_TIMEOUT
   }
 
   connect = (hooks = {}) => {

@@ -43,6 +43,7 @@ import { SET_CURSOR_WAIT } from './constants'
 export class CurrentUser {
   constructor ({
     apiInstance,
+    connectionTimeout,
     cursorsInstance,
     filesInstance,
     hooks,
@@ -58,6 +59,7 @@ export class CurrentUser {
     this.apiInstance = apiInstance
     this.filesInstance = filesInstance
     this.cursorsInstance = cursorsInstance
+    this.connectionTimeout = connectionTimeout
     this.presenceInstance = presenceInstance
     this.logger = apiInstance.logger
     this.presenceStore = new Store()
@@ -335,7 +337,8 @@ export class CurrentUser {
         path: `/cursors/0/rooms/${roomId}`,
         cursorStore: this.cursorStore,
         instance: this.cursorsInstance,
-        logger: this.logger
+        logger: this.logger,
+        connectionTimeout: this.connectionTimeout
       })
     })
     return this.joinRoom({ roomId })
@@ -440,7 +443,8 @@ export class CurrentUser {
       userStore: this.userStore,
       roomStore: this.roomStore,
       typingIndicators: this.typingIndicators,
-      logger: this.logger
+      logger: this.logger,
+      connectionTimeout: this.connectionTimeout
     })
     return this.userSubscription.connect()
       .then(({ user, basicRooms }) => {
@@ -466,7 +470,8 @@ export class CurrentUser {
       userStore: this.userStore,
       roomStore: this.roomStore,
       presenceStore: this.presenceStore,
-      logger: this.logger
+      logger: this.logger,
+      connectionTimeout: this.connectionTimeout
     })
     return this.presenceSubscription.connect()
       .catch(err => {
@@ -488,7 +493,8 @@ export class CurrentUser {
       path: `/cursors/0/users/${this.encodedId}`,
       cursorStore: this.cursorStore,
       instance: this.cursorsInstance,
-      logger: this.logger
+      logger: this.logger,
+      connectionTimeout: this.connectionTimeout
     })
     return this.cursorSubscription.connect()
       .then(() => this.cursorStore.initialize({}))

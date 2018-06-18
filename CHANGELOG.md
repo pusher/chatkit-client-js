@@ -4,7 +4,14 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.14...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.15...HEAD)
+
+## [0.7.15](https://github.com/pusher/chatkit-client-js/compare/0.7.14...0.7.15) - 2018-06-18
+
+### Additions
+
+- The connection timeout introduced in 0.7.13 is configurable by passing
+  `connectionTimeout` (milliseconds) to the `ChatManager` constructor.
 
 ## [0.7.14](https://github.com/pusher/chatkit-client-js/compare/0.7.13...0.7.14) - 2018-06-12
 

@@ -23,9 +23,9 @@ chatManager.connect()
     if (roomToSubscribeTo) {
       room = roomToSubscribeTo
       console.log('Going to subscribe to', roomToSubscribeTo)
-      currentUser.subscribeToRoom(
-        roomToSubscribeTo.id,
-        {
+      currentUser.subscribeToRoom({
+        roomId: roomToSubscribeTo.id,
+        hooks: {
           onNewMessage: message => {
             console.log('new message:', message)
             const messagesList = document.getElementById('messages')
@@ -73,7 +73,7 @@ chatManager.connect()
             }
           }
         }
-      )
+      })
     } else {
       console.log('No room to subscribe to')
     }

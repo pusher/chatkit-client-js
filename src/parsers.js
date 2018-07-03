@@ -22,9 +22,7 @@ export const parseBasicUser = data => ({
 })
 
 export const parsePresence = data => ({
-  lastSeenAt: data.last_seen_at,
-  state: contains(data.state, ['online', 'offline']) ? data.state : 'unknown',
-  userId: data.user_id
+  state: contains(data.state, ['online', 'offline']) ? data.state : 'unknown'
 })
 
 export const parseBasicMessage = data => ({

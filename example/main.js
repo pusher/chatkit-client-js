@@ -12,20 +12,47 @@ const tokenProvider = new Chatkit.TokenProvider({
 const chatManager = new Chatkit.ChatManager({
   instanceLocator: INSTANCE_LOCATOR,
   tokenProvider: tokenProvider,
-  userId: USER_ID
+  userId: USER_ID,
+  logger: {
+    info: console.log,
+    warn: console.log,
+    error: console.log,
+    debug: console.log,
+    verbose: console.log
+  }
 })
 
-chatManager.connect()
+chatManager.connect({
+  onAddedToRoom: room => {
+    console.log('added to room: ', room)
+  },
+  onRemovedFromRoom: room => {
+    console.log('removed from room: ', room)
+  },
+  onUserJoinedRoom: (room, user) => {
+    console.log('user: ', user, ' joined room: ', room)
+  },
+  onUserLeftRoom: (room, user) => {
+    console.log('user: ', user, ' left room: ', room)
+  },
+  onUserCameOnline: user => {
+    console.log('user: ', user, ' came online')
+  },
+  onUserWentOffline: user => {
+    console.log('user: ', user, ' went offline')
+  }
+})
   .then(cUser => {
     currentUser = cUser
+    window.currentUser = cUser
     const roomToSubscribeTo = currentUser.rooms[0]
 
     if (roomToSubscribeTo) {
       room = roomToSubscribeTo
       console.log('Going to subscribe to', roomToSubscribeTo)
-      currentUser.subscribeToRoom(
-        roomToSubscribeTo.id,
-        {
+      currentUser.subscribeToRoom({
+        roomId: roomToSubscribeTo.id,
+        hooks: {
           onNewMessage: message => {
             console.log('new message:', message)
             const messagesList = document.getElementById('messages')

@@ -33,6 +33,7 @@ import { CursorStore } from './cursor-store'
 import { TypingIndicators } from './typing-indicators'
 import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
+import { UserPresenceSubscription } from './user-presence-subscription'
 import { CursorSubscription } from './cursor-subscription'
 import { MessageSubscription } from './message-subscription'
 import { MembershipSubscription } from './membership-subscription'
@@ -86,9 +87,12 @@ export class CurrentUser {
       instance: this.apiInstance,
       logger: this.logger
     })
+    this.userStore.onSetHooks.push(this.subscribeToUserPresence)
+    this.presenceStore.initialize({})
     this.roomSubscriptions = {}
     this.membershipSubscriptions = {}
     this.readCursorBuffer = {} // roomId -> { position, [{ resolve, reject }] }
+    this.userPresenceSubscriptions = {}
   }
 
   /* public */
@@ -457,6 +461,7 @@ export class CurrentUser {
         this.updatedAt = user.updatedAt
         this.roomStore.initialize(indexBy(prop('id'), basicRooms))
       })
+      .then(this.establishMembershipSubscriptions)
       .catch(err => {
         this.logger.error('error establishing user subscription:', err)
         throw err
@@ -470,23 +475,6 @@ export class CurrentUser {
       .then(this.initializeUserStore)
       .catch(err => {
         this.logger.error('error establishing membership subscriptions:', err)
-        throw err
-      })
-  }
-
-  establishPresenceSubscription = () => {
-    this.presenceSubscription = new PresenceSubscription({
-      hooks: this.hooks,
-      userId: this.id,
-      instance: this.presenceInstance,
-      userStore: this.userStore,
-      roomStore: this.roomStore,
-      presenceStore: this.presenceStore,
-      logger: this.logger
-    })
-    return this.presenceSubscription.connect()
-      .catch(err => {
-        this.logger.warn('error establishing presence subscription:', err)
         throw err
       })
   }
@@ -512,6 +500,42 @@ export class CurrentUser {
         this.logger.warn('error establishing cursor subscription:', err)
         throw err
       })
+  }
+
+  registerAsOnline = () => {
+    this.presenceSubscription = new PresenceSubscription({
+      userId: this.id,
+      instance: this.presenceInstance,
+      logger: this.logger
+    })
+    return this.presenceSubscription.registerAsOnline()
+      .catch(err => {
+        this.logger.warn('error registering as online:', err)
+        throw err
+      })
+  }
+
+  subscribeToUserPresence = (userId) => {
+    if (this.userPresenceSubscriptions[userId]) {
+      return Promise.resolve()
+    }
+
+    if (userId === this.id) {
+      return Promise.resolve()
+    }
+
+    const userPresenceSub = new UserPresenceSubscription({
+      hooks: this.hooks,
+      userId: userId,
+      instance: this.presenceInstance,
+      userStore: this.userStore,
+      roomStore: this.roomStore,
+      presenceStore: this.presenceStore,
+      logger: this.logger
+    })
+
+    this.userPresenceSubscriptions[userId] = userPresenceSub
+    return userPresenceSub.connect()
   }
 
   initializeUserStore = () => {

@@ -21,6 +21,7 @@ export class UserStore {
     this.presenceStore = presenceStore
     this.logger = logger
     this.reqs = {} // ongoing requests by userId
+    this.onSetHooks = [] // hooks called when a new user is added to the store
   }
 
   store = new Store()
@@ -29,7 +30,12 @@ export class UserStore {
     this.store.initialize(map(this.decorate, initial))
   }
 
-  set = (userId, basicUser) => this.store.set(userId, this.decorate(basicUser))
+  set = (userId, basicUser) => {
+    return this.store.set(
+      userId,
+      this.decorate(basicUser)
+    ).then(this.onSetHooks.forEach(hook => hook(userId)))
+  }
 
   get = userId => Promise.all([
     this.fetchUser(userId),

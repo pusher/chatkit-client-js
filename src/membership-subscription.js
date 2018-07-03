@@ -44,9 +44,13 @@ export class MembershipSubscription {
   }
 
   onInitialState = ({ user_ids: userIds }) => {
-    this.roomStore
-      .update(this.roomId, { userIds })
-      .then(this.onSubscriptionEstablished)
+    Promise.all([
+      this.roomStore.update(this.roomId, { userIds }),
+      this.userStore.fetchMissingUsers(userIds)
+        .catch(err => {
+          this.logger.error('error fetching missing user information:', err)
+        })
+    ]).then(this.onSubscriptionEstablished)
   }
 
   onUserJoined = ({ user_id: userId }) => {

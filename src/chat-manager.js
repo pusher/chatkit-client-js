@@ -50,7 +50,7 @@ export class ChatManager {
     })
     this.presenceInstance = new Instance({
       serviceName: 'chatkit_presence',
-      serviceVersion: 'v1',
+      serviceVersion: 'v2',
       ...instanceOptions
     })
     this.userId = userId
@@ -68,9 +68,8 @@ export class ChatManager {
     })
     return Promise.all([
       currentUser.establishUserSubscription(),
-      currentUser.establishMembershipSubscriptions(),
-      currentUser.establishPresenceSubscription(),
-      currentUser.establishCursorSubscription()
+      currentUser.establishCursorSubscription(),
+      currentUser.registerAsOnline()
     ]).then(() => currentUser)
   }
 }

@@ -387,7 +387,9 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('user came online hook (user sub)', t => {
+// Presence Subscription
+
+test('user came online hook (presence sub)', t => {
   let alice
   fetchUser(t, 'alice', {
     onUserCameOnline: user => {
@@ -399,13 +401,15 @@ test('user came online hook (user sub)', t => {
   })
     .then(a => {
       alice = a
-      fetchUser(t, 'bob').then(b => { bob = b })
+      fetchUser(t, 'bob').then(b => { 
+        bob = b
+      })
     })
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('user went offline hook (user sub)', t => {
+test('user went offline hook (presence sub)', t => {
   let alice
   fetchUser(t, 'alice', {
     onUserWentOffline: user => {

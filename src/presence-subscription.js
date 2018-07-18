@@ -11,7 +11,7 @@ export class PresenceSubscription {
         path: `/users/${encodeURIComponent(this.userId)}/register`,
         listeners: {
           onError: reject,
-          onOpen: resolve,
+          onOpen: resolve
         }
       })
     })

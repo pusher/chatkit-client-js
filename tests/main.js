@@ -401,7 +401,7 @@ test('user came online hook (presence sub)', t => {
   })
     .then(a => {
       alice = a
-      fetchUser(t, 'bob').then(b => { 
+      fetchUser(t, 'bob').then(b => {
         bob = b
       })
     })

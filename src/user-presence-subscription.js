@@ -3,9 +3,6 @@ import {
   contains,
   filter,
   forEach,
-  indexBy,
-  map,
-  prop,
   toPairs
 } from 'ramda'
 
@@ -29,7 +26,7 @@ export class UserPresenceSubscription {
         listeners: {
           onError: reject,
           onEvent: this.onEvent,
-          onOpen: resolve,
+          onOpen: resolve
         }
       })
     })

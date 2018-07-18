@@ -422,34 +422,6 @@ test('user went offline hook (presence sub)', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test('typing indicators (user sub)', t => {
-  let started, alice
-  Promise.all([
-    fetchUser(t, 'alice', {
-      onUserStartedTyping: (room, user) => {
-        started = Date.now()
-        t.equal(room.id, bobsRoom.id)
-        t.equal(user.id, 'bob')
-      },
-      onUserStoppedTyping: (room, user) => {
-        t.equal(room.id, bobsRoom.id)
-        t.equal(user.id, 'bob')
-        t.true(Date.now() - started > 1000, 'fired more than 1s after start')
-        teardown(alice)
-        t.end()
-      }
-    }),
-    fetchUser(t, 'bob')
-  ])
-    .then(([a, bob]) => {
-      alice = a
-      bob.isTypingIn({ roomId: bobsRoom.id })
-      teardown(bob)
-    })
-    .catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
-})
-
 test('user left room hook (user sub) [removes Bob from his own room]', t => {
   let alice
   fetchUser(t, 'alice', {

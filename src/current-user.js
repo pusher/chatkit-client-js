@@ -90,6 +90,9 @@ export class CurrentUser {
       instance: this.apiInstance,
       logger: this.logger
     })
+    // TODO make this and onAddedToRoom / onRemovedFromRoom above consistent.
+    // Probably move them in to the room sub in a similar way to this one? I
+    // like that.
     this.userStore.onSetHooks.push(this.subscribeToUserPresence)
     this.presenceStore.initialize({})
     this.roomSubscriptions = {}
@@ -485,24 +488,6 @@ export class CurrentUser {
       })
   }
 
-  establishPresenceSubscription = () => {
-    this.presenceSubscription = new PresenceSubscription({
-      hooks: this.hooks,
-      userId: this.id,
-      instance: this.presenceInstance,
-      userStore: this.userStore,
-      roomStore: this.roomStore,
-      presenceStore: this.presenceStore,
-      logger: this.logger,
-      connectionTimeout: this.connectionTimeout
-    })
-    return this.presenceSubscription.connect()
-      .catch(err => {
-        this.logger.error('error establishing presence subscription:', err)
-        throw err
-      })
-  }
-
   establishCursorSubscription = () => {
     this.cursorSubscription = new CursorSubscription({
       onNewCursorHook: cursor => {
@@ -527,20 +512,21 @@ export class CurrentUser {
       })
   }
 
-  registerAsOnline = () => {
+  establishPresenceSubscription = () => {
     this.presenceSubscription = new PresenceSubscription({
       userId: this.id,
       instance: this.presenceInstance,
-      logger: this.logger
+      logger: this.logger,
+      connectionTimeout: this.connectionTimeout
     })
-    return this.presenceSubscription.registerAsOnline()
+    return this.presenceSubscription.connect()
       .catch(err => {
-        this.logger.warn('error registering as online:', err)
+        this.logger.warn('error establishing presence subscription:', err)
         throw err
       })
   }
 
-  subscribeToUserPresence = (userId) => {
+  subscribeToUserPresence = userId => {
     if (this.userPresenceSubscriptions[userId]) {
       return Promise.resolve()
     }

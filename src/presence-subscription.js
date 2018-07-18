@@ -6,7 +6,7 @@ export class PresenceSubscription {
     this.connectionTimeout = options.connectionTimeout
   }
 
-  registerAsOnline () {
+  connect () {
     return new Promise((resolve, reject) => {
       this.timeout = setTimeout(() => {
         reject(new Error('presence subscription timed out'))
@@ -26,8 +26,6 @@ export class PresenceSubscription {
       })
     })
   }
-
-  // TODO: Hook for when CurrentUser is online?
 
   cancel () {
     clearTimeout(this.timeout)

@@ -89,12 +89,7 @@ const sendMessages = (user, room, texts) => length(texts) === 0
 // Teardown first so that we can kill the tests at any time, safe in the
 // knowledge that we'll always be starting with a blank slate next time
 
-const teardown = currentUser => {
-  currentUser.userSubscription.cancel()
-  currentUser.presenceSubscription.cancel()
-  currentUser.cursorSubscription.cancel()
-  map(sub => sub.cancel(), currentUser.roomSubscriptions)
-}
+const teardown = currentUser => currentUser.disconnect()
 
 test('[teardown]', t => {
   server.apiRequest({

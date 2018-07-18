@@ -100,7 +100,7 @@ chatManager.connect({
             }
           }
         }
-      )
+      })
     } else {
       console.log('No room to subscribe to')
     }

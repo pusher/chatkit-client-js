@@ -3,21 +3,31 @@ import { compose, forEach, map } from 'ramda'
 import { parseBasicCursor } from './parsers'
 
 export class CursorSubscription {
-  constructor ({ onNewCursorHook, path, cursorStore, instance, logger }) {
-    this.onNewCursorHook = onNewCursorHook
-    this.path = path
-    this.cursorStore = cursorStore
-    this.instance = instance
-    this.logger = logger
+  constructor (options) {
+    this.onNewCursorHook = options.onNewCursorHook
+    this.path = options.path
+    this.cursorStore = options.cursorStore
+    this.instance = options.instance
+    this.logger = options.logger
+    this.connectionTimeout = options.connectionTimeout
   }
 
   connect () {
     return new Promise((resolve, reject) => {
-      this.onSubscriptionEstablished = resolve
+      this.timeout = setTimeout(() => {
+        reject(new Error('cursor subscription timed out'))
+      }, this.connectionTimeout)
+      this.onSubscriptionEstablished = initialState => {
+        clearTimeout(this.timeout)
+        resolve(initialState)
+      }
       this.sub = this.instance.subscribeNonResuming({
         path: this.path,
         listeners: {
-          onError: reject,
+          onError: err => {
+            clearTimeout(this.timeout)
+            reject(err)
+          },
           onEvent: this.onEvent
         }
       })
@@ -25,6 +35,7 @@ export class CursorSubscription {
   }
 
   cancel () {
+    clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {

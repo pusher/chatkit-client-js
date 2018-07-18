@@ -6,6 +6,7 @@ import {
   has,
   indexBy,
   map,
+  forEachObjIndexed,
   max,
   pipe,
   prop,
@@ -44,6 +45,7 @@ import { SET_CURSOR_WAIT } from './constants'
 export class CurrentUser {
   constructor ({
     apiInstance,
+    connectionTimeout,
     cursorsInstance,
     filesInstance,
     hooks,
@@ -63,6 +65,7 @@ export class CurrentUser {
     this.apiInstance = apiInstance
     this.filesInstance = filesInstance
     this.cursorsInstance = cursorsInstance
+    this.connectionTimeout = connectionTimeout
     this.presenceInstance = presenceInstance
     this.logger = apiInstance.logger
     this.presenceStore = new Store()
@@ -346,7 +349,8 @@ export class CurrentUser {
         path: `/cursors/0/rooms/${roomId}`,
         cursorStore: this.cursorStore,
         instance: this.cursorsInstance,
-        logger: this.logger
+        logger: this.logger,
+        connectionTimeout: this.connectionTimeout
       })
     })
     return this.joinRoom({ roomId })
@@ -450,7 +454,9 @@ export class CurrentUser {
       instance: this.apiInstance,
       userStore: this.userStore,
       roomStore: this.roomStore,
-      logger: this.logger
+      typingIndicators: this.typingIndicators,
+      logger: this.logger,
+      connectionTimeout: this.connectionTimeout
     })
     return this.userSubscription.connect()
       .then(({ user, basicRooms }) => {
@@ -479,6 +485,24 @@ export class CurrentUser {
       })
   }
 
+  establishPresenceSubscription = () => {
+    this.presenceSubscription = new PresenceSubscription({
+      hooks: this.hooks,
+      userId: this.id,
+      instance: this.presenceInstance,
+      userStore: this.userStore,
+      roomStore: this.roomStore,
+      presenceStore: this.presenceStore,
+      logger: this.logger,
+      connectionTimeout: this.connectionTimeout
+    })
+    return this.presenceSubscription.connect()
+      .catch(err => {
+        this.logger.error('error establishing presence subscription:', err)
+        throw err
+      })
+  }
+
   establishCursorSubscription = () => {
     this.cursorSubscription = new CursorSubscription({
       onNewCursorHook: cursor => {
@@ -492,12 +516,13 @@ export class CurrentUser {
       path: `/cursors/0/users/${this.encodedId}`,
       cursorStore: this.cursorStore,
       instance: this.cursorsInstance,
-      logger: this.logger
+      logger: this.logger,
+      connectionTimeout: this.connectionTimeout
     })
     return this.cursorSubscription.connect()
       .then(() => this.cursorStore.initialize({}))
       .catch(err => {
-        this.logger.warn('error establishing cursor subscription:', err)
+        this.logger.error('error establishing cursor subscription:', err)
         throw err
       })
   }
@@ -569,6 +594,15 @@ export class CurrentUser {
       delete this.membershipSubscriptions[roomId]
     }
     return Promise.resolve()
+  }
+
+  disconnect = () => {
+    this.userSubscription.cancel()
+    this.presenceSubscription.cancel()
+    this.cursorSubscription.cancel()
+    forEachObjIndexed(sub => sub.cancel(), this.roomSubscriptions)
+    forEachObjIndexed(sub => sub.cancel(), this.userPresenceSubscriptions)
+    forEachObjIndexed(sub => sub.cancel(), this.membershipSubscriptions)
   }
 }
 

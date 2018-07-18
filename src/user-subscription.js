@@ -11,15 +11,25 @@ export class UserSubscription {
     this.roomStore = options.roomStore
     this.roomSubscriptions = options.roomSubscriptions
     this.logger = options.logger
+    this.connectionTimeout = options.connectionTimeout
   }
 
   connect () {
     return new Promise((resolve, reject) => {
-      this.onSubscriptionEstablished = resolve
+      this.timeout = setTimeout(() => {
+        reject(new Error('user subscription timed out'))
+      }, this.connectionTimeout)
+      this.onSubscriptionEstablished = initialState => {
+        clearTimeout(this.timeout)
+        resolve(initialState)
+      }
       this.sub = this.instance.subscribeNonResuming({
         path: '/users',
         listeners: {
-          onError: reject,
+          onError: err => {
+            clearTimeout(this.timeout)
+            reject(err)
+          },
           onEvent: this.onEvent
         }
       })
@@ -27,6 +37,7 @@ export class UserSubscription {
   }
 
   cancel () {
+    clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {

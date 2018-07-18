@@ -4,61 +4,82 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## 0.7.12 -- 2018-04-30
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.16...HEAD)
 
-## Changes
+## [0.7.16](https://github.com/pusher/chatkit-client-js/compare/0.7.14...0.7.16) - 2018-06-18
+
+### Additions
+
+- The connection timeout introduced in 0.7.13 is configurable by passing
+  `connectionTimeout` (milliseconds) to the `ChatManager` constructor.
+
+## [0.7.14](https://github.com/pusher/chatkit-client-js/compare/0.7.13...0.7.14) - 2018-06-12
+
+### Changes
+
+- Adds a `disconnect` method to `ChatManager` which disconnects a user from Chatkit.
+
+## [0.7.13](https://github.com/pusher/chatkit-client-js/compare/0.7.12...0.7.13) - 2018-06-12
+
+### Changes
+
+- Subscriptions will now time out after 5s if no initial state is received.
+
+## [0.7.12](https://github.com/pusher/chatkit-client-js/compare/0.7.11...0.7.12) - 2018-04-30
+
+### Changes
 
 - Uploads files to path scoped by user ID (no external change)
 
-## 0.7.11 -- 2018-04-30
+## [0.7.11](https://github.com/pusher/chatkit-client-js/compare/0.7.9...0.7.11) - 2018-04-30
 
-## Changes
+### Changes
 
 - Batch set cursor requests (no external change)
 
-## 0.7.9 -- 2018-04-10
+## [0.7.9](https://github.com/pusher/chatkit-client-js/compare/0.7.8...0.7.9) - 2018-04-10
 
-## Additions
+### Additions
 
 - De-duplicate user information requests.
 - Send SDK info headers along with every request (version, platform, etc).
 
-## 0.7.8 -- 2018-04-04
+## [0.7.8](https://github.com/pusher/chatkit-client-js/compare/0.7.7...0.7.8) - 2018-04-04
 
-## Changes
+### Changes
 
 - Remove the es build because it was causing problems with webpack. If we want
   to add it back later more investigation and testing will be required.
 
-## 0.7.7 -- 2018-04-03
+## [0.7.7](https://github.com/pusher/chatkit-client-js/compare/0.7.6...0.7.7) - 2018-04-03
 
-## Changes
+### Changes
 
 - Point `es.js` to the es module build not the web build.
 
-## 0.7.6 -- 2018-04-03
+## [0.7.6](https://github.com/pusher/chatkit-client-js/compare/0.7.5...0.7.6) - 2018-04-03
 
-## Changes
+### Changes
 
 - Fill in a sensible default for missing presence data so we don't have to
   explicitly check for undefined.
 - Use ES5 syntax in `es.js` to satisfy `create-react-app`'s build script.
 
-## 0.7.5 -- 2018-03-26
+## [0.7.5](https://github.com/pusher/chatkit-client-js/compare/0.7.4...0.7.5) - 2018-03-26
 
-## Changes
+### Changes
 
 - type check the `private` option to `updateRoom` rather than casting, so that
   default is `undefined` not `false`.
 
-## 0.7.4 -- 2018-03-20
+## [0.7.4](https://github.com/pusher/chatkit-client-js/compare/0.7.3...0.7.4) - 2018-03-20
 
-## Additions
+### Additions
 
 - es module build for named imports and tree shaking when consuming the SDK
   with rollup
 
-## 0.7.3 -- 2018-03-20
+## [0.7.3](https://github.com/pusher/chatkit-client-js/compare/0.7.2...0.7.3) - 2018-03-20
 
 ### Changes
 
@@ -77,7 +98,7 @@ currentUser.getJoinableRooms().then(joinable => {
 })
 ```
 
-## 0.7.2 -- 2018-03-19
+## [0.7.2](https://github.com/pusher/chatkit-client-js/compare/0.7.1...0.7.2) - 2018-03-19
 
 ### Changes
 
@@ -89,7 +110,7 @@ currentUser.getJoinableRooms().then(joinable => {
 
 - Remove chatty logs about requiring room membership after leaving a room
 
-## 0.7.0 -- 2018-03-13
+## [0.7.0](https://github.com/pusher/chatkit-client-js/compare/0.6.2...0.7.0) - 2018-03-13
 
 This version represents a radical departure from 0.6.X. The interface is very
 different, and there's a good chance we'll miss some of the changes in this
@@ -177,13 +198,13 @@ const isOnline = user.presence.state === 'online'
   `currentUser.users`, and all members of a room are accessable under
   `room.users`.
 
-## 0.6.2 -- 2018-02-05
+## [0.6.2](https://github.com/pusher/chatkit-client-js/compare/0.6.1...0.6.2) - 2018-02-05
 
 ### Fixes
 
 - Catch errors in cursors get request
 
-## 0.6.1 -- 2018-01-25
+## [0.6.1](https://github.com/pusher/chatkit-client-js/compare/0.6.0...0.6.1) - 2018-01-25
 
 ### Fixes
 
@@ -192,7 +213,7 @@ const isOnline = user.presence.state === 'online'
 - Ensured that the `position` argument in `setCursor` is a valid number.
 - Throw an error if the userId isn't provided to the ChatManager.
 
-## 0.6.0 -- 2018-01-19
+## [0.6.0](https://github.com/pusher/chatkit-client-js/compare/0.5.1...0.6.0) - 2018-01-19
 
 ### Changes
 
@@ -202,14 +223,14 @@ const isOnline = user.presence.state === 'online'
   - `startedTyping` and `stoppedTyping` are fired exactly once each per burst
     of typing
 
-## 0.5.1 -- 2018-01-16
+## [0.5.1](https://github.com/pusher/chatkit-client-js/compare/0.5.0...0.5.1) - 2018-01-16
 
 ### Fixes
 
 - Fixed `fetchMessageFromRoom` which wasn't passing along the values provided in the `FetchRoomMessagesOptions` parameter as query params. Thanks [@apalmer0](https://github.com/apalmer0)!
 
 
-## 0.5.0 -- 2018-01-09
+## [0.5.0](https://github.com/pusher/chatkit-client-js/compare/0.4.0...0.5.0) - 2018-01-09
 
 ### Changes
 
@@ -230,14 +251,14 @@ const isOnline = user.presence.state === 'online'
   be used upon receiving messages to determine if they have been read already.
 
 
-## 0.4.0 -- 2018-01-04
+## [0.4.0](https://github.com/pusher/chatkit-client-js/compare/0.3.2...0.4.0) - 2018-01-04
 
 ### Additions
 
 - Add initial support for receiving cursors.
 
 
-## 0.3.2 -- 2017-12-19
+## [0.3.2](https://github.com/pusher/chatkit-client-js/compare/0.3.1...0.3.2) - 2017-12-19
 
 ### Changes
 

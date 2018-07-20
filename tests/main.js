@@ -11,7 +11,6 @@ import {
   head,
   length,
   map,
-  prop,
   reduce,
   tail,
   toString
@@ -88,8 +87,6 @@ const sendMessages = (user, room, texts) => length(texts) === 0
 
 // Teardown first so that we can kill the tests at any time, safe in the
 // knowledge that we'll always be starting with a blank slate next time
-
-const teardown = currentUser => currentUser.disconnect()
 
 test('[teardown]', t => {
   server.apiRequest({
@@ -280,6 +277,8 @@ test('[setup] create Alice', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+// TODO membership test (not here, but somewhere)
+
 test('connection resolves with current user object', t => {
   fetchUser(t, 'alice')
     .then(alice => {
@@ -291,13 +290,7 @@ test('connection resolves with current user object', t => {
       t.equal(alice.rooms[0].name, `Alice's room`)
       t.equal(alice.rooms[0].isPrivate, false)
       t.equal(alice.rooms[0].createdByUserId, 'alice')
-      // t.deepEqual(alice.rooms[0].userIds, ['alice']) // TODO: Replace with memberships test
-      t.true(Array.isArray(alice.rooms[0].users), 'users is an array')
-      // t.equal(length(alice.rooms[0].users), 1)
-      // t.equal(alice.rooms[0].users[0].name, 'Alice')
-      // TODO: Is it expected that when this resolves that we don't know about users?
-      // Should the membership subscriptions have resolved too before we resolve?
-      teardown(alice)
+      alice.disconnect()
       t.end()
     })
     .catch(endWithErr(t))
@@ -310,7 +303,7 @@ test('own read cursor undefined if not set', t => {
   fetchUser(t, 'alice')
     .then(alice => {
       t.equal(alice.readCursor({ roomId: alicesRoom.id }), undefined)
-      teardown(alice)
+      alice.disconnect()
       t.end()
     })
     .catch(endWithErr(t))
@@ -324,8 +317,8 @@ test('new read cursor hook [Alice sets her read cursor in her room]', t => {
       t.equal(cursor.position, 42)
       t.equal(cursor.user.name, 'Alice')
       t.equal(cursor.room.name, `Alice's room`)
-      teardown(mobileAlice)
-      teardown(browserAlice)
+      mobileAlice.disconnect()
+      browserAlice.disconnect()
       t.end()
     }
   })])
@@ -345,7 +338,7 @@ test('get own read cursor', t => {
       t.equal(cursor.position, 42)
       t.equal(cursor.user.name, 'Alice')
       t.equal(cursor.room.name, `Alice's room`)
-      teardown(alice)
+      alice.disconnect()
       t.end()
     })
     .catch(endWithErr(t))
@@ -363,8 +356,7 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
       )
       const br = find(r => r.id === room.id, alice.rooms)
       t.true(br, `alice.rooms should contain Bob's room`)
-      t.deepEqual(map(prop('name'), br.users).sort(), ['Alice', 'Bob'])
-      teardown(alice)
+      alice.disconnect()
       t.end()
     }
   })
@@ -390,16 +382,18 @@ test('user came online hook (presence sub)', t => {
     onUserCameOnline: user => {
       t.equal(user.id, 'bob')
       t.equal(user.presence.state, 'online')
-      teardown(alice)
+      alice.disconnect()
       t.end()
     }
   })
     .then(a => {
       alice = a
-      fetchUser(t, 'bob').then(b => {
-        bob = b
-      })
     })
+    .then(() => fetchUser(t, 'bob'))
+    .then(b => {
+      bob = b
+    })
+    .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -410,14 +404,15 @@ test('user went offline hook (presence sub)', t => {
     onUserWentOffline: user => {
       t.equal(user.id, 'bob')
       t.equal(user.presence.state, 'offline')
-      teardown(alice)
+      alice.disconnect()
       t.end()
     }
   })
     .then(a => {
       alice = a
-      teardown(bob)
     })
+    .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
+    .then(() => bob.disconnect())
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -428,12 +423,15 @@ test('user left room hook (user sub) [removes Bob from his own room]', t => {
     onUserLeftRoom: (room, user) => {
       t.equal(room.id, bobsRoom.id)
       t.equal(user.id, 'bob')
-      teardown(alice)
+      alice.disconnect()
       t.end()
     }
   })
     .then(a => {
       alice = a
+    })
+    .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
+    .then(() => {
       server.apiRequest({
         method: 'PUT',
         path: `/rooms/${bobsRoom.id}/users/remove`,
@@ -450,14 +448,17 @@ test('user joined room hook (user sub) [Bob rejoins his own room]', t => {
   fetchUser(t, 'alice', {
     onUserJoinedRoom: (room, user) => {
       t.equal(user.id, 'bob')
-      t.equal(room, bobsRoom)
-      t.true(contains('bob', bobsRoom.userIds), `bob's room updated`)
-      teardown(alice)
+      t.equal(room.id, bobsRoom.id)
+      t.true(contains('bob', room.userIds), `bob's room updated`)
+      alice.disconnect()
       t.end()
     }
   })
     .then(a => {
       alice = a
+    })
+    .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
+    .then(() => {
       bobsRoom = find(r => r.id === bobsRoom.id, alice.rooms)
       server.apiRequest({
         method: 'PUT',
@@ -476,7 +477,7 @@ test('room updated hook', t => {
     onRoomUpdated: room => {
       t.equal(room.id, bobsRoom.id)
       t.equal(room.name, `Bob's renamed room`)
-      teardown(alice)
+      alice.disconnect()
       t.end()
     }
   })
@@ -498,7 +499,7 @@ test(`removed from room hook [removes Alice from Bob's room]`, t => {
   fetchUser(t, 'alice', {
     onRemovedFromRoom: room => {
       t.equal(room.id, bobsRoom.id)
-      teardown(alice)
+      alice.disconnect()
       t.end()
     }
   })
@@ -520,7 +521,7 @@ test(`room deleted hook [destroys Alice's room]`, t => {
   fetchUser(t, 'alice', {
     onRoomDeleted: room => {
       t.equal(room.id, alicesRoom.id)
-      teardown(alice)
+      alice.disconnect()
       t.end()
     }
   })
@@ -537,10 +538,11 @@ test(`room deleted hook [destroys Alice's room]`, t => {
 })
 
 test(`create room [creates Alice's new room]`, t => {
+  let alice
   fetchUser(t, 'alice')
-    .then(alice => {
+    .then(a => {
+      alice = a
       const result = alice.createRoom({ name: `Alice's new room` })
-      teardown(alice)
       return result
     })
     .then(room => {
@@ -548,21 +550,26 @@ test(`create room [creates Alice's new room]`, t => {
       t.equal(room.name, `Alice's new room`)
       t.false(room.isPrivate, `room shouldn't be private`)
       t.equal(room.createdByUserId, 'alice')
-      t.deepEqual(room.userIds, ['alice'])
-      t.end()
+      alice.subscribeToRoom({ roomId: room.id })
+        .then(() => {
+          t.deepEqual(room.userIds, ['alice'])
+          alice.disconnect()
+          t.end()
+        })
     })
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
 test(`create private room [creates Alice's private room]`, t => {
+  let alice
   fetchUser(t, 'alice')
-    .then(alice => {
+    .then(a => {
+      alice = a
       const result = alice.createRoom({
         name: `Alice's private room`,
         private: true
       })
-      teardown(alice)
       return result
     })
     .then(room => {
@@ -570,21 +577,26 @@ test(`create private room [creates Alice's private room]`, t => {
       t.equal(room.name, `Alice's private room`)
       t.true(room.isPrivate, 'room should be private')
       t.equal(room.createdByUserId, 'alice')
-      t.deepEqual(room.userIds, ['alice'])
-      t.end()
+      alice.subscribeToRoom({ roomId: room.id })
+        .then(() => {
+          t.deepEqual(room.userIds, ['alice'])
+          alice.disconnect()
+          t.end()
+        })
     })
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
 test(`create room with members [creates Bob's new room]`, t => {
+  let bob
   fetchUser(t, 'bob')
-    .then(bob => {
+    .then(b => {
+      bob = b
       const result = bob.createRoom({
         name: `Bob's new room`,
         addUserIds: ['alice']
       })
-      teardown(bob)
       return result
     })
     .then(room => {
@@ -592,8 +604,12 @@ test(`create room with members [creates Bob's new room]`, t => {
       t.equal(room.name, `Bob's new room`)
       t.false(room.isPrivate, `room shouldn't be private`)
       t.equal(room.createdByUserId, 'bob')
-      t.deepEqual(room.userIds.sort(), ['alice', 'bob'])
-      t.end()
+      bob.subscribeToRoom({ roomId: room.id })
+        .then(() => {
+          t.deepEqual(room.userIds.sort(), ['alice', 'bob'])
+          bob.disconnect()
+          t.end()
+        })
     })
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
@@ -605,7 +621,7 @@ test('get joined rooms', t => {
   fetchUser(t, 'alice')
     .then(alice => {
       t.deepEqual(map(r => r.id, alice.rooms).sort(), expectedRoomIds)
-      teardown(alice)
+      alice.disconnect()
       t.end()
     })
     .catch(endWithErr(t))
@@ -616,7 +632,7 @@ test('get joinable rooms', t => {
   fetchUser(t, 'bob')
     .then(bob => {
       const result = bob.getJoinableRooms()
-      teardown(bob)
+      bob.disconnect()
       return result
     })
     .then(rooms => {
@@ -639,13 +655,16 @@ test(`join room [Bob joins Alice's room]`, t => {
       .then(room => {
         t.equal(room.id, alicesRoom.id)
         t.equal(room.createdByUserId, 'alice')
-        t.true(room.userIds.includes('bob'), 'should include bob')
         t.true(
           any(r => r.id === alicesRoom.id, bob.rooms),
           `should include Alice's room`
         )
-        teardown(bob)
-        t.end()
+        bob.subscribeToRoom({ roomId: room.id })
+          .then(() => {
+            t.true(room.userIds.includes('bob'), 'should include bob')
+            bob.disconnect()
+            t.end()
+          })
       })
     )
     .catch(endWithErr(t))
@@ -665,7 +684,7 @@ test(`leave room [Bob leaves Alice's room]`, t => {
             any(r => r.id === alicesRoom.id, bob.rooms),
             `shouldn't include Alice's room`
           )
-          teardown(bob)
+          bob.disconnect()
           t.end()
         })
     })
@@ -681,9 +700,12 @@ test('add user [Alice adds Bob to her room]', t => {
     })
       .then(() => {
         const room = find(r => r.id === alicesRoom.id, alice.rooms)
-        t.deepEqual(room.userIds.sort(), ['alice', 'bob'])
-        teardown(alice)
-        t.end()
+        alice.subscribeToRoom({ roomId: room.id })
+          .then(() => {
+            t.deepEqual(room.userIds.sort(), ['alice', 'bob'])
+            alice.disconnect()
+            t.end()
+          })
       })
       .catch(endWithErr(t))
     )
@@ -698,9 +720,12 @@ test('remove user [Alice removes Bob from her room]', t => {
     })
       .then(() => {
         const room = find(r => r.id === alicesRoom.id, alice.rooms)
-        t.deepEqual(room.userIds.sort(), ['alice'])
-        teardown(alice)
-        t.end()
+        alice.subscribeToRoom({ roomId: room.id })
+          .then(() => {
+            t.deepEqual(room.userIds.sort(), ['alice'])
+            alice.disconnect()
+            t.end()
+          })
       })
       .catch(endWithErr(t))
     )
@@ -711,7 +736,7 @@ test(`send messages [sends four messages to Bob's room]`, t => {
   fetchUser(t, 'alice')
     .then(alice => sendMessages(alice, bobsRoom, [
       'hello', 'hey', 'hi', 'ho'
-    ]).then(() => teardown(alice)))
+    ]).then(() => alice.disconnect()))
     .then(t.end)
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
@@ -730,7 +755,7 @@ test('fetch messages', t => {
       t.equal(messages[0].sender.name, 'Alice')
       t.equal(messages[0].room.id, bobsRoom.id)
       t.equal(messages[0].room.name, bobsRoom.name)
-      teardown(alice)
+      alice.disconnect()
       t.end()
     })
     .catch(endWithErr(t))
@@ -750,7 +775,7 @@ test('fetch messages with pagination', t => {
       }))
       .then(messages => {
         t.deepEqual(messages.map(m => m.text), ['hello', 'hey'])
-        teardown(alice)
+        alice.disconnect()
         t.end()
       })
     )
@@ -767,7 +792,7 @@ test('subscribe to room and fetch initial messages', t => {
           t.deepEqual(map(m => m.text, messages), ['hello', 'hey', 'hi', 'ho'])
           t.equal(messages[0].sender.name, 'Alice')
           t.equal(messages[0].room.name, `Bob's new room`)
-          teardown(alice)
+          alice.disconnect()
           t.end()
         })
       }
@@ -783,7 +808,7 @@ test('subscribe to room and fetch last two message only', t => {
       hooks: {
         onNewMessage: concatBatch(2, messages => {
           t.deepEqual(map(m => m.text, messages), ['hi', 'ho'])
-          teardown(alice)
+          alice.disconnect()
           t.end()
         })
       },
@@ -802,7 +827,7 @@ test('subscribe to room and receive sent messages', t => {
           t.deepEqual(map(m => m.text, messages), ['yo', 'yoo', 'yooo'])
           t.equal(messages[0].sender.name, 'Alice')
           t.equal(messages[0].room.name, `Bob's new room`)
-          teardown(alice)
+          alice.disconnect()
           t.end()
         })
       },
@@ -827,7 +852,7 @@ test('unsubscribe from room', t => {
       .then(() => alice.roomSubscriptions[bobsRoom.id].cancel())
       .then(() => sendMessages(alice, bobsRoom, ['yoooo']))
       .then(() => setTimeout(() => {
-        teardown(alice)
+        alice.disconnect()
         t.end()
       }, 1000))
     )
@@ -846,7 +871,7 @@ test('send message with malformed attachment fails', t => {
     })
       .catch(err => {
         t.true(toString(err).match(/attachment/), 'attachment error')
-        teardown(alice)
+        alice.disconnect()
         t.end()
       }))
   t.timeoutAfter(TEST_TIMEOUT)
@@ -859,7 +884,7 @@ test(`send message with link attachment [sends a message to Bob's room]`, t => {
       text: 'see attached link',
       attachment: { link: 'https://cataas.com/cat', type: 'image' }
     }).then(() => {
-      teardown(alice)
+      alice.disconnect()
       t.end()
     }))
     .catch(endWithErr(t))
@@ -876,7 +901,7 @@ test('receive message with link attachment', t => {
           type: 'image',
           fetchRequired: false
         })
-        teardown(alice)
+        alice.disconnect()
         t.end()
       }))
   t.timeoutAfter(TEST_TIMEOUT)
@@ -894,7 +919,7 @@ test(`send message with data attachment [sends a message to Bob's room]`, t => {
         name: 'hello.json'
       }
     }).then(() => {
-      teardown(alice)
+      alice.disconnect()
       t.end()
     }))
     .catch(endWithErr(t))
@@ -909,7 +934,7 @@ test('receive message with data attachment', t => {
         t.equal(message.attachment.type, 'file')
         t.equal(message.attachment.fetchRequired, true)
         dataAttachmentUrl = message.attachment.link
-        teardown(alice)
+        alice.disconnect()
         t.end()
       }))
     .catch(endWithErr(t))
@@ -927,7 +952,7 @@ test('fetch data attachment', t => {
       .then(res => res.json())
       .then(data => {
         t.deepEqual(data, { hello: 'world' })
-        teardown(alice)
+        alice.disconnect()
         t.end()
       }))
     .catch(endWithErr(t))
@@ -955,7 +980,7 @@ test('subscribe to room implicitly joins', t => {
           any(r => r.id === carolsRoom.id, alice.rooms),
           `Alice's rooms include Carol's room`
         )
-        teardown(alice)
+        alice.disconnect()
         t.end()
       })
       .catch(endWithErr(t))
@@ -972,7 +997,7 @@ test(`user joined hook [Carol joins Bob's room]`, t => {
         onUserJoined: user => {
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
-          teardown(alice)
+          alice.disconnect()
           t.end()
         }
       }
@@ -998,7 +1023,7 @@ test('user came online hook', t => {
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
           t.equal(user.presence.state, 'online')
-          teardown(alice)
+          alice.disconnect()
           t.end()
         }
       }
@@ -1014,15 +1039,18 @@ test('user went offline hook', t => {
       roomId: bobsRoom.id,
       hooks: {
         onUserWentOffline: user => {
+          if (user.id !== 'carol') {
+            return // Ignore notifications about Bob
+          }
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
           t.equal(user.presence.state, 'offline')
-          teardown(alice)
+          alice.disconnect()
           t.end()
         }
       }
     }))
-    .then(() => teardown(carol))
+    .then(() => carol.disconnect())
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -1043,7 +1071,7 @@ test('typing indicators', t => {
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
           t.true(Date.now() - started > 1000, 'fired more than 1s after start')
-          teardown(alice)
+          alice.disconnect()
           t.end()
         }
       }
@@ -1051,7 +1079,7 @@ test('typing indicators', t => {
     fetchUser(t, 'carol')
   ])
     .then(([x, carol]) => carol.isTypingIn({ roomId: bobsRoom.id })
-      .then(() => teardown(carol)))
+      .then(() => carol.disconnect()))
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })
@@ -1064,7 +1092,7 @@ test(`user left hook [removes Carol from Bob's room]`, t => {
         onUserLeft: user => {
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
-          teardown(alice)
+          alice.disconnect()
           t.end()
         }
       }
@@ -1093,7 +1121,7 @@ test(`new read cursor hook [Bob sets his read cursor in Alice's room]`, t => {
           t.equal(cursor.position, 128)
           t.equal(cursor.user.name, 'Bob')
           t.equal(cursor.room.name, `Alice's new room`)
-          teardown(alice)
+          alice.disconnect()
           t.end()
         }
       }
@@ -1103,7 +1131,7 @@ test(`new read cursor hook [Bob sets his read cursor in Alice's room]`, t => {
       roomId: alicesRoom.id,
       position: 128
     })
-      .then(() => teardown(bob))
+      .then(() => bob.disconnect())
     )
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
@@ -1116,7 +1144,7 @@ test(`get another user's read cursor before subscribing to a room fails`, t => {
         roomId: alicesRoom.id,
         userId: 'bob'
       }), /subscribe/)
-      teardown(alice)
+      alice.disconnect()
       t.end()
     })
     .catch(endWithErr(t))
@@ -1137,7 +1165,7 @@ test(`get another user's read cursor after subscribing to a room`, t => {
       t.equal(cursor.position, 128)
       t.equal(cursor.user.name, 'Bob')
       t.equal(cursor.room.name, `Alice's new room`)
-      teardown(alice)
+      alice.disconnect()
       t.end()
     })
     .catch(endWithErr(t))
@@ -1153,7 +1181,7 @@ test('non-admin update room fails gracefully', t => {
       .then(() => t.end(`updateRoom should not resolve`))
       .catch(err => {
         t.true(toString(err).match(/permission/), 'permission error')
-        teardown(alice)
+        alice.disconnect()
         t.end()
       })
     )
@@ -1166,7 +1194,7 @@ test('non-admin delete room fails gracefully', t => {
       .then(() => t.end(`deleteRoom should not resolve`))
       .catch(err => {
         t.true(toString(err).match(/permission/), 'permission error')
-        teardown(alice)
+        alice.disconnect()
         t.end()
       })
     )
@@ -1186,7 +1214,7 @@ test(`update room [renames Bob's room]`, t => {
     onRoomUpdated: room => {
       t.equal(room.id, bobsRoom.id)
       t.equal(room.name, `Bob's updated room`)
-      teardown(alice)
+      alice.disconnect()
       t.end()
     }
   })
@@ -1211,7 +1239,7 @@ test(`delete room [deletes Bob's room]`, t => {
         any(r => r.id === bobsRoom.id, alice.rooms),
         `alice.rooms doesn't contain Bob's room`
       )
-      teardown(alice)
+      alice.disconnect()
       t.end()
     }
   })

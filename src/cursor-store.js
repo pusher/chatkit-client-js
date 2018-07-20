@@ -18,10 +18,15 @@ export class CursorStore {
     this.store.initialize(map(this.decorate, initial))
   }
 
-  set = (userId, roomId, cursor) => this.store.set(
-    key(userId, roomId),
-    this.decorate(cursor)
-  )
+  set = (userId, roomId, cursor) => {
+    return Promise.all([
+      this.store.set(
+        key(userId, roomId),
+        this.decorate(cursor)
+      ),
+      this.userStore.fetchMissingUsers([userId])
+    ])
+  }
 
   get = (userId, roomId) => {
     return this.store.get(key(userId, roomId))

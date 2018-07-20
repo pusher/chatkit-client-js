@@ -1,4 +1,4 @@
-import { compose, forEach, map } from 'ramda'
+import { map } from 'ramda'
 
 import { parseBasicCursor } from './parsers'
 
@@ -55,11 +55,11 @@ export class CursorSubscription {
   }
 
   onInitialState = ({ cursors }) => {
-    compose(
-      forEach(c => this.cursorStore.set(c.userId, c.roomId, c)),
-      map(parseBasicCursor)
-    )(cursors)
-    this.onSubscriptionEstablished()
+    Promise.all(map(
+      c => this.cursorStore.set(c.userId, c.roomId, c),
+      map(parseBasicCursor, cursors)
+    ))
+      .then(this.onSubscriptionEstablished)
   }
 
   onNewCursor = data => {

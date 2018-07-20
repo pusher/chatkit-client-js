@@ -9,6 +9,7 @@ export class MembershipSubscription {
   }
 
   connect () {
+    // TODO timeout
     return new Promise((resolve, reject) => {
       this.onSubscriptionEstablished = resolve
       this.sub = this.instance.subscribeNonResuming({
@@ -44,13 +45,8 @@ export class MembershipSubscription {
   }
 
   onInitialState = ({ user_ids: userIds }) => {
-    Promise.all([
-      this.roomStore.update(this.roomId, { userIds }),
-      this.userStore.fetchMissingUsers(userIds)
-        .catch(err => {
-          this.logger.error('error fetching missing user information:', err)
-        })
-    ]).then(this.onSubscriptionEstablished)
+    this.roomStore.update(this.roomId, { userIds })
+      .then(this.onSubscriptionEstablished)
   }
 
   onUserJoined = ({ user_id: userId }) => {

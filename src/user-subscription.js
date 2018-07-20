@@ -75,22 +75,18 @@ export class UserSubscription {
   onAddedToRoom = ({ room: roomData }) => {
     const basicRoom = parseBasicRoom(roomData)
     this.roomStore.set(basicRoom.id, basicRoom).then(room => {
-      this.hooks.internal.onAddedToRoom(basicRoom.id).then(() => {
-        if (this.hooks.global.onAddedToRoom) {
-          this.hooks.global.onAddedToRoom(room)
-        }
-      })
+      if (this.hooks.global.onAddedToRoom) {
+        this.hooks.global.onAddedToRoom(room)
+      }
     })
   }
 
   onRemovedFromRoom = ({ room_id: roomId }) => {
     this.roomStore.pop(roomId).then(room => {
-      this.hooks.internal.onRemovedFromRoom(roomId).then(() => {
-        // room will be undefined if we left with leaveRoom
-        if (room && this.hooks.global.onRemovedFromRoom) {
-          this.hooks.global.onRemovedFromRoom(room)
-        }
-      })
+      // room will be undefined if we left with leaveRoom
+      if (room && this.hooks.global.onRemovedFromRoom) {
+        this.hooks.global.onRemovedFromRoom(room)
+      }
     })
   }
 

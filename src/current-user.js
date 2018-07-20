@@ -1,6 +1,5 @@
 import { sendRawRequest } from 'pusher-platform'
 import {
-  chain,
   compose,
   contains,
   has,
@@ -54,10 +53,6 @@ export class CurrentUser {
   }) {
     this.hooks = {
       global: hooks,
-      internal: {
-        onAddedToRoom: roomId => this.addMembershipSubscription(roomId),
-        onRemovedFromRoom: roomId => this.removeMembershipSubscription(roomId)
-      },
       rooms: {}
     }
     this.id = id
@@ -77,6 +72,7 @@ export class CurrentUser {
     this.roomStore = new RoomStore({
       instance: this.apiInstance,
       userStore: this.userStore,
+      isSubscribedTo: this.isSubscribedTo,
       logger: this.logger
     })
     this.cursorStore = new CursorStore({
@@ -90,13 +86,11 @@ export class CurrentUser {
       instance: this.apiInstance,
       logger: this.logger
     })
-    // TODO make this and onAddedToRoom / onRemovedFromRoom above consistent.
-    // Probably move them in to the room sub in a similar way to this one? I
-    // like that.
     this.userStore.onSetHooks.push(this.subscribeToUserPresence)
+    this.userStore.initialize({})
     this.presenceStore.initialize({})
+    this.cursorStore.initialize({})
     this.roomSubscriptions = {}
-    this.membershipSubscriptions = {}
     this.readCursorBuffer = {} // roomId -> { position, [{ resolve, reject }] }
     this.userPresenceSubscriptions = {}
   }
@@ -138,8 +132,8 @@ export class CurrentUser {
   readCursor = ({ roomId, userId = this.id } = {}) => {
     typeCheck('roomId', 'number', roomId)
     typeCheck('userId', 'string', userId)
-    if (userId !== this.id && !has(roomId, this.roomSubscriptions)) {
-      const err = new TypeError(
+    if (userId !== this.id && !this.isSubscribedTo(roomId)) {
+      const err = new Error(
         `Must be subscribed to room ${roomId} to access member's read cursors`
       )
       this.logger.error(err)
@@ -203,7 +197,6 @@ export class CurrentUser {
         const basicRoom = parseBasicRoom(JSON.parse(res))
         return this.roomStore.set(basicRoom.id, basicRoom)
       })
-      .then(room => this.addMembershipSubscription(roomId).then(() => room))
       .catch(err => {
         this.logger.warn(`error joining room ${roomId}:`, err)
         throw err
@@ -217,7 +210,6 @@ export class CurrentUser {
         method: 'POST',
         path: `/users/${this.encodedId}/rooms/${roomId}/leave`
       })
-      .then(() => this.removeMembershipSubscription(roomId))
       .then(() => this.roomStore.pop(roomId))
       .catch(err => {
         this.logger.warn(`error leaving room ${roomId}:`, err)
@@ -354,13 +346,18 @@ export class CurrentUser {
         instance: this.cursorsInstance,
         logger: this.logger,
         connectionTimeout: this.connectionTimeout
+      }),
+      membershipSub: new MembershipSubscription({
+        roomId,
+        hooks: this.hooks,
+        instance: this.apiInstance,
+        userStore: this.userStore,
+        roomStore: this.roomStore,
+        logger: this.logger
       })
     })
     return this.joinRoom({ roomId })
-      .then(room => Promise.all([
-        this.roomSubscriptions[roomId].messageSub.connect(),
-        this.roomSubscriptions[roomId].cursorSub.connect()
-      ]).then(() => room))
+      .then(room => this.roomSubscriptions[roomId].connect().then(() => room))
       .catch(err => {
         this.logger.warn(`error subscribing to room ${roomId}:`, err)
         throw err
@@ -444,6 +441,8 @@ export class CurrentUser {
 
   isMemberOf = roomId => contains(roomId, map(prop('id'), this.rooms))
 
+  isSubscribedTo = roomId => has(roomId, this.roomSubscriptions)
+
   decorateMessage = basicMessage => new Message(
     basicMessage,
     this.userStore,
@@ -470,20 +469,8 @@ export class CurrentUser {
         this.updatedAt = user.updatedAt
         this.roomStore.initialize(indexBy(prop('id'), basicRooms))
       })
-      .then(this.establishMembershipSubscriptions)
       .catch(err => {
         this.logger.error('error establishing user subscription:', err)
-        throw err
-      })
-  }
-
-  establishMembershipSubscriptions = () => {
-    return Promise.all(
-      map(({ id }) => this.addMembershipSubscription(id), this.rooms)
-    )
-      .then(this.initializeUserStore)
-      .catch(err => {
-        this.logger.error('error establishing membership subscriptions:', err)
         throw err
       })
   }
@@ -505,7 +492,6 @@ export class CurrentUser {
       connectionTimeout: this.connectionTimeout
     })
     return this.cursorSubscription.connect()
-      .then(() => this.cursorStore.initialize({}))
       .catch(err => {
         this.logger.error('error establishing cursor subscription:', err)
         throw err
@@ -549,46 +535,12 @@ export class CurrentUser {
     return userPresenceSub.connect()
   }
 
-  initializeUserStore = () => {
-    return this.userStore.fetchMissingUsers(
-      uniq(chain(prop('userIds'), this.rooms))
-    )
-      .catch(err => {
-        this.logger.warn('error fetching initial user information:', err)
-      })
-      .then(() => this.userStore.initialize({}))
-  }
-
-  addMembershipSubscription = roomId => {
-    if (this.membershipSubscriptions[roomId]) {
-      return Promise.resolve()
-    }
-    this.membershipSubscriptions[roomId] = new MembershipSubscription({
-      roomId,
-      hooks: this.hooks,
-      instance: this.apiInstance,
-      userStore: this.userStore,
-      roomStore: this.roomStore,
-      logger: this.logger
-    })
-    return this.membershipSubscriptions[roomId].connect()
-  }
-
-  removeMembershipSubscription = roomId => {
-    if (this.membershipSubscriptions[roomId]) {
-      this.membershipSubscriptions[roomId].cancel()
-      delete this.membershipSubscriptions[roomId]
-    }
-    return Promise.resolve()
-  }
-
   disconnect = () => {
     this.userSubscription.cancel()
     this.presenceSubscription.cancel()
     this.cursorSubscription.cancel()
     forEachObjIndexed(sub => sub.cancel(), this.roomSubscriptions)
     forEachObjIndexed(sub => sub.cancel(), this.userPresenceSubscriptions)
-    forEachObjIndexed(sub => sub.cancel(), this.membershipSubscriptions)
   }
 }
 

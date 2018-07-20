@@ -34,7 +34,8 @@ export class UserStore {
     return this.store.set(
       userId,
       this.decorate(basicUser)
-    ).then(this.onSetHooks.forEach(hook => hook(userId)))
+    )
+      .then(() => forEach(hook => hook(userId), this.onSetHooks))
   }
 
   get = userId => Promise.all([

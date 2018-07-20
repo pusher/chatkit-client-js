@@ -20,6 +20,7 @@ export class UserPresenceSubscription {
   }
 
   connect () {
+    // TODO timeout
     return new Promise((resolve, reject) => {
       this.sub = this.instance.subscribeNonResuming({
         path: `/users/${encodeURIComponent(this.userId)}`,

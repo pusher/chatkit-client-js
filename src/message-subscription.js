@@ -19,6 +19,7 @@ export class MessageSubscription {
   }
 
   connect () {
+    // TODO timeout
     return new Promise((resolve, reject) => {
       this.sub = this.instance.subscribeResuming({
         path: `/rooms/${this.roomId}?${urlEncode({

@@ -58,7 +58,7 @@ chatManager.connect()
               attachment.width = '400'
 
               if (message.attachment.fetchRequired) {
-                currentUser.fetchAttachment(message.attachment.link)
+                currentUser.fetchAttachment({ url: message.attachment.link })
                   .then(fetchedAttachment => {
                     attachment.src = fetchedAttachment.link
                     messageItem.appendChild(attachment)

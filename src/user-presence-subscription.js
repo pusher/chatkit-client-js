@@ -17,23 +17,33 @@ export class UserPresenceSubscription {
     this.roomStore = options.roomStore
     this.presenceStore = options.presenceStore
     this.logger = options.logger
+    this.connectionTimeout = options.connectionTimeout
   }
 
   connect () {
-    // TODO timeout
     return new Promise((resolve, reject) => {
+      this.timeout = setTimeout(() => {
+        reject(new Error('user presence subscription timed out'))
+      }, this.connectionTimeout)
       this.sub = this.instance.subscribeNonResuming({
         path: `/users/${encodeURIComponent(this.userId)}`,
         listeners: {
-          onError: reject,
+          onError: err => {
+            clearTimeout(this.timeout)
+            reject(err)
+          },
           onEvent: this.onEvent,
-          onOpen: resolve
+          onOpen: err => {
+            clearTimeout(this.timeout)
+            reject(err)
+          }
         }
       })
     })
   }
 
   cancel () {
+    clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {

@@ -277,8 +277,6 @@ test('[setup] create Alice', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-// TODO membership test (not here, but somewhere)
-
 test('connection resolves with current user object', t => {
   fetchUser(t, 'alice')
     .then(alice => {
@@ -653,15 +651,15 @@ test(`join room [Bob joins Alice's room]`, t => {
   fetchUser(t, 'bob')
     .then(bob => bob.joinRoom({ roomId: alicesRoom.id })
       .then(room => {
-        t.equal(room.id, alicesRoom.id)
-        t.equal(room.createdByUserId, 'alice')
-        t.true(
-          any(r => r.id === alicesRoom.id, bob.rooms),
-          `should include Alice's room`
-        )
         bob.subscribeToRoom({ roomId: room.id })
           .then(() => {
-            t.true(room.userIds.includes('bob'), 'should include bob')
+            t.equal(room.id, alicesRoom.id)
+            t.equal(room.createdByUserId, 'alice')
+            t.true(
+              any(r => r.id === alicesRoom.id, bob.rooms),
+              `should include Alice's room`
+            )
+            t.deepEqual(room.userIds.sort(), ['alice', 'bob'])
             bob.disconnect()
             t.end()
           })

@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.16...HEAD)
 
+### Changes
+
+- Room memberships (the user property on rooms) are now available only after
+  subscribing to a room. Attempting to access them before subscribing will
+  throw an error.
+
 ## [0.7.16](https://github.com/pusher/chatkit-client-js/compare/0.7.14...0.7.16) - 2018-06-18
 
 ### Additions

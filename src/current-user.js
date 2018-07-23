@@ -329,7 +329,8 @@ export class CurrentUser {
         userStore: this.userStore,
         roomStore: this.roomStore,
         typingIndicators: this.typingIndicators,
-        logger: this.logger
+        logger: this.logger,
+        connectionTimeout: this.connectionTimeout
       }),
       cursorSub: new CursorSubscription({
         onNewCursorHook: cursor => {
@@ -353,7 +354,8 @@ export class CurrentUser {
         instance: this.apiInstance,
         userStore: this.userStore,
         roomStore: this.roomStore,
-        logger: this.logger
+        logger: this.logger,
+        connectionTimeout: this.connectionTimeout
       })
     })
     return this.joinRoom({ roomId })
@@ -528,7 +530,8 @@ export class CurrentUser {
       userStore: this.userStore,
       roomStore: this.roomStore,
       presenceStore: this.presenceStore,
-      logger: this.logger
+      logger: this.logger,
+      connectionTimeout: this.connectionTimeout
     })
 
     this.userPresenceSubscriptions[userId] = userPresenceSub

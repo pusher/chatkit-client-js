@@ -16,18 +16,27 @@ export class MessageSubscription {
     this.typingIndicators = options.typingIndicators
     this.messageBuffer = [] // { message, ready }
     this.logger = options.logger
+    this.connectionTimeout = options.connectionTimeout
   }
 
   connect () {
-    // TODO timeout
     return new Promise((resolve, reject) => {
+      this.timeout = setTimeout(() => {
+        reject(new Error('message subscription timed out'))
+      }, this.connectionTimeout)
       this.sub = this.instance.subscribeResuming({
         path: `/rooms/${this.roomId}?${urlEncode({
           message_limit: this.messageLimit
         })}`,
         listeners: {
-          onOpen: resolve,
-          onError: reject,
+          onOpen: () => {
+            clearTimeout(this.timeout)
+            resolve()
+          },
+          onError: err => {
+            clearTimeout(this.timeout)
+            reject(err)
+          },
           onEvent: this.onEvent
         }
       })
@@ -35,6 +44,7 @@ export class MessageSubscription {
   }
 
   cancel () {
+    clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {

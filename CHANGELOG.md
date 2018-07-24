@@ -8,6 +8,11 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ### Changes
 
+- `onPresenceChanged` replaces `onUserCameOnline` and `onUserWentOffline`.
+  Takes parameters `(state, user)` -- where `state` is `{ current, previous }`
+  and `current` and `previous` are one of `"online"`, `"offline"`, or
+  `"unknown"`.
+
 - Room memberships (the user property on rooms) are now available only after
   subscribing to a room. Attempting to access them before subscribing will
   throw an error.

@@ -377,7 +377,9 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
 test('user came online hook (presence sub)', t => {
   let alice
   fetchUser(t, 'alice', {
-    onUserCameOnline: user => {
+    onPresenceChanged: (state, user) => {
+      t.equal(state.current, 'online')
+      t.equal(state.previous, 'unknown')
       t.equal(user.id, 'bob')
       t.equal(user.presence.state, 'online')
       alice.disconnect()
@@ -399,7 +401,12 @@ test('user came online hook (presence sub)', t => {
 test('user went offline hook (presence sub)', t => {
   let alice
   fetchUser(t, 'alice', {
-    onUserWentOffline: user => {
+    onPresenceChanged: (state, user) => {
+      if (state.previous === 'unknown') {
+        return // ignore the initial state, we only care about the transition
+      }
+      t.equal(state.current, 'offline')
+      t.equal(state.previous, 'online')
       t.equal(user.id, 'bob')
       t.equal(user.presence.state, 'offline')
       alice.disconnect()
@@ -410,6 +417,7 @@ test('user went offline hook (presence sub)', t => {
       alice = a
     })
     .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
+    .then(() => new Promise(resolve => setTimeout(resolve, 10000)))
     .then(() => bob.disconnect())
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
@@ -1010,14 +1018,17 @@ test(`user joined hook [Carol joins Bob's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-// This test has to run before any tests which cause Carol to open a
-// subscription (since then she will already be online)
 test('user came online hook', t => {
   fetchUser(t, 'alice')
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        onUserCameOnline: user => {
+        onPresenceChanged: (state, user) => {
+          if (state.previous === 'unknown') {
+            return // ignore the initial state, we only care about the transition
+          }
+          t.equal(state.current, 'online')
+          t.equal(state.previous, 'offline')
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
           t.equal(user.presence.state, 'online')
@@ -1036,10 +1047,12 @@ test('user went offline hook', t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        onUserWentOffline: user => {
-          if (user.id !== 'carol') {
-            return // Ignore notifications about Bob
+        onPresenceChanged: (state, user) => {
+          if (state.previous === 'unknown') {
+            return // ignore the initial state, we only care about the transition
           }
+          t.equal(state.current, 'offline')
+          t.equal(state.previous, 'online')
           t.equal(user.id, 'carol')
           t.equal(user.name, 'Carol')
           t.equal(user.presence.state, 'offline')

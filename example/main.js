@@ -35,11 +35,8 @@ chatManager.connect({
   onUserLeftRoom: (room, user) => {
     console.log('user: ', user, ' left room: ', room)
   },
-  onUserCameOnline: user => {
-    console.log('user: ', user, ' came online')
-  },
-  onUserWentOffline: user => {
-    console.log('user: ', user, ' went offline')
+  onPresenceChanged: ({ previous, current }, user) => {
+    console.log('user: ', user, ' was ', previous, ' but is now ', current)
   }
 })
   .then(cUser => {

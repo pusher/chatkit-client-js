@@ -56,7 +56,11 @@ export class MembershipSubscription {
 
   onInitialState = ({ user_ids: userIds }) => {
     this.roomStore.update(this.roomId, { userIds })
-      .then(this.onSubscriptionEstablished)
+      .then(() => {
+        // console.log('FINISHED UPDATING ROOM WITH USER IDS:', userIds)
+        // console.log('USER IDS IN ROOM:', this.roomStore.getSync(this.roomId).userIds)
+        this.onSubscriptionEstablished()
+      })
   }
 
   onUserJoined = ({ user_id: userId }) => {

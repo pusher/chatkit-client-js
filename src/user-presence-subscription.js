@@ -1,10 +1,4 @@
-import {
-  compose,
-  contains,
-  filter,
-  forEach,
-  toPairs
-} from 'ramda'
+import { contains, compose, forEach, filter, toPairs } from 'ramda'
 
 import { parsePresence } from './parsers'
 
@@ -60,38 +54,26 @@ export class UserPresenceSubscription {
   }
 
   onPresenceState = data => {
-    const presence = parsePresence(data)
-    this.presenceStore.set(this.userId, presence)
-      .then(p => this.userStore.get(this.userId)
-        .then(user => {
-          switch (p.state) {
-            case 'online':
-              this.onCameOnline(user)
-              break
-            case 'offline':
-              this.onWentOffline(user)
-              break
-          }
-        })
-    )
-  }
-
-  onCameOnline = user => this.callRelevantHooks('onUserCameOnline', user)
-
-  onWentOffline = user => this.callRelevantHooks('onUserWentOffline', user)
-
-  callRelevantHooks = (hookName, user) => {
-    if (this.hooks.global[hookName]) {
-      this.hooks.global[hookName](user)
+    const previous = this.presenceStore.getSync(this.userId) || 'unknown'
+    const current = parsePresence(data).state
+    if (current === previous) {
+      return
     }
-    compose(
-      forEach(([roomId, hooks]) => this.roomStore.get(roomId).then(room => {
-        if (contains(user.id, room.userIds)) {
-          hooks[hookName](user)
+    this.presenceStore.set(this.userId, current).then(() => {
+      this.userStore.get(this.userId).then(user => {
+        if (this.hooks.global.onPresenceChanged) {
+          this.hooks.global.onPresenceChanged({ current, previous }, user)
         }
-      })),
-      filter(([roomId, hooks]) => hooks[hookName] !== undefined),
-      toPairs
-    )(this.hooks.rooms)
+        compose(
+          forEach(([roomId, hooks]) => this.roomStore.get(roomId).then(room => {
+            if (contains(user.id, room.userIds)) {
+              hooks.onPresenceChanged({ current, previous }, user)
+            }
+          })),
+          filter(([roomId, hooks]) => hooks.onPresenceChanged !== undefined),
+          toPairs
+        )(this.hooks.rooms)
+      })
+    })
   }
 }

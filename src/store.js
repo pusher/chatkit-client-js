@@ -16,7 +16,8 @@ export class Store {
 
   set = (key, value) => {
     if (this.store) {
-      return Promise.resolve(this.store[key] = value)
+      this.store[key] = value
+      return Promise.resolve(value)
     } else {
       return new Promise(resolve => {
         this.pendingSets.push({ key, value, resolve })

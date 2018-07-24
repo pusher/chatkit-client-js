@@ -18,7 +18,7 @@
     "ramda": "^0.25.0"
   },
   "devDependencies": {
-    "@pusher/chatkit-server": "^0.12.1",
+    "@pusher/chatkit-server": "0.13.0",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
     "babel-eslint": "^7.0.0",

@@ -16,11 +16,11 @@
     tap-parser "~0.2.0"
     through "~2.3.4"
 
-"@pusher/chatkit-server@^0.12.1":
-  version "0.12.1"
-  resolved "https://registry.yarnpkg.com/@pusher/chatkit-server/-/chatkit-server-0.12.1.tgz#c4a35ac45da7e04a2034ce04c47630a6062c5e73"
+"@pusher/chatkit-server@0.13.0":
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/@pusher/chatkit-server/-/chatkit-server-0.13.0.tgz#6075d0b2fca054c976e39e28d745b65c362f2ed2"
   dependencies:
-    jsonwebtoken "^8.2.0"
+    jsonwebtoken "^8.3.0"
     pusher-platform-node "~0.13.0"
 
 "@types/node@^7.0.18":
@@ -2630,9 +2630,9 @@ jsonwebtoken@^7.4.1:
     ms "^2.0.0"
     xtend "^4.0.1"
 
-jsonwebtoken@^8.2.0:
-  version "8.2.2"
-  resolved "https://registry.yarnpkg.com/jsonwebtoken/-/jsonwebtoken-8.2.2.tgz#76d7993fda79660d71bd0f933109e1f133734b20"
+jsonwebtoken@^8.3.0:
+  version "8.3.0"
+  resolved "https://registry.yarnpkg.com/jsonwebtoken/-/jsonwebtoken-8.3.0.tgz#056c90eee9a65ed6e6c72ddb0a1d325109aaf643"
   dependencies:
     jws "^3.1.5"
     lodash.includes "^4.3.0"
@@ -2643,7 +2643,6 @@ jsonwebtoken@^8.2.0:
     lodash.isstring "^4.0.1"
     lodash.once "^4.0.0"
     ms "^2.1.1"
-    xtend "^4.0.1"
 
 jsprim@^1.2.2:
   version "1.4.1"

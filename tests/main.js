@@ -682,7 +682,8 @@ test(`leave room [Bob leaves Alice's room]`, t => {
         `should include Bob's room`
       )
       bob.leaveRoom({ roomId: alicesRoom.id })
-        .then(() => {
+        .then(room => {
+          t.equal(room.id, alicesRoom.id)
           t.false(
             any(r => r.id === alicesRoom.id, bob.rooms),
             `shouldn't include Alice's room`

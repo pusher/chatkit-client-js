@@ -17,6 +17,13 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
   subscribing to a room. Attempting to access them before subscribing will
   throw an error.
 
+## [0.7.17](https://github.com/pusher/chatkit-client-js/compare/0.7.16...0.7.17) - 2018-06-18
+
+### Changes
+
+- Internal fix to ensure that the room is properly returned from `leaveRoom`.
+  No external change.
+
 ## [0.7.16](https://github.com/pusher/chatkit-client-js/compare/0.7.14...0.7.16) - 2018-06-18
 
 ### Additions

@@ -205,12 +205,13 @@ export class CurrentUser {
 
   leaveRoom = ({ roomId } = {}) => {
     typeCheck('roomId', 'number', roomId)
-    return this.apiInstance
-      .request({
+    return this.roomStore.get(roomId)
+      .then(room => this.apiInstance.request({
         method: 'POST',
         path: `/users/${this.encodedId}/rooms/${roomId}/leave`
       })
-      .then(() => this.roomStore.pop(roomId))
+        .then(() => this.roomStore.pop(roomId))
+        .then(() => room))
       .catch(err => {
         this.logger.warn(`error leaving room ${roomId}:`, err)
         throw err

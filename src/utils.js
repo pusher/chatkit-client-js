@@ -7,7 +7,8 @@ import {
   map,
   pipe,
   split,
-  toPairs
+  toPairs,
+  xprod
 } from 'ramda'
 
 export const urlEncode = pipe(
@@ -20,6 +21,12 @@ export const urlEncode = pipe(
 export const appendQueryParams = (queryParams, url) => {
   const separator = contains('?', url) ? '&' : '?'
   return url + separator + urlEncode(queryParams)
+}
+
+export const appendQueryStringArrayParams = (key, values, url) => {
+  const separator = contains('?', url) ? '&' : '?'
+  const encodedQs = pipe(xprod, map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+  return url + separator + encodedQs
 }
 
 export const extractQueryParams = url =>

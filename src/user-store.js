@@ -10,7 +10,7 @@ import {
   values
 } from 'ramda'
 
-import { appendQueryParams } from './utils'
+import { appendQueryParamsAsArray } from './utils'
 import { Store } from './store'
 import { parseBasicUser } from './parsers'
 import { User } from './user'
@@ -63,8 +63,9 @@ export class UserStore {
     const req = this.instance
       .request({
         method: 'GET',
-        path: appendQueryParams(
-          { user_ids: join(',', userIds) },
+        path: appendQueryParamsAsArray(
+          'id',
+          userIds,
           '/users_by_ids'
         )
       })

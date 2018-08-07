@@ -23,10 +23,10 @@ export const appendQueryParams = (queryParams, url) => {
   return url + separator + urlEncode(queryParams)
 }
 
-export const appendQueryStringArrayParams = (key, values, url) => {
-  const separator = contains('?', url) ? '&' : '?'
+export const appendQueryParamsAsArray  = (key, values, url) => {
+  const separator = contains('?', url) ? '' : '?'
   const encodedQs = pipe(xprod, map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
-  return url + separator + encodedQs
+  return url + separator + encodedQs([key], values)
 }
 
 export const extractQueryParams = url =>

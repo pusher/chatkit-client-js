@@ -15,7 +15,6 @@ export class UserPresenceSubscription {
   }
 
   connect () {
-    console.log('ESTABLISHING PRESENCE SUB FOR', this.userId)
     return new Promise((resolve, reject) => {
       this.timeout = setTimeout(() => {
         reject(new Error('user presence subscription timed out'))

@@ -55,7 +55,7 @@ export class MessageSubscription {
   onEvent = ({ body }) => {
     switch (body.event_name) {
       case 'new_message':
-        this.onNewMessage(body.data)
+        this.onMessage(body.data)
         break
       case 'is_typing':
         this.onIsTyping(body.data)
@@ -63,7 +63,7 @@ export class MessageSubscription {
     }
   }
 
-  onNewMessage = data => {
+  onMessage = data => {
     const pending = {
       message: new Message(
         parseBasicMessage(data),
@@ -88,9 +88,9 @@ export class MessageSubscription {
       const message = this.messageBuffer.shift().message
       if (
         this.hooks.rooms[this.roomId] &&
-        this.hooks.rooms[this.roomId].onNewMessage
+        this.hooks.rooms[this.roomId].onMessage
       ) {
-        this.hooks.rooms[this.roomId].onNewMessage(message)
+        this.hooks.rooms[this.roomId].onMessage(message)
       }
     }
   }

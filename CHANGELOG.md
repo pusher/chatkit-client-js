@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ### Changes
 
+- renames `onNewMessage` to `onMessage`
+
 - `onPresenceChanged` replaces `onUserCameOnline` and `onUserWentOffline`.
   Takes parameters `(state, user)` -- where `state` is `{ current, previous }`
   and `current` and `previous` are one of `"online"`, `"offline"`, or

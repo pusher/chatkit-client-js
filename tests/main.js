@@ -797,7 +797,7 @@ test('subscribe to room and fetch initial messages', t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        onNewMessage: concatBatch(4, messages => {
+        onMessage: concatBatch(4, messages => {
           t.deepEqual(map(m => m.text, messages), ['hello', 'hey', 'hi', 'ho'])
           t.equal(messages[0].sender.name, 'Alice')
           t.equal(messages[0].room.name, `Bob's new room`)
@@ -815,7 +815,7 @@ test('subscribe to room and fetch last two message only', t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        onNewMessage: concatBatch(2, messages => {
+        onMessage: concatBatch(2, messages => {
           t.deepEqual(map(m => m.text, messages), ['hi', 'ho'])
           alice.disconnect()
           t.end()
@@ -832,7 +832,7 @@ test('subscribe to room and receive sent messages', t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        onNewMessage: concatBatch(3, messages => {
+        onMessage: concatBatch(3, messages => {
           t.deepEqual(map(m => m.text, messages), ['yo', 'yoo', 'yooo'])
           t.equal(messages[0].sender.name, 'Alice')
           t.equal(messages[0].room.name, `Bob's new room`)
@@ -852,7 +852,7 @@ test('unsubscribe from room', t => {
     .then(alice => alice.subscribeToRoom({
       roomId: bobsRoom.id,
       hooks: {
-        onNewMessage: m => {
+        onMessage: m => {
           endWithErr(t, 'should not be called after unsubscribe')
         }
       },

@@ -50,7 +50,7 @@ chatManager.connect({
       currentUser.subscribeToRoom({
         roomId: roomToSubscribeTo.id,
         hooks: {
-          onNewMessage: message => {
+          onMessage: message => {
             console.log('new message:', message)
             const messagesList = document.getElementById('messages')
             const messageItem = document.createElement('li')

@@ -655,6 +655,7 @@ test('get joinable rooms', t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+// FIXME why is this test flaky?
 test(`join room [Bob joins Alice's room]`, t => {
   fetchUser(t, 'bob')
     .then(bob => bob.joinRoom({ roomId: alicesRoom.id })

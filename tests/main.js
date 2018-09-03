@@ -417,7 +417,6 @@ test('user went offline hook (presence sub)', t => {
       alice = a
     })
     .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
-    .then(() => new Promise(resolve => setTimeout(resolve, 10000)))
     .then(() => bob.disconnect())
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)

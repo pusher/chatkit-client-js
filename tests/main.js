@@ -660,8 +660,6 @@ test(`join room [Bob joins Alice's room]`, t => {
       .then(room => {
         bob.subscribeToRoom({ roomId: room.id })
           .then(() => {
-            // FIXME why is this test flaky without the following line?
-            room = find(r => r.id === room.id, bob.rooms)
             t.equal(room.id, alicesRoom.id)
             t.equal(room.createdByUserId, 'alice')
             t.true(

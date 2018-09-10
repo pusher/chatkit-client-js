@@ -18,7 +18,13 @@ export class RoomStore {
     this.store.initialize(map(this.decorate, initial))
   }
 
-  set = (roomId, basicRoom) => this.store.set(roomId, this.decorate(basicRoom))
+  set = (roomId, basicRoom) => {
+    const room = this.store.getSync(roomId)
+    if (room) {
+      return Promise.resolve(room)
+    }
+    return this.store.set(roomId, this.decorate(basicRoom))
+  }
 
   get = roomId => this.store.get(roomId).then(room =>
     room || this.fetchBasicRoom(roomId).then(basicRoom => this.set(roomId, basicRoom))

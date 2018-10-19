@@ -28,7 +28,6 @@
     "babel-preset-env": "^1.6.1",
     "babelify": "^8.0.0",
     "browserify": "^15.2.0",
-    "faucet": "^0.0.1",
     "rollup": "^0.55.3",
     "rollup-plugin-alias": "^1.4.0",
     "rollup-plugin-babel": "^3.0.3",
@@ -38,6 +37,7 @@
     "rollup-plugin-uglify": "^3.0.0",
     "snazzy": "^7.0.0",
     "standard": "^10.0.3",
+    "tap-colorize": "^1.2.0",
     "tape": "^4.8.0",
     "tape-run": "^3.0.2"
   },
@@ -46,11 +46,9 @@
     "build": "yarn build:web && yarn build:react-native",
     "build:web": "rollup -c rollup/web.js",
     "build:react-native": "rollup -c rollup/react-native.js",
-    "test": "yarn test:raw | faucet",
-    "test:raw": "browserify tests/main.js -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run",
+    "test": "browserify tests/main.js -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run --render=tap-colorize",
     "lint:build": "clear && yarn lint && clear && yarn build",
-    "lint:build:test": "yarn lint:build && clear && yarn test",
-    "lint:build:test:raw": "yarn lint:build && clear && yarn test:raw"
+    "lint:build:test": "yarn lint:build && clear && yarn test"
   },
   "standard": {
     "ignore": "example"

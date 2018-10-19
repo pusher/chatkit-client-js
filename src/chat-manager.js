@@ -46,7 +46,7 @@ export class ChatManager {
     })
     this.cursorsInstance = new Instance({
       serviceName: 'chatkit_cursors',
-      serviceVersion: 'v1',
+      serviceVersion: 'v2',
       ...instanceOptions
     })
     this.presenceInstance = new Instance({

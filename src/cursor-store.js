@@ -43,7 +43,7 @@ export class CursorStore {
     return this.instance
       .request({
         method: 'GET',
-        path: `/cursors/0/rooms/${roomId}/users/${encodeURIComponent(userId)}`
+        path: `/cursors/0/rooms/${encodeURIComponent(roomId)}/users/${encodeURIComponent(userId)}`
       })
       .then(res => {
         const data = JSON.parse(res)

@@ -70,7 +70,7 @@ export class RoomStore {
     return this.instance
       .request({
         method: 'GET',
-        path: `/rooms/${roomId}`
+        path: `/rooms/${encodeURIComponent(roomId)}`
       })
       .then(pipe(JSON.parse, parseBasicRoom))
       .catch(err => {

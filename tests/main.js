@@ -439,7 +439,7 @@ test('user left room hook (user sub) [removes Bob from his own room]', t => {
     .then(() => {
       server.apiRequest({
         method: 'PUT',
-        path: `/rooms/${bobsRoom.id}/users/remove`,
+        path: `/rooms/${encodeURIComponent(bobsRoom.id)}/users/remove`,
         body: { user_ids: ['bob'] },
         jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
       })
@@ -467,7 +467,7 @@ test('user joined room hook (user sub) [Bob rejoins his own room]', t => {
       bobsRoom = find(r => r.id === bobsRoom.id, alice.rooms)
       server.apiRequest({
         method: 'PUT',
-        path: `/rooms/${bobsRoom.id}/users/add`,
+        path: `/rooms/${encodeURIComponent(bobsRoom.id)}/users/add`,
         body: { user_ids: ['bob'] },
         jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
       })
@@ -490,7 +490,7 @@ test('room updated hook', t => {
       alice = a
       server.apiRequest({
         method: 'PUT',
-        path: `/rooms/${bobsRoom.id}`,
+        path: `/rooms/${encodeURIComponent(bobsRoom.id)}`,
         body: { name: `Bob's renamed room` },
         jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
       })
@@ -512,7 +512,7 @@ test(`removed from room hook [removes Alice from Bob's room]`, t => {
       alice = a
       server.apiRequest({
         method: 'PUT',
-        path: `/rooms/${bobsRoom.id}/users/remove`,
+        path: `/rooms/${encodeURIComponent(bobsRoom.id)}/users/remove`,
         body: { user_ids: ['alice'] },
         jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
       })
@@ -1010,7 +1010,7 @@ test(`user joined hook [Carol joins Bob's room]`, t => {
     }))
     .then(() => server.apiRequest({
       method: 'PUT',
-      path: `/rooms/${bobsRoom.id}/users/add`,
+      path: `/rooms/${encodeURIComponent(bobsRoom.id)}/users/add`,
       body: { user_ids: ['carol'] },
       jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
     }))
@@ -1110,7 +1110,7 @@ test(`user left hook [removes Carol from Bob's room]`, t => {
     }))
     .then(() => server.apiRequest({
       method: 'PUT',
-      path: `/rooms/${bobsRoom.id}/users/remove`,
+      path: `/rooms/${encodeURIComponent(bobsRoom.id)}/users/remove`,
       body: { user_ids: ['carol'] },
       jwt: server.generateAccessToken({ userId: 'admin', su: true }).token
     }))

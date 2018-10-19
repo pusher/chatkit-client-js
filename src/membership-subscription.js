@@ -19,7 +19,7 @@ export class MembershipSubscription {
         resolve(initialState)
       }
       this.sub = this.instance.subscribeNonResuming({
-        path: `/rooms/${this.roomId}/memberships`,
+        path: `/rooms/${encodeURIComponent(this.roomId)}/memberships`,
         listeners: {
           onError: err => {
             clearTimeout(this.timeout)

@@ -25,7 +25,7 @@ export class MessageSubscription {
         reject(new Error('message subscription timed out'))
       }, this.connectionTimeout)
       this.sub = this.instance.subscribeResuming({
-        path: `/rooms/${this.roomId}?${urlEncode({
+        path: `/rooms/${encodeURIComponent(this.roomId)}?${urlEncode({
           message_limit: this.messageLimit
         })}`,
         listeners: {

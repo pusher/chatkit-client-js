@@ -19,7 +19,7 @@ export class TypingIndicators {
     return this.instance
       .request({
         method: 'POST',
-        path: `/rooms/${roomId}/typing_indicators`
+        path: `/rooms/${encodeURIComponent(roomId)}/typing_indicators`
       })
       .catch(err => {
         delete this.typingRequestSent[roomId]

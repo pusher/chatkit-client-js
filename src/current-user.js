@@ -1,4 +1,3 @@
-import { sendRawRequest } from 'pusher-platform'
 import {
   compose,
   contains,
@@ -23,8 +22,7 @@ import {
 } from './utils'
 import {
   parseBasicMessage,
-  parseBasicRoom,
-  parseFetchedAttachment
+  parseBasicRoom
 } from './parsers'
 import { Store } from './store'
 import { UserStore } from './user-store'
@@ -363,20 +361,6 @@ export class CurrentUser {
       .then(room => this.roomSubscriptions[roomId].connect().then(() => room))
       .catch(err => {
         this.logger.warn(`error subscribing to room ${roomId}:`, err)
-        throw err
-      })
-  }
-
-  fetchAttachment = ({ url } = {}) => {
-    return this.filesInstance.tokenProvider.fetchToken()
-      .then(token => sendRawRequest({
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
-        url
-      }))
-      .then(pipe(JSON.parse, parseFetchedAttachment))
-      .catch(err => {
-        this.logger.warn(`error fetching attachment:`, err)
         throw err
       })
   }

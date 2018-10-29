@@ -4,6 +4,8 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.0.0...HEAD)
+
 ## [1.0.0](https://github.com/pusher/chatkit-client-js/compare/0.7.16...1.0.0)
 
 ### Changes
@@ -20,6 +22,13 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
   throw an error.
 
 - room IDs are now strings everywhere
+
+## [0.7.18](https://github.com/pusher/chatkit-client-js/compare/0.7.17...0.7.18) - 2018-10-12
+
+### Changes
+
+- Increased default connection timeout from 10 to 20 seconds
+- Bump pusher-platform-js dependency to 0.15.2
 
 ## [0.7.17](https://github.com/pusher/chatkit-client-js/compare/0.7.16...0.7.17) - 2018-06-18
 

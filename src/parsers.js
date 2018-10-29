@@ -1,7 +1,5 @@
 import { contains } from 'ramda'
 
-import { extractQueryParams } from './utils'
-
 export const parseBasicRoom = data => ({
   createdAt: data.created_at,
   createdByUserId: data.created_by_id,
@@ -35,16 +33,6 @@ export const parseBasicMessage = data => ({
   attachment: data.attachment && parseMessageAttachment(data.attachment)
 })
 
-export const parseFetchedAttachment = data => ({
-  file: {
-    name: data.file.name,
-    bytes: data.file.bytes,
-    lastModified: data.file.last_modified
-  },
-  link: data.resource_link,
-  ttl: data.ttl
-})
-
 export const parseBasicCursor = data => ({
   position: data.position,
   updatedAt: data.updated_at,
@@ -55,6 +43,5 @@ export const parseBasicCursor = data => ({
 
 const parseMessageAttachment = data => ({
   link: data.resource_link,
-  type: data.type,
-  fetchRequired: extractQueryParams(data.resource_link).chatkit_link === 'true'
+  type: data.type
 })

@@ -80,20 +80,8 @@ chatManager.connect({
 
               attachment.className += ' attachment'
               attachment.width = '400'
-
-              if (message.attachment.fetchRequired) {
-                currentUser.fetchAttachment({ url: message.attachment.link })
-                  .then(fetchedAttachment => {
-                    attachment.src = fetchedAttachment.link
-                    messageItem.appendChild(attachment)
-                  })
-                  .catch(error => {
-                    console.log('Error', error)
-                  })
-              } else {
-                attachment.src = message.attachment.link
-                messageItem.appendChild(attachment)
-              }
+              attachment.src = message.attachment.link
+              messageItem.appendChild(attachment)
             }
           }
         }

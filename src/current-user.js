@@ -1,6 +1,5 @@
 import { sendRawRequest } from 'pusher-platform'
 import {
-  chain,
   compose,
   contains,
   has,
@@ -34,8 +33,10 @@ import { CursorStore } from './cursor-store'
 import { TypingIndicators } from './typing-indicators'
 import { UserSubscription } from './user-subscription'
 import { PresenceSubscription } from './presence-subscription'
+import { UserPresenceSubscription } from './user-presence-subscription'
 import { CursorSubscription } from './cursor-subscription'
 import { MessageSubscription } from './message-subscription'
+import { MembershipSubscription } from './membership-subscription'
 import { RoomSubscription } from './room-subscription'
 import { Message } from './message'
 import { SET_CURSOR_WAIT } from './constants'
@@ -71,6 +72,7 @@ export class CurrentUser {
     this.roomStore = new RoomStore({
       instance: this.apiInstance,
       userStore: this.userStore,
+      isSubscribedTo: this.isSubscribedTo,
       logger: this.logger
     })
     this.cursorStore = new CursorStore({
@@ -81,12 +83,16 @@ export class CurrentUser {
     })
     this.typingIndicators = new TypingIndicators({
       hooks: this.hooks,
-      userId: this.id,
       instance: this.apiInstance,
       logger: this.logger
     })
+    this.userStore.onSetHooks.push(this.subscribeToUserPresence)
+    this.userStore.initialize({})
+    this.presenceStore.initialize({})
+    this.cursorStore.initialize({})
     this.roomSubscriptions = {}
     this.readCursorBuffer = {} // roomId -> { position, [{ resolve, reject }] }
+    this.userPresenceSubscriptions = {}
   }
 
   /* public */
@@ -100,7 +106,7 @@ export class CurrentUser {
   }
 
   setReadCursor = ({ roomId, position } = {}) => {
-    typeCheck('roomId', 'number', roomId)
+    typeCheck('roomId', 'string', roomId)
     typeCheck('position', 'number', position)
     return new Promise((resolve, reject) => {
       if (this.readCursorBuffer[roomId] !== undefined) {
@@ -124,10 +130,10 @@ export class CurrentUser {
   }
 
   readCursor = ({ roomId, userId = this.id } = {}) => {
-    typeCheck('roomId', 'number', roomId)
+    typeCheck('roomId', 'string', roomId)
     typeCheck('userId', 'string', userId)
-    if (userId !== this.id && !has(roomId, this.roomSubscriptions)) {
-      const err = new TypeError(
+    if (userId !== this.id && !this.isSubscribedTo(roomId)) {
+      const err = new Error(
         `Must be subscribed to room ${roomId} to access member's read cursors`
       )
       this.logger.error(err)
@@ -137,7 +143,7 @@ export class CurrentUser {
   }
 
   isTypingIn = ({ roomId } = {}) => {
-    typeCheck('roomId', 'number', roomId)
+    typeCheck('roomId', 'string', roomId)
     return this.typingIndicators.sendThrottledRequest(roomId)
   }
 
@@ -178,14 +184,14 @@ export class CurrentUser {
   }
 
   joinRoom = ({ roomId } = {}) => {
-    typeCheck('roomId', 'number', roomId)
+    typeCheck('roomId', 'string', roomId)
     if (this.isMemberOf(roomId)) {
       return this.roomStore.get(roomId)
     }
     return this.apiInstance
       .request({
         method: 'POST',
-        path: `/users/${this.encodedId}/rooms/${roomId}/join`
+        path: `/users/${this.encodedId}/rooms/${encodeURIComponent(roomId)}/join`
       })
       .then(res => {
         const basicRoom = parseBasicRoom(JSON.parse(res))
@@ -198,11 +204,11 @@ export class CurrentUser {
   }
 
   leaveRoom = ({ roomId } = {}) => {
-    typeCheck('roomId', 'number', roomId)
+    typeCheck('roomId', 'string', roomId)
     return this.roomStore.get(roomId)
       .then(room => this.apiInstance.request({
         method: 'POST',
-        path: `/users/${this.encodedId}/rooms/${roomId}/leave`
+        path: `/users/${this.encodedId}/rooms/${encodeURIComponent(roomId)}/leave`
       })
         .then(() => this.roomStore.pop(roomId))
         .then(() => room))
@@ -214,11 +220,11 @@ export class CurrentUser {
 
   addUserToRoom = ({ userId, roomId } = {}) => {
     typeCheck('userId', 'string', userId)
-    typeCheck('roomId', 'number', roomId)
+    typeCheck('roomId', 'string', roomId)
     return this.apiInstance
       .request({
         method: 'PUT',
-        path: `/rooms/${roomId}/users/add`,
+        path: `/rooms/${encodeURIComponent(roomId)}/users/add`,
         json: {
           user_ids: [userId]
         }
@@ -232,11 +238,11 @@ export class CurrentUser {
 
   removeUserFromRoom = ({ userId, roomId } = {}) => {
     typeCheck('userId', 'string', userId)
-    typeCheck('roomId', 'number', roomId)
+    typeCheck('roomId', 'string', roomId)
     return this.apiInstance
       .request({
         method: 'PUT',
-        path: `/rooms/${roomId}/users/remove`,
+        path: `/rooms/${encodeURIComponent(roomId)}/users/remove`,
         json: {
           user_ids: [userId]
         }
@@ -253,7 +259,7 @@ export class CurrentUser {
 
   sendMessage = ({ text, roomId, attachment } = {}) => {
     typeCheck('text', 'string', text)
-    typeCheck('roomId', 'number', roomId)
+    typeCheck('roomId', 'string', roomId)
     return new Promise((resolve, reject) => {
       if (attachment !== undefined && isDataAttachment(attachment)) {
         resolve(this.uploadDataAttachment(roomId, attachment))
@@ -267,7 +273,7 @@ export class CurrentUser {
     })
       .then(attachment => this.apiInstance.request({
         method: 'POST',
-        path: `/rooms/${roomId}/messages`,
+        path: `/rooms/${encodeURIComponent(roomId)}/messages`,
         json: { text, attachment }
       }))
       .then(pipe(JSON.parse, prop('message_id')))
@@ -278,14 +284,14 @@ export class CurrentUser {
   }
 
   fetchMessages = ({ roomId, initialId, limit, direction } = {}) => {
-    typeCheck('roomId', 'number', roomId)
+    typeCheck('roomId', 'string', roomId)
     initialId && typeCheck('initialId', 'number', initialId)
     limit && typeCheck('limit', 'number', limit)
     direction && checkOneOf('direction', ['older', 'newer'], direction)
     return this.apiInstance
       .request({
         method: 'GET',
-        path: `/rooms/${roomId}/messages?${urlEncode({
+        path: `/rooms/${encodeURIComponent(roomId)}/messages?${urlEncode({
           initial_id: initialId,
           limit,
           direction
@@ -307,7 +313,7 @@ export class CurrentUser {
   }
 
   subscribeToRoom = ({ roomId, hooks = {}, messageLimit } = {}) => {
-    typeCheck('roomId', 'number', roomId)
+    typeCheck('roomId', 'string', roomId)
     typeCheckObj('hooks', 'function', hooks)
     messageLimit && typeCheck('messageLimit', 'number', messageLimit)
     if (this.roomSubscriptions[roomId]) {
@@ -323,7 +329,9 @@ export class CurrentUser {
         instance: this.apiInstance,
         userStore: this.userStore,
         roomStore: this.roomStore,
-        logger: this.logger
+        typingIndicators: this.typingIndicators,
+        logger: this.logger,
+        connectionTimeout: this.connectionTimeout
       }),
       cursorSub: new CursorSubscription({
         onNewCursorHook: cursor => {
@@ -335,18 +343,24 @@ export class CurrentUser {
             this.hooks.rooms[roomId].onNewReadCursor(cursor)
           }
         },
-        path: `/cursors/0/rooms/${roomId}`,
+        path: `/cursors/0/rooms/${encodeURIComponent(roomId)}`,
         cursorStore: this.cursorStore,
         instance: this.cursorsInstance,
+        logger: this.logger,
+        connectionTimeout: this.connectionTimeout
+      }),
+      membershipSub: new MembershipSubscription({
+        roomId,
+        hooks: this.hooks,
+        instance: this.apiInstance,
+        userStore: this.userStore,
+        roomStore: this.roomStore,
         logger: this.logger,
         connectionTimeout: this.connectionTimeout
       })
     })
     return this.joinRoom({ roomId })
-      .then(room => Promise.all([
-        this.roomSubscriptions[roomId].messageSub.connect(),
-        this.roomSubscriptions[roomId].cursorSub.connect()
-      ]).then(() => room))
+      .then(room => this.roomSubscriptions[roomId].connect().then(() => room))
       .catch(err => {
         this.logger.warn(`error subscribing to room ${roomId}:`, err)
         throw err
@@ -368,12 +382,12 @@ export class CurrentUser {
   }
 
   updateRoom = ({ roomId, name, ...rest } = {}) => {
-    typeCheck('roomId', 'number', roomId)
+    typeCheck('roomId', 'string', roomId)
     name && typeCheck('name', 'string', name)
     rest.private && typeCheck('private', 'boolean', rest.private)
     return this.apiInstance.request({
       method: 'PUT',
-      path: `/rooms/${roomId}`,
+      path: `/rooms/${encodeURIComponent(roomId)}`,
       json: {
         name,
         private: rest.private // private is a reserved word in strict mode!
@@ -387,10 +401,10 @@ export class CurrentUser {
   }
 
   deleteRoom = ({ roomId } = {}) => {
-    typeCheck('roomId', 'number', roomId)
+    typeCheck('roomId', 'string', roomId)
     return this.apiInstance.request({
       method: 'DELETE',
-      path: `/rooms/${roomId}`
+      path: `/rooms/${encodeURIComponent(roomId)}`
     })
       .then(() => {})
       .catch(err => {
@@ -405,7 +419,7 @@ export class CurrentUser {
     return this.cursorsInstance
       .request({
         method: 'PUT',
-        path: `/cursors/0/rooms/${roomId}/users/${this.encodedId}`,
+        path: `/cursors/0/rooms/${encodeURIComponent(roomId)}/users/${this.encodedId}`,
         json: { position }
       })
       .then(() => map(x => x.resolve(), callbacks))
@@ -422,13 +436,15 @@ export class CurrentUser {
     body.append('file', file, name)
     return this.filesInstance.request({
       method: 'POST',
-      path: `/rooms/${roomId}/users/${this.encodedId}/files/${name}`,
+      path: `/rooms/${encodeURIComponent(roomId)}/users/${this.encodedId}/files/${name}`,
       body
     })
       .then(JSON.parse)
   }
 
   isMemberOf = roomId => contains(roomId, map(prop('id'), this.rooms))
+
+  isSubscribedTo = roomId => has(roomId, this.roomSubscriptions)
 
   decorateMessage = basicMessage => new Message(
     basicMessage,
@@ -456,27 +472,8 @@ export class CurrentUser {
         this.updatedAt = user.updatedAt
         this.roomStore.initialize(indexBy(prop('id'), basicRooms))
       })
-      .then(this.initializeUserStore)
       .catch(err => {
         this.logger.error('error establishing user subscription:', err)
-        throw err
-      })
-  }
-
-  establishPresenceSubscription = () => {
-    this.presenceSubscription = new PresenceSubscription({
-      hooks: this.hooks,
-      userId: this.id,
-      instance: this.presenceInstance,
-      userStore: this.userStore,
-      roomStore: this.roomStore,
-      presenceStore: this.presenceStore,
-      logger: this.logger,
-      connectionTimeout: this.connectionTimeout
-    })
-    return this.presenceSubscription.connect()
-      .catch(err => {
-        this.logger.error('error establishing presence subscription:', err)
         throw err
       })
   }
@@ -498,21 +495,48 @@ export class CurrentUser {
       connectionTimeout: this.connectionTimeout
     })
     return this.cursorSubscription.connect()
-      .then(() => this.cursorStore.initialize({}))
       .catch(err => {
         this.logger.error('error establishing cursor subscription:', err)
         throw err
       })
   }
 
-  initializeUserStore = () => {
-    return this.userStore.fetchMissingUsers(
-      uniq(chain(prop('userIds'), this.rooms))
-    )
+  establishPresenceSubscription = () => {
+    this.presenceSubscription = new PresenceSubscription({
+      userId: this.id,
+      instance: this.presenceInstance,
+      logger: this.logger,
+      connectionTimeout: this.connectionTimeout
+    })
+    return this.presenceSubscription.connect()
       .catch(err => {
-        this.logger.warn('error fetching initial user information:', err)
+        this.logger.warn('error establishing presence subscription:', err)
+        throw err
       })
-      .then(() => this.userStore.initialize({}))
+  }
+
+  subscribeToUserPresence = userId => {
+    if (this.userPresenceSubscriptions[userId]) {
+      return Promise.resolve()
+    }
+
+    if (userId === this.id) {
+      return Promise.resolve()
+    }
+
+    const userPresenceSub = new UserPresenceSubscription({
+      hooks: this.hooks,
+      userId: userId,
+      instance: this.presenceInstance,
+      userStore: this.userStore,
+      roomStore: this.roomStore,
+      presenceStore: this.presenceStore,
+      logger: this.logger,
+      connectionTimeout: this.connectionTimeout
+    })
+
+    this.userPresenceSubscriptions[userId] = userPresenceSub
+    return userPresenceSub.connect()
   }
 
   disconnect = () => {
@@ -520,6 +544,7 @@ export class CurrentUser {
     this.presenceSubscription.cancel()
     this.cursorSubscription.cancel()
     forEachObjIndexed(sub => sub.cancel(), this.roomSubscriptions)
+    forEachObjIndexed(sub => sub.cancel(), this.userPresenceSubscriptions)
   }
 }
 

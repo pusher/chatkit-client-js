@@ -9,7 +9,6 @@ export class UserSubscription {
     this.instance = options.instance
     this.userStore = options.userStore
     this.roomStore = options.roomStore
-    this.typingIndicators = options.typingIndicators
     this.roomSubscriptions = options.roomSubscriptions
     this.logger = options.logger
     this.connectionTimeout = options.connectionTimeout
@@ -57,20 +56,11 @@ export class UserSubscription {
       case 'removed_from_room':
         this.onRemovedFromRoom(body.data)
         break
-      case 'user_joined':
-        this.onUserJoined(body.data)
-        break
-      case 'user_left':
-        this.onUserLeft(body.data)
-        break
       case 'room_updated':
         this.onRoomUpdated(body.data)
         break
       case 'room_deleted':
         this.onRoomDeleted(body.data)
-        break
-      case 'typing_start': // soon to be 'is_typing'
-        this.onIsTyping(body.data)
         break
     }
   }
@@ -100,38 +90,6 @@ export class UserSubscription {
     })
   }
 
-  onUserJoined = ({ room_id: roomId, user_id: userId }) => {
-    this.roomStore.addUserToRoom(roomId, userId).then(room => {
-      this.userStore.get(userId).then(user => {
-        if (this.hooks.global.onUserJoinedRoom) {
-          this.hooks.global.onUserJoinedRoom(room, user)
-        }
-        if (
-          this.hooks.rooms[roomId] &&
-          this.hooks.rooms[roomId].onUserJoined
-        ) {
-          this.hooks.rooms[roomId].onUserJoined(user)
-        }
-      })
-    })
-  }
-
-  onUserLeft = ({ room_id: roomId, user_id: userId }) => {
-    this.roomStore.removeUserFromRoom(roomId, userId).then(room => {
-      this.userStore.get(userId).then(user => {
-        if (this.hooks.global.onUserLeftRoom) {
-          this.hooks.global.onUserLeftRoom(room, user)
-        }
-        if (
-          this.hooks.rooms[roomId] &&
-          this.hooks.rooms[roomId].onUserLeft
-        ) {
-          this.hooks.rooms[roomId].onUserLeft(user)
-        }
-      })
-    })
-  }
-
   onRoomUpdated = ({ room: roomData }) => {
     const updates = parseBasicRoom(roomData)
     this.roomStore.update(updates.id, updates).then(room => {
@@ -147,10 +105,5 @@ export class UserSubscription {
         this.hooks.global.onRoomDeleted(room)
       }
     })
-  }
-
-  onIsTyping = ({ room_id: roomId, user_id: userId }) => {
-    Promise.all([this.roomStore.get(roomId), this.userStore.get(userId)])
-      .then(([room, user]) => this.typingIndicators.onIsTyping(room, user))
   }
 }

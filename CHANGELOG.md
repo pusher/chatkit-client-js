@@ -4,7 +4,24 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/0.7.18...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.0.0...HEAD)
+
+## [1.0.0](https://github.com/pusher/chatkit-client-js/compare/0.7.16...1.0.0)
+
+### Changes
+
+- renames `onNewMessage` to `onMessage`
+
+- `onPresenceChanged` replaces `onUserCameOnline` and `onUserWentOffline`.
+  Takes parameters `(state, user)` -- where `state` is `{ current, previous }`
+  and `current` and `previous` are one of `"online"`, `"offline"`, or
+  `"unknown"`.
+
+- Room memberships (the user property on rooms) are now available only after
+  subscribing to a room. Attempting to access them before subscribing will
+  throw an error.
+
+- room IDs are now strings everywhere
 
 ## [0.7.18](https://github.com/pusher/chatkit-client-js/compare/0.7.17...0.7.18) - 2018-10-12
 

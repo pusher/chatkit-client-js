@@ -22,6 +22,15 @@ export const appendQueryParams = (queryParams, url) => {
   return url + separator + urlEncode(queryParams)
 }
 
+export const appendQueryParamsAsArray = (key, values, url) => {
+  const separator = contains('?', url) ? '' : '?'
+  const encodedPairs = map(
+    v => `${encodeURIComponent(key)}=${encodeURIComponent(v)}`,
+    values
+  )
+  return url + separator + join('&', encodedPairs)
+}
+
 export const extractQueryParams = url =>
   contains('?', url) ? queryStringToObj(split('?', url)[1]) : {}
 

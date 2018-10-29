@@ -36,7 +36,7 @@ export class ChatManager {
     }
     this.apiInstance = new Instance({
       serviceName: 'chatkit',
-      serviceVersion: 'v1',
+      serviceVersion: 'v2',
       ...instanceOptions
     })
     this.filesInstance = new Instance({
@@ -46,12 +46,12 @@ export class ChatManager {
     })
     this.cursorsInstance = new Instance({
       serviceName: 'chatkit_cursors',
-      serviceVersion: 'v1',
+      serviceVersion: 'v2',
       ...instanceOptions
     })
     this.presenceInstance = new Instance({
       serviceName: 'chatkit_presence',
-      serviceVersion: 'v1',
+      serviceVersion: 'v2',
       ...instanceOptions
     })
     this.userId = userId
@@ -72,12 +72,13 @@ export class ChatManager {
     })
     return Promise.all([
       currentUser.establishUserSubscription(),
-      currentUser.establishPresenceSubscription(),
-      currentUser.establishCursorSubscription()
-    ]).then(() => {
-      this.currentUser = currentUser
-      return currentUser
-    })
+      currentUser.establishCursorSubscription(),
+      currentUser.establishPresenceSubscription()
+    ])
+      .then(() => {
+        this.currentUser = currentUser
+        return currentUser
+      })
   }
 
   disconnect = () => { if (this.currentUser) this.currentUser.disconnect() }

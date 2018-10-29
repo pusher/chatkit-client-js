@@ -1,9 +1,8 @@
 import { TYPING_INDICATOR_TTL, TYPING_INDICATOR_LEEWAY } from './constants'
 
 export class TypingIndicators {
-  constructor ({ hooks, userId, instance, logger }) {
+  constructor ({ hooks, instance, logger }) {
     this.hooks = hooks
-    this.userId = userId
     this.instance = instance
     this.logger = logger
     this.lastSentRequests = {}
@@ -20,16 +19,12 @@ export class TypingIndicators {
     return this.instance
       .request({
         method: 'POST',
-        path: `/rooms/${roomId}/events`,
-        json: {
-          name: 'typing_start', // soon to be 'is_typing'
-          user_id: this.userId
-        }
+        path: `/rooms/${encodeURIComponent(roomId)}/typing_indicators`
       })
       .catch(err => {
         delete this.typingRequestSent[roomId]
         this.logger.warn(
-          `Error sending is_typing event in room ${roomId}`,
+          `Error sending typing indicator in room ${roomId}`,
           err
         )
         throw err

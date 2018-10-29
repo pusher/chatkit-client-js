@@ -13,19 +13,30 @@ export class MessageSubscription {
     this.instance = options.instance
     this.userStore = options.userStore
     this.roomStore = options.roomStore
+    this.typingIndicators = options.typingIndicators
     this.messageBuffer = [] // { message, ready }
     this.logger = options.logger
+    this.connectionTimeout = options.connectionTimeout
   }
 
   connect () {
     return new Promise((resolve, reject) => {
+      this.timeout = setTimeout(() => {
+        reject(new Error('message subscription timed out'))
+      }, this.connectionTimeout)
       this.sub = this.instance.subscribeResuming({
-        path: `/rooms/${this.roomId}?${urlEncode({
+        path: `/rooms/${encodeURIComponent(this.roomId)}?${urlEncode({
           message_limit: this.messageLimit
         })}`,
         listeners: {
-          onOpen: resolve,
-          onError: reject,
+          onOpen: () => {
+            clearTimeout(this.timeout)
+            resolve()
+          },
+          onError: err => {
+            clearTimeout(this.timeout)
+            reject(err)
+          },
           onEvent: this.onEvent
         }
       })
@@ -33,6 +44,7 @@ export class MessageSubscription {
   }
 
   cancel () {
+    clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {
@@ -43,12 +55,15 @@ export class MessageSubscription {
   onEvent = ({ body }) => {
     switch (body.event_name) {
       case 'new_message':
-        this.onNewMessage(body.data)
+        this.onMessage(body.data)
+        break
+      case 'is_typing':
+        this.onIsTyping(body.data)
         break
     }
   }
 
-  onNewMessage = data => {
+  onMessage = data => {
     const pending = {
       message: new Message(
         parseBasicMessage(data),
@@ -73,10 +88,17 @@ export class MessageSubscription {
       const message = this.messageBuffer.shift().message
       if (
         this.hooks.rooms[this.roomId] &&
-        this.hooks.rooms[this.roomId].onNewMessage
+        this.hooks.rooms[this.roomId].onMessage
       ) {
-        this.hooks.rooms[this.roomId].onNewMessage(message)
+        this.hooks.rooms[this.roomId].onMessage(message)
       }
+    }
+  }
+
+  onIsTyping = ({ user_id: userId }) => {
+    if (userId !== this.userId) {
+      Promise.all([this.roomStore.get(this.roomId), this.userStore.get(userId)])
+        .then(([room, user]) => this.typingIndicators.onIsTyping(room, user))
     }
   }
 }

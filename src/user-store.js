@@ -1,7 +1,6 @@
 import {
   difference,
   forEach,
-  join,
   keys,
   length,
   map,
@@ -10,7 +9,7 @@ import {
   values
 } from 'ramda'
 
-import { appendQueryParams } from './utils'
+import { appendQueryParamsAsArray } from './utils'
 import { Store } from './store'
 import { parseBasicUser } from './parsers'
 import { User } from './user'
@@ -21,6 +20,7 @@ export class UserStore {
     this.presenceStore = presenceStore
     this.logger = logger
     this.reqs = {} // ongoing requests by userId
+    this.onSetHooks = [] // hooks called when a new user is added to the store
   }
 
   store = new Store()
@@ -29,7 +29,13 @@ export class UserStore {
     this.store.initialize(map(this.decorate, initial))
   }
 
-  set = (userId, basicUser) => this.store.set(userId, this.decorate(basicUser))
+  set = (userId, basicUser) => {
+    return this.store.set(
+      userId,
+      this.decorate(basicUser)
+    )
+      .then(() => forEach(hook => hook(userId), this.onSetHooks))
+  }
 
   get = userId => Promise.all([
     this.fetchUser(userId),
@@ -56,8 +62,9 @@ export class UserStore {
     const req = this.instance
       .request({
         method: 'GET',
-        path: appendQueryParams(
-          { user_ids: join(',', userIds) },
+        path: appendQueryParamsAsArray(
+          'id',
+          userIds,
           '/users_by_ids'
         )
       })

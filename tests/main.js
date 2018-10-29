@@ -938,7 +938,7 @@ test('receive message with data attachment', t => {
       .then(([message]) => {
         t.equal(message.text, 'see attached json')
         t.equal(message.attachment.type, 'file')
-        t.equal(message.attachment.fetchRequired, true)
+        t.equal(message.attachment.fetchRequired, false)
         dataAttachmentUrl = message.attachment.link
         alice.disconnect()
         t.end()
@@ -949,12 +949,7 @@ test('receive message with data attachment', t => {
 
 test('fetch data attachment', t => {
   fetchUser(t, 'alice')
-    .then(alice => alice.fetchAttachment({ url: dataAttachmentUrl })
-      .then(attachment => {
-        t.equal(attachment.file.name, 'hello.json')
-        t.equal(attachment.file.bytes, 17)
-        return fetch(attachment.link)
-      })
+    .then(alice => fetch(dataAttachmentUrl)
       .then(res => res.json())
       .then(data => {
         t.deepEqual(data, { hello: 'world' })

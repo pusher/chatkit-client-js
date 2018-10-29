@@ -19,6 +19,8 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
   subscribing to a room. Attempting to access them before subscribing will
   throw an error.
 
+- room IDs are now strings everywhere
+
 ## [0.7.17](https://github.com/pusher/chatkit-client-js/compare/0.7.16...0.7.17) - 2018-06-18
 
 ### Changes

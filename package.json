@@ -1,8 +1,8 @@
 {
-  "name": "@pusher/chatkit",
+  "name": "@pusher/chatkit-client",
   "description": "Pusher Chatkit client library for browsers and react native",
   "main": "dist/web/chatkit.js",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "author": "Pusher",
   "license": "MIT",
   "homepage": "https://github.com/pusher/chatkit-client-js",

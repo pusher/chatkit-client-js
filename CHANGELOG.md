@@ -4,7 +4,11 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.0.0...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.0.2...HEAD)
+
+### Changes
+
+## [1.0.2](https://github.com/pusher/chatkit-client-js/compare/0.7.16...1.0.2)
 
 ### Changes
 
@@ -13,10 +17,6 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 - The `fetchAttachment` method is removed from the current user object since it
   is never required.
-
-## [1.0.0](https://github.com/pusher/chatkit-client-js/compare/0.7.16...1.0.0)
-
-### Changes
 
 - renames `onNewMessage` to `onMessage`
 

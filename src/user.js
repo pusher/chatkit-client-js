@@ -1,5 +1,5 @@
 export class User {
-  constructor (basicUser, presenceStore) {
+  constructor(basicUser, presenceStore) {
     this.avatarURL = basicUser.avatarURL
     this.createdAt = basicUser.createdAt
     this.customData = basicUser.customData
@@ -9,9 +9,9 @@ export class User {
     this.presenceStore = presenceStore
   }
 
-  get presence () {
+  get presence() {
     return {
-      state: this.presenceStore.getSync(this.id) || 'unknown'
+      state: this.presenceStore.getSync(this.id) || "unknown",
     }
   }
 }

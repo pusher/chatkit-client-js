@@ -1,49 +1,59 @@
-import { map } from 'ramda'
+import { map } from "ramda"
 
-import { Store } from './store'
-import { Cursor } from './cursor'
-import { parseBasicCursor } from './parsers'
+import { Store } from "./store"
+import { Cursor } from "./cursor"
+import { parseBasicCursor } from "./parsers"
 
 export class CursorStore {
-  constructor ({ instance, userStore, roomStore, logger }) {
+  constructor({ instance, userStore, roomStore, logger }) {
     this.instance = instance
     this.userStore = userStore
     this.roomStore = roomStore
     this.logger = logger
+    this.store = new Store()
+
+    this.initialize = this.initialize.bind(this)
+    this.set = this.set.bind(this)
+    this.get = this.get.bind(this)
+    this.getSync = this.getSync.bind(this)
+    this.fetchBasicCursor = this.fetchBasicCursor.bind(this)
+    this.decorate = this.decorate.bind(this)
   }
 
-  store = new Store()
-
-  initialize = initial => {
-    this.store.initialize(map(this.decorate, initial))
+  initialize(initial) {
+    return this.store.initialize(map(this.decorate, initial))
   }
 
-  set = (userId, roomId, cursor) => {
+  set(userId, roomId, cursor) {
     return Promise.all([
-      this.store.set(
-        key(userId, roomId),
-        this.decorate(cursor)
-      ),
-      this.userStore.fetchMissingUsers([userId])
+      this.store.set(key(userId, roomId), this.decorate(cursor)),
+      this.userStore.fetchMissingUsers([userId]),
     ])
   }
 
-  get = (userId, roomId) => {
-    return this.store.get(key(userId, roomId))
-      .then(cursor => cursor || this.fetchBasicCursor(userId, roomId)
-        .then(cursor => this.set(userId, roomId, cursor))
+  get(userId, roomId) {
+    return this.store
+      .get(key(userId, roomId))
+      .then(
+        cursor =>
+          cursor ||
+          this.fetchBasicCursor(userId, roomId).then(cursor =>
+            this.set(userId, roomId, cursor),
+          ),
       )
   }
 
-  getSync = (userId, roomId) => {
+  getSync(userId, roomId) {
     return this.store.getSync(key(userId, roomId))
   }
 
-  fetchBasicCursor = (userId, roomId) => {
+  fetchBasicCursor(userId, roomId) {
     return this.instance
       .request({
-        method: 'GET',
-        path: `/cursors/0/rooms/${encodeURIComponent(roomId)}/users/${encodeURIComponent(userId)}`
+        method: "GET",
+        path: `/cursors/0/rooms/${encodeURIComponent(
+          roomId,
+        )}/users/${encodeURIComponent(userId)}`,
       })
       .then(res => {
         const data = JSON.parse(res)
@@ -53,12 +63,12 @@ export class CursorStore {
         return undefined
       })
       .catch(err => {
-        this.logger.warn('error fetching cursor:', err)
+        this.logger.warn("error fetching cursor:", err)
         throw err
       })
   }
 
-  decorate = basicCursor => {
+  decorate(basicCursor) {
     return basicCursor
       ? new Cursor(basicCursor, this.userStore, this.roomStore)
       : undefined

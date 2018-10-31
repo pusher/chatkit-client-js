@@ -49,8 +49,10 @@
     "build:web": "rollup -c rollup/web.js",
     "build:react-native": "rollup -c rollup/react-native.js",
     "test": "browserify tests/main.js -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run --render=tap-colorize",
+    "test:chrome": "browserify tests/main.js -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run --render=tap-colorize -b chrome",
     "lint:build": "clear && yarn lint && clear && yarn build",
-    "lint:build:test": "yarn lint:build && clear && yarn test"
+    "lint:build:test": "yarn lint:build && clear && yarn test",
+    "lint:build:test:chrome": "yarn lint:build && clear && yarn test:chrome"
   },
   "prettier": {
     "semi": false,

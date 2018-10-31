@@ -1,21 +1,27 @@
-import { map } from 'ramda'
+import { map } from "ramda"
 
-import { parseBasicCursor } from './parsers'
+import { parseBasicCursor } from "./parsers"
 
 export class CursorSubscription {
-  constructor (options) {
+  constructor(options) {
     this.onNewCursorHook = options.onNewCursorHook
     this.path = options.path
     this.cursorStore = options.cursorStore
     this.instance = options.instance
     this.logger = options.logger
     this.connectionTimeout = options.connectionTimeout
+
+    this.connect = this.connect.bind(this)
+    this.cancel = this.cancel.bind(this)
+    this.onEvent = this.onEvent.bind(this)
+    this.onInitialState = this.onInitialState.bind(this)
+    this.onNewCursor = this.onNewCursor.bind(this)
   }
 
-  connect () {
+  connect() {
     return new Promise((resolve, reject) => {
       this.timeout = setTimeout(() => {
-        reject(new Error('cursor subscription timed out'))
+        reject(new Error("cursor subscription timed out"))
       }, this.connectionTimeout)
       this.onSubscriptionEstablished = initialState => {
         clearTimeout(this.timeout)
@@ -28,43 +34,44 @@ export class CursorSubscription {
             clearTimeout(this.timeout)
             reject(err)
           },
-          onEvent: this.onEvent
-        }
+          onEvent: this.onEvent,
+        },
       })
     })
   }
 
-  cancel () {
+  cancel() {
     clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {
-      this.logger.debug('error when cancelling cursor subscription', err)
+      this.logger.debug("error when cancelling cursor subscription", err)
     }
   }
 
-  onEvent = ({ body }) => {
+  onEvent({ body }) {
     switch (body.event_name) {
-      case 'initial_state':
+      case "initial_state":
         this.onInitialState(body.data)
         break
-      case 'new_cursor':
+      case "new_cursor":
         this.onNewCursor(body.data)
         break
     }
   }
 
-  onInitialState = ({ cursors }) => {
-    Promise.all(map(
-      c => this.cursorStore.set(c.userId, c.roomId, c),
-      map(parseBasicCursor, cursors)
-    ))
-      .then(this.onSubscriptionEstablished)
+  onInitialState({ cursors }) {
+    return Promise.all(
+      map(
+        c => this.cursorStore.set(c.userId, c.roomId, c),
+        map(parseBasicCursor, cursors),
+      ),
+    ).then(this.onSubscriptionEstablished)
   }
 
-  onNewCursor = data => {
+  onNewCursor(data) {
     const basicCursor = parseBasicCursor(data)
-    this.cursorStore
+    return this.cursorStore
       .set(basicCursor.userId, basicCursor.roomId, basicCursor)
       .then(() => {
         this.cursorStore

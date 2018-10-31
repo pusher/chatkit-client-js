@@ -1,11 +1,11 @@
-import { head, isEmpty } from 'ramda'
+import { head, isEmpty } from "ramda"
 
-import { parseBasicMessage } from './parsers'
-import { urlEncode } from './utils'
-import { Message } from './message'
+import { parseBasicMessage } from "./parsers"
+import { urlEncode } from "./utils"
+import { Message } from "./message"
 
 export class MessageSubscription {
-  constructor (options) {
+  constructor(options) {
     this.roomId = options.roomId
     this.hooks = options.hooks
     this.messageLimit = options.messageLimit
@@ -17,16 +17,23 @@ export class MessageSubscription {
     this.messageBuffer = [] // { message, ready }
     this.logger = options.logger
     this.connectionTimeout = options.connectionTimeout
+
+    this.connect = this.connect.bind(this)
+    this.cancel = this.cancel.bind(this)
+    this.onEvent = this.onEvent.bind(this)
+    this.onMessage = this.onMessage.bind(this)
+    this.flushBuffer = this.flushBuffer.bind(this)
+    this.onIsTyping = this.onIsTyping.bind(this)
   }
 
-  connect () {
+  connect() {
     return new Promise((resolve, reject) => {
       this.timeout = setTimeout(() => {
-        reject(new Error('message subscription timed out'))
+        reject(new Error("message subscription timed out"))
       }, this.connectionTimeout)
       this.sub = this.instance.subscribeResuming({
         path: `/rooms/${encodeURIComponent(this.roomId)}?${urlEncode({
-          message_limit: this.messageLimit
+          message_limit: this.messageLimit,
         })}`,
         listeners: {
           onOpen: () => {
@@ -37,45 +44,46 @@ export class MessageSubscription {
             clearTimeout(this.timeout)
             reject(err)
           },
-          onEvent: this.onEvent
-        }
+          onEvent: this.onEvent,
+        },
       })
     })
   }
 
-  cancel () {
+  cancel() {
     clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {
-      this.logger.debug('error when cancelling message subscription', err)
+      this.logger.debug("error when cancelling message subscription", err)
     }
   }
 
-  onEvent = ({ body }) => {
+  onEvent({ body }) {
     switch (body.event_name) {
-      case 'new_message':
+      case "new_message":
         this.onMessage(body.data)
         break
-      case 'is_typing':
+      case "is_typing":
         this.onIsTyping(body.data)
         break
     }
   }
 
-  onMessage = data => {
+  onMessage(data) {
     const pending = {
       message: new Message(
         parseBasicMessage(data),
         this.userStore,
-        this.roomStore
+        this.roomStore,
       ),
-      ready: false
+      ready: false,
     }
     this.messageBuffer.push(pending)
-    this.userStore.fetchMissingUsers([pending.message.senderId])
+    this.userStore
+      .fetchMissingUsers([pending.message.senderId])
       .catch(err => {
-        this.logger.error('error fetching missing user information:', err)
+        this.logger.error("error fetching missing user information:", err)
       })
       .then(() => {
         pending.ready = true
@@ -83,7 +91,7 @@ export class MessageSubscription {
       })
   }
 
-  flushBuffer = () => {
+  flushBuffer() {
     while (!isEmpty(this.messageBuffer) && head(this.messageBuffer).ready) {
       const message = this.messageBuffer.shift().message
       if (
@@ -95,10 +103,12 @@ export class MessageSubscription {
     }
   }
 
-  onIsTyping = ({ user_id: userId }) => {
+  onIsTyping({ user_id: userId }) {
     if (userId !== this.userId) {
-      Promise.all([this.roomStore.get(this.roomId), this.userStore.get(userId)])
-        .then(([room, user]) => this.typingIndicators.onIsTyping(room, user))
+      Promise.all([
+        this.roomStore.get(this.roomId),
+        this.userStore.get(userId),
+      ]).then(([room, user]) => this.typingIndicators.onIsTyping(room, user))
     }
   }
 }

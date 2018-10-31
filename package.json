@@ -1,6 +1,6 @@
 {
   "name": "@pusher/chatkit-client",
-  "description": "Pusher Chatkit client library for browsers and react native",
+  "description": "Pusher Chatkit client SDK for browsers and react native",
   "main": "dist/web/chatkit.js",
   "version": "1.0.2",
   "author": "Pusher",
@@ -21,13 +21,15 @@
     "@pusher/chatkit-server": "0.13.0",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
-    "babel-eslint": "^7.0.0",
     "babel-plugin-external-helpers": "^6.22.0",
-    "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babelify": "^8.0.0",
     "browserify": "^15.2.0",
+    "eslint": "^5.8.0",
+    "eslint-config-prettier": "^3.1.0",
+    "eslint-plugin-prettier": "^3.0.0",
+    "prettier": "1.14.3",
     "rollup": "^0.55.3",
     "rollup-plugin-alias": "^1.4.0",
     "rollup-plugin-babel": "^3.0.3",
@@ -36,21 +38,46 @@
     "rollup-plugin-node-resolve": "^3.0.2",
     "rollup-plugin-uglify": "^3.0.0",
     "snazzy": "^7.0.0",
-    "standard": "^10.0.3",
     "tap-colorize": "^1.2.0",
     "tape": "^4.8.0",
     "tape-run": "^3.0.2"
   },
   "scripts": {
-    "lint": "standard --parser babel-eslint --verbose | snazzy",
+    "lint": "eslint src tests rollup",
+    "format": "prettier --write src/**/*.js tests/**/*.js rollup/**/*.js example/**/*.js",
     "build": "yarn build:web && yarn build:react-native",
     "build:web": "rollup -c rollup/web.js",
     "build:react-native": "rollup -c rollup/react-native.js",
     "test": "browserify tests/main.js -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run --render=tap-colorize",
+    "test:chrome": "browserify tests/main.js -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run --render=tap-colorize -b chrome",
     "lint:build": "clear && yarn lint && clear && yarn build",
-    "lint:build:test": "yarn lint:build && clear && yarn test"
+    "lint:build:test": "yarn lint:build && clear && yarn test",
+    "lint:build:test:chrome": "yarn lint:build && clear && yarn test:chrome",
+    "publish-please": "publish-please",
+    "prepublishOnly": "publish-please guard"
   },
-  "standard": {
-    "ignore": "example"
+  "prettier": {
+    "semi": false,
+    "trailingComma": "all"
+  },
+  "eslintConfig": {
+    "extends": [
+      "prettier",
+      "eslint:recommended"
+    ],
+    "plugins": [
+      "prettier"
+    ],
+    "rules": {
+      "prettier/prettier": "error"
+    },
+    "parserOptions": {
+      "sourceType": "module",
+      "ecmaVersion": 2018
+    },
+    "env": {
+      "browser": true,
+      "es6": true
+    }
   }
 }

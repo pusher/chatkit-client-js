@@ -1,15 +1,20 @@
-import { TYPING_INDICATOR_TTL, TYPING_INDICATOR_LEEWAY } from './constants'
+import { TYPING_INDICATOR_TTL, TYPING_INDICATOR_LEEWAY } from "./constants"
 
 export class TypingIndicators {
-  constructor ({ hooks, instance, logger }) {
+  constructor({ hooks, instance, logger }) {
     this.hooks = hooks
     this.instance = instance
     this.logger = logger
     this.lastSentRequests = {}
     this.timers = {}
+
+    this.sendThrottledRequest = this.sendThrottledRequest.bind(this)
+    this.onIsTyping = this.onIsTyping.bind(this)
+    this.onStarted = this.onStarted.bind(this)
+    this.onStopped = this.onStopped.bind(this)
   }
 
-  sendThrottledRequest = roomId => {
+  sendThrottledRequest(roomId) {
     const now = Date.now()
     const sent = this.lastSentRequests[roomId]
     if (sent && now - sent < TYPING_INDICATOR_TTL - TYPING_INDICATOR_LEEWAY) {
@@ -18,20 +23,20 @@ export class TypingIndicators {
     this.lastSentRequests[roomId] = now
     return this.instance
       .request({
-        method: 'POST',
-        path: `/rooms/${encodeURIComponent(roomId)}/typing_indicators`
+        method: "POST",
+        path: `/rooms/${encodeURIComponent(roomId)}/typing_indicators`,
       })
       .catch(err => {
         delete this.typingRequestSent[roomId]
         this.logger.warn(
           `Error sending typing indicator in room ${roomId}`,
-          err
+          err,
         )
         throw err
       })
   }
 
-  onIsTyping = (room, user) => {
+  onIsTyping(room, user) {
     if (!this.timers[room.id]) {
       this.timers[room.id] = {}
     }
@@ -46,7 +51,7 @@ export class TypingIndicators {
     }, TYPING_INDICATOR_TTL)
   }
 
-  onStarted = (room, user) => {
+  onStarted(room, user) {
     if (this.hooks.global.onUserStartedTyping) {
       this.hooks.global.onUserStartedTyping(room, user)
     }
@@ -58,7 +63,7 @@ export class TypingIndicators {
     }
   }
 
-  onStopped = (room, user) => {
+  onStopped(room, user) {
     if (this.hooks.global.onUserStoppedTyping) {
       this.hooks.global.onUserStoppedTyping(room, user)
     }

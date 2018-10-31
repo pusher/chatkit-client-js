@@ -1,5 +1,5 @@
 export class MembershipSubscription {
-  constructor (options) {
+  constructor(options) {
     this.roomId = options.roomId
     this.hooks = options.hooks
     this.instance = options.instance
@@ -7,12 +7,19 @@ export class MembershipSubscription {
     this.roomStore = options.roomStore
     this.logger = options.logger
     this.connectionTimeout = options.connectionTimeout
+
+    this.connect = this.connect.bind(this)
+    this.cancel = this.cancel.bind(this)
+    this.onEvent = this.onEvent.bind(this)
+    this.onInitialState = this.onInitialState.bind(this)
+    this.onUserJoined = this.onUserJoined.bind(this)
+    this.onUserLeft = this.onUserLeft.bind(this)
   }
 
-  connect () {
+  connect() {
     return new Promise((resolve, reject) => {
       this.timeout = setTimeout(() => {
-        reject(new Error('membership subscription timed out'))
+        reject(new Error("membership subscription timed out"))
       }, this.connectionTimeout)
       this.onSubscriptionEstablished = initialState => {
         clearTimeout(this.timeout)
@@ -25,43 +32,42 @@ export class MembershipSubscription {
             clearTimeout(this.timeout)
             reject(err)
           },
-          onEvent: this.onEvent
-        }
+          onEvent: this.onEvent,
+        },
       })
     })
   }
 
-  cancel () {
+  cancel() {
     clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {
-      this.logger.debug('error when cancelling membership subscription', err)
+      this.logger.debug("error when cancelling membership subscription", err)
     }
   }
 
-  onEvent = ({ body }) => {
+  onEvent({ body }) {
     switch (body.event_name) {
-      case 'initial_state':
+      case "initial_state":
         this.onInitialState(body.data)
         break
-      case 'user_joined':
+      case "user_joined":
         this.onUserJoined(body.data)
         break
-      case 'user_left':
+      case "user_left":
         this.onUserLeft(body.data)
         break
     }
   }
 
-  onInitialState = ({ user_ids: userIds }) => {
-    this.roomStore.update(this.roomId, { userIds })
-      .then(() => {
-        this.onSubscriptionEstablished()
-      })
+  onInitialState({ user_ids: userIds }) {
+    this.roomStore.update(this.roomId, { userIds }).then(() => {
+      this.onSubscriptionEstablished()
+    })
   }
 
-  onUserJoined = ({ user_id: userId }) => {
+  onUserJoined({ user_id: userId }) {
     this.roomStore.addUserToRoom(this.roomId, userId).then(room => {
       this.userStore.get(userId).then(user => {
         if (this.hooks.global.onUserJoinedRoom) {
@@ -77,7 +83,7 @@ export class MembershipSubscription {
     })
   }
 
-  onUserLeft = ({ user_id: userId }) => {
+  onUserLeft({ user_id: userId }) {
     this.roomStore.removeUserFromRoom(this.roomId, userId).then(room => {
       this.userStore.get(userId).then(user => {
         if (this.hooks.global.onUserLeftRoom) {

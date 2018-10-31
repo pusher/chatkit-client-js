@@ -1,5 +1,5 @@
 export class Message {
-  constructor (basicMessage, userStore, roomStore) {
+  constructor(basicMessage, userStore, roomStore) {
     this.id = basicMessage.id
     this.senderId = basicMessage.senderId
     this.roomId = basicMessage.roomId
@@ -11,11 +11,11 @@ export class Message {
     this.roomStore = roomStore
   }
 
-  get sender () {
+  get sender() {
     return this.userStore.getSync(this.senderId)
   }
 
-  get room () {
+  get room() {
     return this.roomStore.getSync(this.roomId)
   }
 }

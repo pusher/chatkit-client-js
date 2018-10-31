@@ -1,9 +1,9 @@
-import { map } from 'ramda'
+import { map } from "ramda"
 
-import { parseBasicRoom, parseBasicUser } from './parsers'
+import { parseBasicRoom, parseBasicUser } from "./parsers"
 
 export class UserSubscription {
-  constructor (options) {
+  constructor(options) {
     this.userId = options.userId
     this.hooks = options.hooks
     this.instance = options.instance
@@ -12,67 +12,76 @@ export class UserSubscription {
     this.roomSubscriptions = options.roomSubscriptions
     this.logger = options.logger
     this.connectionTimeout = options.connectionTimeout
+
+    this.connect = this.connect.bind(this)
+    this.cancel = this.cancel.bind(this)
+    this.onEvent = this.onEvent.bind(this)
+    this.onInitialState = this.onInitialState.bind(this)
+    this.onAddedToRoom = this.onAddedToRoom.bind(this)
+    this.onRemovedFromRoom = this.onRemovedFromRoom.bind(this)
+    this.onRoomUpdated = this.onRoomUpdated.bind(this)
+    this.onRoomDeleted = this.onRoomDeleted.bind(this)
   }
 
-  connect () {
+  connect() {
     return new Promise((resolve, reject) => {
       this.timeout = setTimeout(() => {
-        reject(new Error('user subscription timed out'))
+        reject(new Error("user subscription timed out"))
       }, this.connectionTimeout)
       this.onSubscriptionEstablished = initialState => {
         clearTimeout(this.timeout)
         resolve(initialState)
       }
       this.sub = this.instance.subscribeNonResuming({
-        path: '/users',
+        path: "/users",
         listeners: {
           onError: err => {
             clearTimeout(this.timeout)
             reject(err)
           },
-          onEvent: this.onEvent
-        }
+          onEvent: this.onEvent,
+        },
       })
     })
   }
 
-  cancel () {
+  cancel() {
     clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {
-      this.logger.debug('error when cancelling user subscription', err)
+      this.logger.debug("error when cancelling user subscription", err)
     }
   }
 
-  onEvent = ({ body }) => {
+  onEvent({ body }) {
     switch (body.event_name) {
-      case 'initial_state':
+      case "initial_state":
         this.onInitialState(body.data)
         break
-      case 'added_to_room':
+      case "added_to_room":
         this.onAddedToRoom(body.data)
         break
-      case 'removed_from_room':
+      case "removed_from_room":
         this.onRemovedFromRoom(body.data)
         break
-      case 'room_updated':
+      case "room_updated":
         this.onRoomUpdated(body.data)
         break
-      case 'room_deleted':
+      case "room_deleted":
         this.onRoomDeleted(body.data)
         break
     }
   }
 
-  onInitialState = ({ current_user: userData, rooms: roomsData }) => {
+  onInitialState({ current_user: userData, rooms: roomsData }) {
     this.onSubscriptionEstablished({
       user: parseBasicUser(userData),
-      basicRooms: map(parseBasicRoom, roomsData)
+      basicRooms: map(parseBasicRoom, roomsData),
     })
   }
 
-  onAddedToRoom = ({ room: roomData }) => {
+  onAddedToRoom({ room: roomData }) {
     const basicRoom = parseBasicRoom(roomData)
     this.roomStore.set(basicRoom.id, basicRoom).then(room => {
       if (this.hooks.global.onAddedToRoom) {
@@ -81,7 +90,7 @@ export class UserSubscription {
     })
   }
 
-  onRemovedFromRoom = ({ room_id: roomId }) => {
+  onRemovedFromRoom({ room_id: roomId }) {
     this.roomStore.pop(roomId).then(room => {
       // room will be undefined if we left with leaveRoom
       if (room && this.hooks.global.onRemovedFromRoom) {
@@ -90,7 +99,7 @@ export class UserSubscription {
     })
   }
 
-  onRoomUpdated = ({ room: roomData }) => {
+  onRoomUpdated({ room: roomData }) {
     const updates = parseBasicRoom(roomData)
     this.roomStore.update(updates.id, updates).then(room => {
       if (this.hooks.global.onRoomUpdated) {
@@ -99,7 +108,7 @@ export class UserSubscription {
     })
   }
 
-  onRoomDeleted = ({ room_id: roomId }) => {
+  onRoomDeleted({ room_id: roomId }) {
     this.roomStore.pop(roomId).then(room => {
       if (room && this.hooks.global.onRoomDeleted) {
         this.hooks.global.onRoomDeleted(room)

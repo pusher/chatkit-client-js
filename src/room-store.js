@@ -1,24 +1,35 @@
-import { append, map, filter, uniq, pipe } from 'ramda'
+import { append, map, filter, uniq, pipe } from "ramda"
 
-import { Store } from './store'
-import { parseBasicRoom } from './parsers'
-import { Room } from './room'
+import { Store } from "./store"
+import { parseBasicRoom } from "./parsers"
+import { Room } from "./room"
 
 export class RoomStore {
-  constructor (options) {
+  constructor(options) {
     this.instance = options.instance
     this.userStore = options.userStore
     this.isSubscribedTo = options.isSubscribedTo
     this.logger = options.logger
+    this.store = new Store()
+
+    this.initialize = this.initialize.bind(this)
+    this.set = this.set.bind(this)
+    this.get = this.get.bind(this)
+    this.pop = this.pop.bind(this)
+    this.addUserToRoom = this.addUserToRoom.bind(this)
+    this.removeUserFromRoom = this.removeUserFromRoom.bind(this)
+    this.update = this.update.bind(this)
+    this.fetchBasicRoom = this.fetchBasicRoom.bind(this)
+    this.snapshot = this.snapshot.bind(this)
+    this.getSync = this.getSync.bind(this)
+    this.decorate = this.decorate.bind(this)
   }
 
-  store = new Store()
-
-  initialize = initial => {
+  initialize(initial) {
     this.store.initialize(map(this.decorate, initial))
   }
 
-  set = (roomId, basicRoom) => {
+  set(roomId, basicRoom) {
     const room = this.store.getSync(roomId)
     if (room) {
       return Promise.resolve(room)
@@ -26,29 +37,40 @@ export class RoomStore {
     return this.store.set(roomId, this.decorate(basicRoom))
   }
 
-  get = roomId => this.store.get(roomId).then(room =>
-    room || this.fetchBasicRoom(roomId).then(basicRoom => this.set(roomId, basicRoom))
-  )
+  get(roomId) {
+    return this.store
+      .get(roomId)
+      .then(
+        room =>
+          room ||
+          this.fetchBasicRoom(roomId).then(basicRoom =>
+            this.set(roomId, basicRoom),
+          ),
+      )
+  }
 
-  pop = this.store.pop
+  pop(...x) {
+    return this.store.pop(...x)
+  }
 
-  addUserToRoom = (roomId, userId) => {
+  addUserToRoom(roomId, userId) {
     return Promise.all([
       this.store.update(roomId, r => {
         r.userIds = uniq(append(userId, r.userIds))
         return r
       }),
-      this.userStore.fetchMissingUsers([userId])
-    ])
-      .then(([room]) => room)
+      this.userStore.fetchMissingUsers([userId]),
+    ]).then(([room]) => room)
   }
 
-  removeUserFromRoom = (roomId, userId) => this.store.update(roomId, r => {
-    r.userIds = filter(id => id !== userId, r.userIds)
-    return r
-  })
+  removeUserFromRoom(roomId, userId) {
+    return this.store.update(roomId, r => {
+      r.userIds = filter(id => id !== userId, r.userIds)
+      return r
+    })
+  }
 
-  update = (roomId, updates) => {
+  update(roomId, updates) {
     return Promise.all([
       this.store.update(roomId, r => {
         r.createdAt = updates.createdAt || r.createdAt
@@ -61,35 +83,43 @@ export class RoomStore {
         r.userIds = updates.userIds || r.userIds
         return r
       }),
-      this.userStore.fetchMissingUsers(updates.userIds || [])
-    ])
-      .then(([room]) => room)
+      this.userStore.fetchMissingUsers(updates.userIds || []),
+    ]).then(([room]) => room)
   }
 
-  fetchBasicRoom = roomId => {
+  fetchBasicRoom(roomId) {
     return this.instance
       .request({
-        method: 'GET',
-        path: `/rooms/${encodeURIComponent(roomId)}`
+        method: "GET",
+        path: `/rooms/${encodeURIComponent(roomId)}`,
       })
-      .then(pipe(JSON.parse, parseBasicRoom))
+      .then(
+        pipe(
+          JSON.parse,
+          parseBasicRoom,
+        ),
+      )
       .catch(err => {
         this.logger.warn(`error fetching details for room ${roomId}:`, err)
       })
   }
 
-  snapshot = this.store.snapshot
+  snapshot(...x) {
+    return this.store.snapshot(...x)
+  }
 
-  getSync = this.store.getSync
+  getSync(...x) {
+    return this.store.getSync(...x)
+  }
 
-  decorate = basicRoom => {
+  decorate(basicRoom) {
     return basicRoom
       ? new Room({
-        basicRoom,
-        userStore: this.userStore,
-        isSubscribedTo: this.isSubscribedTo,
-        logger: this.logger
-      })
+          basicRoom,
+          userStore: this.userStore,
+          isSubscribedTo: this.isSubscribedTo,
+          logger: this.logger,
+        })
       : undefined
   }
 }

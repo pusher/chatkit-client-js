@@ -1,5 +1,5 @@
 export class Cursor {
-  constructor (basicCursor, userStore, roomStore) {
+  constructor(basicCursor, userStore, roomStore) {
     this.position = basicCursor.position
     this.updatedAt = basicCursor.updatedAt
     this.userId = basicCursor.userId
@@ -9,11 +9,11 @@ export class Cursor {
     this.roomStore = roomStore
   }
 
-  get user () {
+  get user() {
     return this.userStore.getSync(this.userId)
   }
 
-  get room () {
+  get room() {
     return this.roomStore.getSync(this.roomId)
   }
 }

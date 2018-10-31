@@ -1,4 +1,4 @@
-import { contains } from 'ramda'
+import { contains } from "ramda"
 
 export const parseBasicRoom = data => ({
   createdAt: data.created_at,
@@ -7,7 +7,7 @@ export const parseBasicRoom = data => ({
   id: data.id,
   isPrivate: data.private,
   name: data.name,
-  updatedAt: data.updated_at
+  updatedAt: data.updated_at,
 })
 
 export const parseBasicUser = data => ({
@@ -16,11 +16,11 @@ export const parseBasicUser = data => ({
   customData: data.custom_data,
   id: data.id,
   name: data.name,
-  updatedAt: data.updated_at
+  updatedAt: data.updated_at,
 })
 
 export const parsePresence = data => ({
-  state: contains(data.state, ['online', 'offline']) ? data.state : 'unknown'
+  state: contains(data.state, ["online", "offline"]) ? data.state : "unknown",
 })
 
 export const parseBasicMessage = data => ({
@@ -30,7 +30,7 @@ export const parseBasicMessage = data => ({
   text: data.text,
   createdAt: data.created_at,
   updatedAt: data.updated_at,
-  attachment: data.attachment && parseMessageAttachment(data.attachment)
+  attachment: data.attachment && parseMessageAttachment(data.attachment),
 })
 
 export const parseBasicCursor = data => ({
@@ -38,10 +38,10 @@ export const parseBasicCursor = data => ({
   updatedAt: data.updated_at,
   userId: data.user_id,
   roomId: data.room_id,
-  type: data.cursor_type
+  type: data.cursor_type,
 })
 
 const parseMessageAttachment = data => ({
   link: data.resource_link,
-  type: data.type
+  type: data.type,
 })

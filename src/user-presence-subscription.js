@@ -1,9 +1,9 @@
-import { contains, compose, forEach, filter, toPairs } from 'ramda'
+import { contains, compose, forEach, filter, toPairs } from "ramda"
 
-import { parsePresence } from './parsers'
+import { parsePresence } from "./parsers"
 
 export class UserPresenceSubscription {
-  constructor (options) {
+  constructor(options) {
     this.userId = options.userId
     this.hooks = options.hooks
     this.instance = options.instance
@@ -12,12 +12,17 @@ export class UserPresenceSubscription {
     this.presenceStore = options.presenceStore
     this.logger = options.logger
     this.connectionTimeout = options.connectionTimeout
+
+    this.connect = this.connect.bind(this)
+    this.cancel = this.cancel.bind(this)
+    this.onEvent = this.onEvent.bind(this)
+    this.onPresenceState = this.onPresenceState.bind(this)
   }
 
-  connect () {
+  connect() {
     return new Promise((resolve, reject) => {
       this.timeout = setTimeout(() => {
-        reject(new Error('user presence subscription timed out'))
+        reject(new Error("user presence subscription timed out"))
       }, this.connectionTimeout)
       this.onSubscriptionEstablished = () => {
         clearTimeout(this.timeout)
@@ -30,32 +35,32 @@ export class UserPresenceSubscription {
             clearTimeout(this.timeout)
             reject(err)
           },
-          onEvent: this.onEvent
-        }
+          onEvent: this.onEvent,
+        },
       })
     })
   }
 
-  cancel () {
+  cancel() {
     clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {
-      this.logger.debug('error when cancelling user presence subscription', err)
+      this.logger.debug("error when cancelling user presence subscription", err)
     }
   }
 
-  onEvent = ({ body }) => {
+  onEvent({ body }) {
     switch (body.event_name) {
-      case 'presence_state':
+      case "presence_state":
         this.onPresenceState(body.data)
         break
     }
   }
 
-  onPresenceState = data => {
+  onPresenceState(data) {
     this.onSubscriptionEstablished()
-    const previous = this.presenceStore.getSync(this.userId) || 'unknown'
+    const previous = this.presenceStore.getSync(this.userId) || "unknown"
     const current = parsePresence(data).state
     if (current === previous) {
       return
@@ -66,13 +71,15 @@ export class UserPresenceSubscription {
           this.hooks.global.onPresenceChanged({ current, previous }, user)
         }
         compose(
-          forEach(([roomId, hooks]) => this.roomStore.get(roomId).then(room => {
-            if (contains(user.id, room.userIds)) {
-              hooks.onPresenceChanged({ current, previous }, user)
-            }
-          })),
-          filter(([roomId, hooks]) => hooks.onPresenceChanged !== undefined),
-          toPairs
+          forEach(([roomId, hooks]) =>
+            this.roomStore.get(roomId).then(room => {
+              if (contains(user.id, room.userIds)) {
+                hooks.onPresenceChanged({ current, previous }, user)
+              }
+            }),
+          ),
+          filter(pair => pair[1].onPresenceChanged !== undefined),
+          toPairs,
         )(this.hooks.rooms)
       })
     })

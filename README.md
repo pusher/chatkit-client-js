@@ -19,6 +19,16 @@ For more information on the Chatkit service, [see here](https://pusher.com/chatk
 $ yarn add @pusher/chatkit-client
 ```
 
+[npm](https://www.npmjs.com/):
+
+```sh
+$ npm install @pusher/chatkit-server --save
+```
+
 ## Getting started
 
 Head over to [our documentation](https://docs.pusher.com/chatkit/reference/javascript).
+
+## Publishing
+
+Running `npm run publish-please` will walk you through the publishing steps.

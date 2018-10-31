@@ -1,6 +1,6 @@
 {
   "name": "@pusher/chatkit-client",
-  "description": "Pusher Chatkit client library for browsers and react native",
+  "description": "Pusher Chatkit client SDK for browsers and react native",
   "main": "dist/web/chatkit.js",
   "version": "1.0.2",
   "author": "Pusher",
@@ -52,7 +52,9 @@
     "test:chrome": "browserify tests/main.js -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run --render=tap-colorize -b chrome",
     "lint:build": "clear && yarn lint && clear && yarn build",
     "lint:build:test": "yarn lint:build && clear && yarn test",
-    "lint:build:test:chrome": "yarn lint:build && clear && yarn test:chrome"
+    "lint:build:test:chrome": "yarn lint:build && clear && yarn test:chrome",
+    "publish-please": "publish-please",
+    "prepublishOnly": "publish-please guard"
   },
   "prettier": {
     "semi": false,

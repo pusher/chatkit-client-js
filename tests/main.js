@@ -463,6 +463,7 @@ test("user left room hook (user sub) [removes Bob from his own room]", t => {
     onUserLeftRoom: (room, user) => {
       t.equal(room.id, bobsRoom.id)
       t.equal(user.id, "bob")
+      t.deepEqual(room.users.map(u => u.name), ["Alice"])
       alice.disconnect()
       t.end()
     },

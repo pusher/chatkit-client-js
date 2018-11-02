@@ -22,7 +22,7 @@ $ yarn add @pusher/chatkit-client
 [npm](https://www.npmjs.com/):
 
 ```sh
-$ npm install @pusher/chatkit-client --save
+$ npm install @pusher/chatkit-client
 ```
 
 ## Getting started

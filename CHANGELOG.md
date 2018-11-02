@@ -4,7 +4,13 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.0.2...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.0.3...HEAD)
+
+### Fixes
+
+- The `users` property on the room object.
+
+## [1.0.3](https://github.com/pusher/chatkit-client-js/compare/1.0.2...1.0.3)
 
 ### Changes
 

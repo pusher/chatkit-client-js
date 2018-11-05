@@ -55,4 +55,4 @@ or you can set your editor up to run prettier on save.
 
 ### Publishing
 
-Running `npm run publish-please` will walk you through the publishing steps.
+Running `yarn publish-please` will walk you through the publishing steps.

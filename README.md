@@ -29,6 +29,30 @@ $ npm install @pusher/chatkit-client
 
 Head over to [our documentation](https://docs.pusher.com/chatkit/reference/javascript).
 
-## Publishing
+## Development
+
+### Testing
+
+Lint, build, and run the tests in electron with
+
+```sh
+yarn lint:build:test
+```
+
+or, to run the tests in chrome
+
+```sh
+yarn lint:build:test:chrome
+```
+
+Formatting should largely be delegated to prettier, which can be invoked manually with
+
+```sh
+yarn format
+```
+
+or you can set your editor up to run prettier on save.
+
+### Publishing
 
 Running `npm run publish-please` will walk you through the publishing steps.

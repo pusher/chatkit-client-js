@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 ### Fixes
 
 - The `users` property on the room object.
+- Subscribe to user's own presence state.
 
 ## [1.0.3](https://github.com/pusher/chatkit-client-js/compare/1.0.2...1.0.3)
 

@@ -557,18 +557,19 @@ export class CurrentUser {
       logger: this.logger,
       connectionTimeout: this.connectionTimeout,
     })
-    return this.presenceSubscription.connect().catch(err => {
-      this.logger.warn("error establishing presence subscription:", err)
-      throw err
-    })
+
+    return Promise.all([
+      this.userStore.fetchBasicUsers([this.id]),
+      this.subscribeToUserPresence(this.id),
+      this.presenceSubscription.connect().catch(err => {
+        this.logger.warn("error establishing presence subscription:", err)
+        throw err
+      }),
+    ])
   }
 
   subscribeToUserPresence(userId) {
     if (this.userPresenceSubscriptions[userId]) {
-      return Promise.resolve()
-    }
-
-    if (userId === this.id) {
       return Promise.resolve()
     }
 

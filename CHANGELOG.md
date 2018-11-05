@@ -4,7 +4,9 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.0.3...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.0.4...HEAD)
+
+## [1.0.4](https://github.com/pusher/chatkit-client-js/compare/1.0.3...1.0.4) - 2018-11-05
 
 ### Fixes
 

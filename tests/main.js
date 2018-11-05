@@ -411,7 +411,6 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
 
 test("user came online hook (presence sub)", t => {
   let alice
-  let room
   fetchUser(t, "alice", {
     onPresenceChanged: (state, user) => {
       t.equal(state.current, "online")
@@ -430,9 +429,6 @@ test("user came online hook (presence sub)", t => {
       bob = b
     })
     .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
-    .then(r => {
-      room = r
-    })
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
 })

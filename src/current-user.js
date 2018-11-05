@@ -67,7 +67,7 @@ export class CurrentUser {
     this.roomStore = new RoomStore({
       instance: this.apiInstance,
       userStore: this.userStore,
-      isSubscribedTo: this.isSubscribedTo.bind(this),
+      isSubscribedTo: userId => this.isSubscribedTo(userId),
       logger: this.logger,
     })
     this.cursorStore = new CursorStore({

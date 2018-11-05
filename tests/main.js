@@ -409,14 +409,31 @@ test(`added to room hook [creates Bob & Bob's room]`, t => {
 
 // Presence Subscription
 
+test("current user is online", t => {
+  fetchUser(t, "alice", {})
+    .then(alice => {
+      const myUser = alice.users.find(u => u.id === "alice")
+      t.false(myUser === undefined)
+      t.equal(myUser.presence.state, "online")
+      t.end()
+    })
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test("user came online hook (presence sub)", t => {
   let alice
   fetchUser(t, "alice", {
     onPresenceChanged: (state, user) => {
+      if (user.id === "alice") {
+        return // ignore our own updates
+      }
+
       t.equal(state.current, "online")
       t.equal(state.previous, "unknown")
       t.equal(user.id, "bob")
       t.equal(user.presence.state, "online")
+
       alice.disconnect()
       t.end()
     },
@@ -440,10 +457,15 @@ test("user went offline hook (presence sub)", t => {
       if (state.previous === "unknown") {
         return // ignore the initial state, we only care about the transition
       }
+      if (user.id === "alice") {
+        return // ignore our own updates
+      }
+
       t.equal(state.current, "offline")
       t.equal(state.previous, "online")
       t.equal(user.id, "bob")
       t.equal(user.presence.state, "offline")
+
       alice.disconnect()
       t.end()
     },

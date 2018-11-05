@@ -5037,10 +5037,10 @@ tap-parser@~0.2.0:
   dependencies:
     split "~0.1.2"
 
-tape-run@^3.0.2:
-  version "3.0.4"
-  resolved "https://registry.yarnpkg.com/tape-run/-/tape-run-3.0.4.tgz#7f68be0c494ccc8736a9c98636badb204e6590d1"
-  integrity sha512-nMj/zeUshHQzm0DCsyX/XIsfKUxsvJAEw2yMHuWNB5a0KlvBjzjIpwwEFHo73stUPBReGzEVE1NnS17fF6CIDQ==
+tape-run@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/tape-run/-/tape-run-4.0.0.tgz#3ab23de7e4064d11144eec9abec92c2e6cc239d4"
+  integrity sha512-FIHUNYhvLSv7h/lxWgej9642h3ZSHNoSBPZOqbCAU9qi4o2CXJbi5wArmrgvPrwoiEIOsF0EWy7Ho7n51Oj7Xg==
   dependencies:
     "@juliangruber/tap-finished" "0.0.2"
     browser-run "^4.1.1"

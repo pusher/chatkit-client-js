@@ -41,7 +41,7 @@
     "snazzy": "^7.0.0",
     "tap-colorize": "^1.2.0",
     "tape": "^4.8.0",
-    "tape-run": "^3.0.2"
+    "tape-run": "^4.0.0"
   },
   "scripts": {
     "lint": "eslint src tests rollup",

@@ -615,6 +615,7 @@ test(`create room [creates Alice's new room]`, t => {
       t.equal(room.createdByUserId, "alice")
       alice.subscribeToRoom({ roomId: room.id }).then(() => {
         t.deepEqual(room.userIds, ["alice"])
+        t.deepEqual(room.users.map(u => u.name), ["Alice"])
         alice.disconnect()
         t.end()
       })
@@ -641,6 +642,7 @@ test(`create private room [creates Alice's private room]`, t => {
       t.equal(room.createdByUserId, "alice")
       alice.subscribeToRoom({ roomId: room.id }).then(() => {
         t.deepEqual(room.userIds, ["alice"])
+        t.deepEqual(room.users.map(u => u.name), ["Alice"])
         alice.disconnect()
         t.end()
       })
@@ -667,6 +669,7 @@ test(`create room with members [creates Bob's new room]`, t => {
       t.equal(room.createdByUserId, "bob")
       bob.subscribeToRoom({ roomId: room.id }).then(() => {
         t.deepEqual(room.userIds.sort(), ["alice", "bob"])
+        t.deepEqual(room.users.map(u => u.name).sort(), ["Alice", "Bob"])
         bob.disconnect()
         t.end()
       })
@@ -722,6 +725,7 @@ test(`join room [Bob joins Alice's room]`, t => {
             `should include Alice's room`,
           )
           t.deepEqual(room.userIds.sort(), ["alice", "bob"])
+          t.deepEqual(room.users.map(u => u.name).sort(), ["Alice", "Bob"])
           bob.disconnect()
           t.end()
         })
@@ -763,6 +767,7 @@ test("add user [Alice adds Bob to her room]", t => {
         const room = find(r => r.id === alicesRoom.id, alice.rooms)
         alice.subscribeToRoom({ roomId: room.id }).then(() => {
           t.deepEqual(room.userIds.sort(), ["alice", "bob"])
+          t.deepEqual(room.users.map(u => u.name).sort(), ["Alice", "Bob"])
           alice.disconnect()
           t.end()
         })
@@ -783,6 +788,7 @@ test("remove user [Alice removes Bob from her room]", t => {
         const room = find(r => r.id === alicesRoom.id, alice.rooms)
         alice.subscribeToRoom({ roomId: room.id }).then(() => {
           t.deepEqual(room.userIds.sort(), ["alice"])
+          t.deepEqual(room.users.map(u => u.name), ["Alice"])
           alice.disconnect()
           t.end()
         })

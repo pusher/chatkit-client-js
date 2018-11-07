@@ -605,7 +605,10 @@ test(`create room [creates Alice's new room]`, t => {
   fetchUser(t, "alice")
     .then(a => {
       alice = a
-      const result = alice.createRoom({ name: `Alice's new room` })
+      const result = alice.createRoom({
+        name: `Alice's new room`,
+        customData: { foo: 42 },
+      })
       return result
     })
     .then(room => {
@@ -616,6 +619,7 @@ test(`create room [creates Alice's new room]`, t => {
       alice.subscribeToRoom({ roomId: room.id }).then(() => {
         t.deepEqual(room.userIds, ["alice"])
         t.deepEqual(room.users.map(u => u.name), ["Alice"])
+        t.deepEqual(room.customData, { foo: 42 })
         alice.disconnect()
         t.end()
       })
@@ -1345,12 +1349,14 @@ test("[setup] promote Alice to admin", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test(`update room [renames Bob's room]`, t => {
+test(`update room name [renames Bob's room]`, t => {
   let alice
   fetchUser(t, "alice", {
     onRoomUpdated: room => {
       t.equal(room.id, bobsRoom.id)
+      t.equal(room.isPrivate, false)
       t.equal(room.name, `Bob's updated room`)
+      t.equal(room.customData, undefined)
       alice.disconnect()
       t.end()
     },
@@ -1360,6 +1366,54 @@ test(`update room [renames Bob's room]`, t => {
       alice.updateRoom({
         roomId: bobsRoom.id,
         name: `Bob's updated room`,
+      })
+    })
+    .then(res => t.equal(res, undefined))
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test(`update room privacy [makes Bob's room private]`, t => {
+  let alice
+  fetchUser(t, "alice", {
+    onRoomUpdated: room => {
+      t.equal(room.id, bobsRoom.id)
+      t.equal(room.isPrivate, true)
+      t.equal(room.name, `Bob's updated room`)
+      t.equal(room.customData, undefined)
+      alice.disconnect()
+      t.end()
+    },
+  })
+    .then(a => {
+      alice = a
+      alice.updateRoom({
+        roomId: bobsRoom.id,
+        private: true,
+      })
+    })
+    .then(res => t.equal(res, undefined))
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test(`update room custom data [changes Bob's room's custom data]`, t => {
+  let alice
+  fetchUser(t, "alice", {
+    onRoomUpdated: room => {
+      t.equal(room.id, bobsRoom.id)
+      t.equal(room.isPrivate, true)
+      t.equal(room.name, `Bob's updated room`)
+      t.deepEqual(room.customData, { foo: "bar", n: 42 })
+      alice.disconnect()
+      t.end()
+    },
+  })
+    .then(a => {
+      alice = a
+      alice.updateRoom({
+        roomId: bobsRoom.id,
+        customData: { foo: "bar", n: 42 },
       })
     })
     .then(res => t.equal(res, undefined))

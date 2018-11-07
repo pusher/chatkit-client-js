@@ -73,14 +73,9 @@ export class RoomStore {
   update(roomId, updates) {
     return Promise.all([
       this.store.update(roomId, r => {
-        r.createdAt = updates.createdAt || r.createdAt
-        r.createdByUserId = updates.createdByUserId || r.createdByUserId
-        r.deletedAt = updates.deletedAt || r.deletedAt
-        r.id = updates.id || r.id
-        r.isPrivate = updates.isPrivate || r.isPrivate
-        r.name = updates.name || r.name
-        r.updatedAt = updates.updatedAt || r.updatedAt
-        r.userIds = updates.userIds || r.userIds
+        for (const k in updates) {
+          r[k] = updates[k]
+        }
         return r
       }),
       this.userStore.fetchMissingUsers(updates.userIds || []),

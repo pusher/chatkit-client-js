@@ -6,4 +6,5 @@
 # And these are the files that are allowed.
 !/LICENSE.md
 !/package.json
+!/react-native.js
 !/dist/**/*

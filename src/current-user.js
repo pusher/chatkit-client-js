@@ -175,9 +175,10 @@ export class CurrentUser {
     return this.typingIndicators.sendThrottledRequest(roomId)
   }
 
-  createRoom({ name, addUserIds, ...rest } = {}) {
+  createRoom({ name, addUserIds, customData, ...rest } = {}) {
     name && typeCheck("name", "string", name)
     addUserIds && typeCheckArr("addUserIds", "string", addUserIds)
+    customData && typeCheck("customData", "object", customData)
     return this.apiInstance
       .request({
         method: "POST",
@@ -187,6 +188,7 @@ export class CurrentUser {
           name,
           private: !!rest.private, // private is a reserved word in strict mode!
           user_ids: addUserIds,
+          custom_data: customData,
         },
       })
       .then(res => {
@@ -420,10 +422,11 @@ export class CurrentUser {
       })
   }
 
-  updateRoom({ roomId, name, ...rest } = {}) {
+  updateRoom({ roomId, name, customData, ...rest } = {}) {
     typeCheck("roomId", "string", roomId)
     name && typeCheck("name", "string", name)
     rest.private && typeCheck("private", "boolean", rest.private)
+    customData && typeCheck("customData", "object", customData)
     return this.apiInstance
       .request({
         method: "PUT",
@@ -431,6 +434,7 @@ export class CurrentUser {
         json: {
           name,
           private: rest.private, // private is a reserved word in strict mode!
+          custom_data: customData,
         },
       })
       .then(() => {})

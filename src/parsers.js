@@ -3,11 +3,11 @@ import { contains } from "ramda"
 export const parseBasicRoom = data => ({
   createdAt: data.created_at,
   createdByUserId: data.created_by_id,
-  deletedAt: data.deletedAt,
   id: data.id,
   isPrivate: data.private,
   name: data.name,
   updatedAt: data.updated_at,
+  customData: data.custom_data,
 })
 
 export const parseBasicUser = data => ({

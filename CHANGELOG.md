@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.0.4...HEAD)
 
+## [1.1.0](https://github.com/pusher/chatkit-client-js/compare/1.0.5...1.1.0)
+
 ### Additions
 
 - a `customData` option for `createRoom` and `updateRoom`

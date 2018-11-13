@@ -996,6 +996,7 @@ test("receive message with link attachment", t => {
       t.deepEqual(message.attachment, {
         link: "https://cataas.com/cat",
         type: "image",
+        name: "cat",
       })
       alice.disconnect()
       t.end()
@@ -1035,6 +1036,7 @@ test("receive message with data attachment", t => {
         .then(([message]) => {
           t.equal(message.text, "see attached json")
           t.equal(message.attachment.type, "file")
+          t.equal(message.attachment.name, "hello.json")
           dataAttachmentUrl = message.attachment.link
           alice.disconnect()
           t.end()

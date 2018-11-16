@@ -4088,10 +4088,10 @@ pusher-platform-node@~0.13.0:
     jsonwebtoken "^8.3.0"
     request "^2.81.0"
 
-pusher-platform@^0.15.2:
-  version "0.15.2"
-  resolved "https://registry.yarnpkg.com/pusher-platform/-/pusher-platform-0.15.2.tgz#802726b1ffbc8988f1f827e69d8f6b992b8ca9fc"
-  integrity sha512-4YUPYabnQ0m3uR+zN/av/c8WL0iO8tQCqRiQSdQIhar7yCTcXGNj5DL1VA1SVGArIh0bgxikB/KH93KnI+el7w==
+pusher-platform@^0.15.4:
+  version "0.15.4"
+  resolved "https://registry.yarnpkg.com/pusher-platform/-/pusher-platform-0.15.4.tgz#0b177ff43fc598e04aac72a627acd95feac16f53"
+  integrity sha512-dvPfh56f+CVpdgHMKstlH7jCafNcs+veK0XyggWojUZsycdHJ+MwE0v5AtDhLGj7nT0a88m+UwA+8dFUqVE3OA==
 
 qs@6.5.2, qs@~6.5.2:
   version "6.5.2"

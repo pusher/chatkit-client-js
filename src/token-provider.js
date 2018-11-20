@@ -1,4 +1,4 @@
-import { sendRawRequest } from "pusher-platform"
+import { sendRawRequest } from "@pusher/platform"
 
 import { appendQueryParams, typeCheck, unixSeconds, urlEncode } from "./utils"
 

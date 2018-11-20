@@ -4,7 +4,11 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.1.1...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.1.2...HEAD)
+
+## [1.1.2](https://github.com/pusher/chatkit-client-js/compare/1.1.1...1.1.2)
+
+- move the dependency `pusher-platform` to `@pusher/platform`
 
 ## [1.1.1](https://github.com/pusher/chatkit-client-js/compare/1.1.0...1.1.1)
 

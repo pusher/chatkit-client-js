@@ -1,4 +1,4 @@
-import { BaseClient, HOST_BASE, Instance } from "pusher-platform"
+import { BaseClient, HOST_BASE, Instance } from "@pusher/platform"
 import { split } from "ramda"
 
 import { CurrentUser } from "./current-user"

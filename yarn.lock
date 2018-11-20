@@ -35,6 +35,11 @@
     jsonwebtoken "^8.3.0"
     pusher-platform-node "~0.13.0"
 
+"@pusher/platform@^0.15.5":
+  version "0.15.5"
+  resolved "https://registry.yarnpkg.com/@pusher/platform/-/platform-0.15.5.tgz#f8dc6f7f38ca4b12369e30ed599bf70e6100da68"
+  integrity sha512-a+pB4gUEUc/t6iToniu+z3UoH5KcbF/6HUtTrCbStC5LzSydgTigYmpdKVoTUwElW9aZ/A4L9zmZdgX98mW6zQ==
+
 "@types/node@^8.0.24":
   version "8.10.36"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-8.10.36.tgz#eac05d576fbcd0b4ea3c912dc58c20475c08d9e4"
@@ -4087,11 +4092,6 @@ pusher-platform-node@~0.13.0:
     extend "^2.0.1"
     jsonwebtoken "^8.3.0"
     request "^2.81.0"
-
-pusher-platform@^0.15.4:
-  version "0.15.4"
-  resolved "https://registry.yarnpkg.com/pusher-platform/-/pusher-platform-0.15.4.tgz#0b177ff43fc598e04aac72a627acd95feac16f53"
-  integrity sha512-dvPfh56f+CVpdgHMKstlH7jCafNcs+veK0XyggWojUZsycdHJ+MwE0v5AtDhLGj7nT0a88m+UwA+8dFUqVE3OA==
 
 qs@6.5.2, qs@~6.5.2:
   version "6.5.2"

@@ -30,8 +30,8 @@ export default {
     resolve(),
     commonjs({
       namedExports: {
-        "node_modules/pusher-platform/dist/web/pusher-platform.js": pusherPlatformExports,
-        "node_modules/pusher-platform/react-native.js": pusherPlatformExports,
+        "node_modules/@pusher/platform/dist/web/pusher-platform.js": pusherPlatformExports,
+        "node_modules/@pusher/platform/react-native.js": pusherPlatformExports,
       },
     }),
     uglify(),

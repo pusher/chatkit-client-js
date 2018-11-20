@@ -12,8 +12,8 @@ export default merge(shared, {
   },
   plugins: [
     alias({
-      "pusher-platform": path.resolve(
-        "./node_modules/pusher-platform/react-native.js",
+      "@pusher/platform": path.resolve(
+        "./node_modules/@pusher/platform/react-native.js",
       ),
     }),
     ...shared.plugins,

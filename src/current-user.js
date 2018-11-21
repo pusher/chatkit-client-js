@@ -477,7 +477,6 @@ export class CurrentUser {
   }
 
   uploadDataAttachment(roomId, { file, name }) {
-    // TODO some validation on allowed file names?
     // TODO polyfill FormData?
     const body = new FormData() // eslint-disable-line no-undef
     body.append("file", file, name)
@@ -486,7 +485,7 @@ export class CurrentUser {
         method: "POST",
         path: `/rooms/${encodeURIComponent(roomId)}/users/${
           this.encodedId
-        }/files/${name}`,
+        }/files/${encodeURIComponent(name)}`,
         body,
       })
       .then(JSON.parse)

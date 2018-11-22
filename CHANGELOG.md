@@ -4,7 +4,11 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.1.2...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.2.0...HEAD)
+
+## [1.2.0](https://github.com/pusher/chatkit-client-js/compare/1.1.2...1.2.0)
+
+- the message attachment object now has a `name` field
 
 ## [1.1.2](https://github.com/pusher/chatkit-client-js/compare/1.1.1...1.1.2)
 

@@ -44,4 +44,5 @@ export const parseBasicCursor = data => ({
 const parseMessageAttachment = data => ({
   link: data.resource_link,
   type: data.type,
+  name: data.name,
 })

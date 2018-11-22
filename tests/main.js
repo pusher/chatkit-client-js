@@ -996,6 +996,7 @@ test("receive message with link attachment", t => {
       t.deepEqual(message.attachment, {
         link: "https://cataas.com/cat",
         type: "image",
+        name: "cat",
       })
       alice.disconnect()
       t.end()
@@ -1015,7 +1016,7 @@ test(`send message with data attachment [sends a message to Bob's room]`, t => {
             file: new File([JSON.stringify({ hello: "world" })], {
               type: "application/json",
             }),
-            name: "hello.json",
+            name: "file name with spaces.json",
           },
         })
         .then(() => {
@@ -1035,6 +1036,7 @@ test("receive message with data attachment", t => {
         .then(([message]) => {
           t.equal(message.text, "see attached json")
           t.equal(message.attachment.type, "file")
+          t.equal(message.attachment.name, "file name with spaces.json")
           dataAttachmentUrl = message.attachment.link
           alice.disconnect()
           t.end()

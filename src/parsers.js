@@ -8,6 +8,7 @@ export const parseBasicRoom = data => ({
   name: data.name,
   updatedAt: data.updated_at,
   customData: data.custom_data,
+  deletedAt: data.deleted_at,
 })
 
 export const parseBasicUser = data => ({

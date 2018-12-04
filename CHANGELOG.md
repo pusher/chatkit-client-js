@@ -4,7 +4,12 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.2.0...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.2.1...HEAD)
+
+## [1.2.1](https://github.com/pusher/chatkit-client-js/compare/1.2.0...1.2.1)
+
+- the `deletedAt` field is populated on the room object (it will be `undefined`
+  unless the room has been deleted)
 
 ## [1.2.0](https://github.com/pusher/chatkit-client-js/compare/1.1.2...1.2.0)
 

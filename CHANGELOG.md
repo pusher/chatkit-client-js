@@ -8,7 +8,7 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [1.2.2](https://github.com/pusher/chatkit-client-js/compare/1.2.1...1.2.2)
 
-- Update the `@pusher/platform` dependency to 0.16.0
+- Update the `@pusher/platform` dependency to 0.16.0 and so reconnections are much more reliable now (thanks [@albertopriore](https://github.com/albertopriore) in particular for helping with debugging)
 
 ## [1.2.1](https://github.com/pusher/chatkit-client-js/compare/1.2.0...1.2.1)
 

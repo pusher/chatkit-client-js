@@ -4,20 +4,28 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.2.1...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.2.2...HEAD)
+
+## [1.2.2](https://github.com/pusher/chatkit-client-js/compare/1.2.1...1.2.2)
+
+- Update the `@pusher/platform` dependency to 0.16.0
 
 ## [1.2.1](https://github.com/pusher/chatkit-client-js/compare/1.2.0...1.2.1)
 
-- the `deletedAt` field is populated on the room object (it will be `undefined`
+### Changes
+
+- The `deletedAt` field is populated on the room object (it will be `undefined`
   unless the room has been deleted)
 
 ## [1.2.0](https://github.com/pusher/chatkit-client-js/compare/1.1.2...1.2.0)
 
-- the message attachment object now has a `name` field
+### Additions
+
+- The message attachment object now has a `name` field
 
 ## [1.1.2](https://github.com/pusher/chatkit-client-js/compare/1.1.1...1.1.2)
 
-- move the dependency `pusher-platform` to `@pusher/platform`
+- Move the dependency `pusher-platform` to `@pusher/platform`
 
 ## [1.1.1](https://github.com/pusher/chatkit-client-js/compare/1.1.0...1.1.1)
 
@@ -30,8 +38,8 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ### Additions
 
-- a `customData` option for `createRoom` and `updateRoom`
-- a `customData` property on the room object throughout
+- A `customData` option for `createRoom` and `updateRoom`
+- A `customData` property on the room object throughout
 
 ## [1.0.5](https://github.com/pusher/chatkit-client-js/compare/1.0.4...1.0.5)
 

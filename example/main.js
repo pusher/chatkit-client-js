@@ -9,6 +9,8 @@ const tokenProvider = new Chatkit.TokenProvider({
   url: TOKEN_PROVIDER_URL,
 })
 
+const noopLogger = (...items) => {}
+
 const chatManager = new Chatkit.ChatManager({
   instanceLocator: INSTANCE_LOCATOR,
   tokenProvider: tokenProvider,

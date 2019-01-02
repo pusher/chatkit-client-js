@@ -1016,7 +1016,7 @@ test(`send message with data attachment [sends a message to Bob's room]`, t => {
             file: new File([JSON.stringify({ hello: "world" })], {
               type: "application/json",
             }),
-            name: "file name with spaces.json",
+            name: "file:///with/slashes and spaces.json",
           },
         })
         .then(() => {
@@ -1036,7 +1036,10 @@ test("receive message with data attachment", t => {
         .then(([message]) => {
           t.equal(message.text, "see attached json")
           t.equal(message.attachment.type, "file")
-          t.equal(message.attachment.name, "file name with spaces.json")
+          t.equal(
+            message.attachment.name,
+            "file:///with/slashes and spaces.json",
+          )
           dataAttachmentUrl = message.attachment.link
           alice.disconnect()
           t.end()

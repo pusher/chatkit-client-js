@@ -82,8 +82,7 @@ export class UserSubscription {
   }
 
   onAddedToRoom({ room: roomData }) {
-    const basicRoom = parseBasicRoom(roomData)
-    this.roomStore.set(basicRoom.id, basicRoom).then(room => {
+    this.roomStore.set(parseBasicRoom(roomData)).then(room => {
       if (this.hooks.global.onAddedToRoom) {
         this.hooks.global.onAddedToRoom(room)
       }

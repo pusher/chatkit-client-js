@@ -2,7 +2,6 @@ import {
   compose,
   contains,
   has,
-  indexBy,
   map,
   forEachObjIndexed,
   max,
@@ -191,10 +190,7 @@ export class CurrentUser {
           custom_data: customData,
         },
       })
-      .then(res => {
-        const basicRoom = parseBasicRoom(JSON.parse(res))
-        return this.roomStore.set(basicRoom.id, basicRoom)
-      })
+      .then(res => this.roomStore.set(parseBasicRoom(JSON.parse(res))))
       .catch(err => {
         this.logger.warn("error creating room:", err)
         throw err
@@ -231,10 +227,7 @@ export class CurrentUser {
           roomId,
         )}/join`,
       })
-      .then(res => {
-        const basicRoom = parseBasicRoom(JSON.parse(res))
-        return this.roomStore.set(basicRoom.id, basicRoom)
-      })
+      .then(res => this.roomStore.set(parseBasicRoom(JSON.parse(res))))
       .catch(err => {
         this.logger.warn(`error joining room ${roomId}:`, err)
         throw err
@@ -243,19 +236,14 @@ export class CurrentUser {
 
   leaveRoom({ roomId } = {}) {
     typeCheck("roomId", "string", roomId)
-    return this.roomStore
-      .get(roomId)
-      .then(room =>
-        this.apiInstance
-          .request({
-            method: "POST",
-            path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
-              roomId,
-            )}/leave`,
-          })
-          .then(() => this.roomStore.pop(roomId))
-          .then(() => room),
-      )
+    return this.apiInstance
+      .request({
+        method: "POST",
+        path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
+          roomId,
+        )}/leave`,
+      })
+      .then(() => this.roomStore.pop(roomId))
       .catch(err => {
         this.logger.warn(`error leaving room ${roomId}:`, err)
         throw err
@@ -522,7 +510,9 @@ export class CurrentUser {
         this.customData = user.customData
         this.name = user.name
         this.updatedAt = user.updatedAt
-        this.roomStore.initialize(indexBy(prop("id"), basicRooms))
+        return Promise.all(
+          basicRooms.map(basicRoom => this.roomStore.set(basicRoom)),
+        )
       })
       .catch(err => {
         this.logger.error("error establishing user subscription:", err)

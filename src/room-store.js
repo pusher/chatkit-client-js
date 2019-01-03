@@ -1,6 +1,5 @@
-import { append, map, filter, uniq, pipe } from "ramda"
+import { append, uniq, pipe } from "ramda"
 
-import { Store } from "./store"
 import { parseBasicRoom } from "./parsers"
 import { Room } from "./room"
 
@@ -10,9 +9,8 @@ export class RoomStore {
     this.userStore = options.userStore
     this.isSubscribedTo = options.isSubscribedTo
     this.logger = options.logger
-    this.store = new Store()
+    this.rooms = {}
 
-    this.initialize = this.initialize.bind(this)
     this.set = this.set.bind(this)
     this.get = this.get.bind(this)
     this.pop = this.pop.bind(this)
@@ -25,58 +23,53 @@ export class RoomStore {
     this.decorate = this.decorate.bind(this)
   }
 
-  initialize(initial) {
-    this.store.initialize(map(this.decorate, initial))
-  }
-
-  set(roomId, basicRoom) {
-    const room = this.store.getSync(roomId)
-    if (room) {
-      return Promise.resolve(room)
+  set(basicRoom) {
+    if (!this.rooms[basicRoom.id]) {
+      this.rooms[basicRoom.id] = this.decorate(basicRoom)
     }
-    return this.store.set(roomId, this.decorate(basicRoom))
+    return Promise.resolve(this.rooms[basicRoom.id])
   }
 
   get(roomId) {
-    return this.store
-      .get(roomId)
-      .then(
-        room =>
-          room ||
-          this.fetchBasicRoom(roomId).then(basicRoom =>
-            this.set(roomId, basicRoom),
-          ),
-      )
+    return Promise.resolve(this.rooms[roomId]).then(
+      room =>
+        room ||
+        this.fetchBasicRoom(roomId).then(basicRoom =>
+          this.set(roomId, basicRoom),
+        ),
+    )
   }
 
-  pop(...x) {
-    return this.store.pop(...x)
+  pop(roomId) {
+    const room = this.rooms[roomId]
+    delete this.rooms[roomId]
+    return Promise.resolve(room)
   }
 
   addUserToRoom(roomId, userId) {
     return Promise.all([
-      this.store.update(roomId, r => {
-        r.userIds = uniq(append(userId, r.userIds))
-        return r
+      this.get(roomId).then(room => {
+        room.userIds = uniq(append(userId, room.userIds))
+        return room
       }),
       this.userStore.fetchMissingUsers([userId]),
     ]).then(([room]) => room)
   }
 
   removeUserFromRoom(roomId, userId) {
-    return this.store.update(roomId, r => {
-      r.userIds = filter(id => id !== userId, r.userIds)
-      return r
+    return this.get(roomId).then(room => {
+      room.userIds = room.userIds.filter(id => id !== userId)
+      return room
     })
   }
 
   update(roomId, updates) {
     return Promise.all([
-      this.store.update(roomId, r => {
+      this.get(roomId).then(room => {
         for (const k in updates) {
-          r[k] = updates[k]
+          room[k] = updates[k]
         }
-        return r
+        return room
       }),
       this.userStore.fetchMissingUsers(updates.userIds || []),
     ]).then(([room]) => room)
@@ -99,12 +92,12 @@ export class RoomStore {
       })
   }
 
-  snapshot(...x) {
-    return this.store.snapshot(...x)
+  snapshot() {
+    return this.rooms
   }
 
-  getSync(...x) {
-    return this.store.getSync(...x)
+  getSync(roomId) {
+    return this.rooms[roomId]
   }
 
   decorate(basicRoom) {

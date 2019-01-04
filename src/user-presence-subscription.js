@@ -60,28 +60,27 @@ export class UserPresenceSubscription {
 
   onPresenceState(data) {
     this.onSubscriptionEstablished()
-    const previous = this.presenceStore.getSync(this.userId) || "unknown"
+    const previous = this.presenceStore[this.userId] || "unknown"
     const current = parsePresence(data).state
     if (current === previous) {
       return
     }
-    this.presenceStore.set(this.userId, current).then(() => {
-      this.userStore.get(this.userId).then(user => {
-        if (this.hooks.global.onPresenceChanged) {
-          this.hooks.global.onPresenceChanged({ current, previous }, user)
-        }
-        compose(
-          forEach(([roomId, hooks]) =>
-            this.roomStore.get(roomId).then(room => {
-              if (contains(user.id, room.userIds)) {
-                hooks.onPresenceChanged({ current, previous }, user)
-              }
-            }),
-          ),
-          filter(pair => pair[1].onPresenceChanged !== undefined),
-          toPairs,
-        )(this.hooks.rooms)
-      })
+    this.presenceStore[this.userId] = current
+    this.userStore.get(this.userId).then(user => {
+      if (this.hooks.global.onPresenceChanged) {
+        this.hooks.global.onPresenceChanged({ current, previous }, user)
+      }
+      compose(
+        forEach(([roomId, hooks]) =>
+          this.roomStore.get(roomId).then(room => {
+            if (contains(user.id, room.userIds)) {
+              hooks.onPresenceChanged({ current, previous }, user)
+            }
+          }),
+        ),
+        filter(pair => pair[1].onPresenceChanged !== undefined),
+        toPairs,
+      )(this.hooks.rooms)
     })
   }
 }

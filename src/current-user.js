@@ -20,7 +20,6 @@ import {
   urlEncode,
 } from "./utils"
 import { parseBasicMessage, parseBasicRoom } from "./parsers"
-import { Store } from "./store"
 import { UserStore } from "./user-store"
 import { RoomStore } from "./room-store"
 import { CursorStore } from "./cursor-store"
@@ -57,7 +56,7 @@ export class CurrentUser {
     this.connectionTimeout = connectionTimeout
     this.presenceInstance = presenceInstance
     this.logger = apiInstance.logger
-    this.presenceStore = new Store()
+    this.presenceStore = {}
     this.userStore = new UserStore({
       instance: this.apiInstance,
       presenceStore: this.presenceStore,
@@ -83,7 +82,6 @@ export class CurrentUser {
     this.userStore.onSetHooks.push(userId =>
       this.subscribeToUserPresence(userId),
     )
-    this.presenceStore.initialize({})
     this.cursorStore.initialize({})
     this.roomSubscriptions = {}
     this.readCursorBuffer = {} // roomId -> { position, [{ resolve, reject }] }

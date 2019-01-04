@@ -15,7 +15,6 @@ export class UserStore {
 
     this.set = this.set.bind(this)
     this.get = this.get.bind(this)
-    this.fetchUser = this.fetchUser.bind(this)
     this.fetchMissingUsers = this.fetchMissingUsers.bind(this)
     this.fetchBasicUsers = this.fetchBasicUsers.bind(this)
     this.snapshot = this.snapshot.bind(this)
@@ -30,13 +29,6 @@ export class UserStore {
   }
 
   get(userId) {
-    return Promise.all([
-      this.fetchUser(userId),
-      this.presenceStore.get(userId), // Make sure it's safe to getSync
-    ]).then(([user]) => user)
-  }
-
-  fetchUser(userId) {
     return this.fetchMissingUsers([userId]).then(() => this.users[userId])
   }
 

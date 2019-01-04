@@ -11,7 +11,7 @@ export class User {
 
   get presence() {
     return {
-      state: this.presenceStore.getSync(this.id) || "unknown",
+      state: this.presenceStore[this.id] || "unknown",
     }
   }
 }

@@ -1,5 +1,3 @@
-import { map } from "ramda"
-
 import { parseBasicCursor } from "./parsers"
 
 export class CursorSubscription {
@@ -62,21 +60,13 @@ export class CursorSubscription {
 
   onInitialState({ cursors }) {
     return Promise.all(
-      map(
-        c => this.cursorStore.set(c.userId, c.roomId, c),
-        map(parseBasicCursor, cursors),
-      ),
+      cursors.map(c => this.cursorStore.set(parseBasicCursor(c))),
     ).then(this.onSubscriptionEstablished)
   }
 
   onNewCursor(data) {
-    const basicCursor = parseBasicCursor(data)
     return this.cursorStore
-      .set(basicCursor.userId, basicCursor.roomId, basicCursor)
-      .then(() => {
-        this.cursorStore
-          .get(basicCursor.userId, basicCursor.roomId)
-          .then(this.onNewCursorHook)
-      })
+      .set(parseBasicCursor(data))
+      .then(cursor => this.onNewCursorHook(cursor))
   }
 }

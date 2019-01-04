@@ -83,7 +83,6 @@ export class CurrentUser {
     this.userStore.onSetHooks.push(userId =>
       this.subscribeToUserPresence(userId),
     )
-    this.userStore.initialize({})
     this.presenceStore.initialize({})
     this.cursorStore.initialize({})
     this.roomSubscriptions = {}

@@ -312,5 +312,19 @@ test("room added", (t, roomStore) => {
   })
 })
 
-// TODO test final state of roomStore
+test("final state of room store", (t, roomStore) => {
+  handleUserSubReconnection({
+    basicRooms,
+    roomStore,
+    hooks: { global: {} },
+  })
+
+  t.equal(basicRooms.length, Object.keys(roomStore.snapshot()).length)
+  for (const basicRoom of basicRooms) {
+    t.true(roomStore.getSync(basicRoom.id))
+    t.true(roomStore.getSync(basicRoom.id).eq(basicRoom))
+  }
+  t.end()
+})
+
 // TODO current user changes

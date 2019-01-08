@@ -1,9 +1,19 @@
-import test from "tape"
+import tape from "tape"
 
 import { RoomStore } from "../../src/room-store.js"
 import { handleUserSubReconnection } from "../../src/reconnection-handlers.js"
+import { parseBasicRoom } from "../../src/parsers"
 
 const TEST_TIMEOUT = 200
+
+function test(name, f) {
+  tape(name, t => {
+    t.timeoutAfter(TEST_TIMEOUT)
+    const roomStore = new RoomStore({})
+    roomStoreRooms.forEach(room => roomStore.set(parseBasicRoom(room)))
+    f(t, roomStore)
+  })
+}
 
 const roomStoreRooms = [
   {
@@ -145,10 +155,9 @@ const roomsData = [
   },
 ]
 
-test("room removed", t => {
-  const roomStore = new RoomStore({})
-  roomStoreRooms.forEach(room => roomStore.set(room))
+const basicRooms = roomsData.map(d => parseBasicRoom(d))
 
+test("room removed", (t, roomStore) => {
   const onRemovedFromRoom = room => {
     if (room.id != "2") {
       return
@@ -160,18 +169,13 @@ test("room removed", t => {
   }
 
   handleUserSubReconnection({
-    roomsData,
+    basicRooms,
     roomStore,
     hooks: { global: { onRemovedFromRoom } },
   })
-
-  t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test("privacy changed", t => {
-  const roomStore = new RoomStore({})
-  roomStoreRooms.forEach(room => roomStore.set(room))
-
+test("privacy changed", (t, roomStore) => {
   const onRoomUpdated = room => {
     if (room.id != "3") {
       return
@@ -183,18 +187,13 @@ test("privacy changed", t => {
   }
 
   handleUserSubReconnection({
-    roomsData,
+    basicRooms,
     roomStore,
     hooks: { global: { onRoomUpdated } },
   })
-
-  t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test("custom data added", t => {
-  const roomStore = new RoomStore({})
-  roomStoreRooms.forEach(room => roomStore.set(room))
-
+test("custom data added", (t, roomStore) => {
   const onRoomUpdated = room => {
     if (room.id != "4") {
       return
@@ -207,18 +206,13 @@ test("custom data added", t => {
   }
 
   handleUserSubReconnection({
-    roomsData,
+    basicRooms,
     roomStore,
     hooks: { global: { onRoomUpdated } },
   })
-
-  t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test("custom data updated", t => {
-  const roomStore = new RoomStore({})
-  roomStoreRooms.forEach(room => roomStore.set(room))
-
+test("custom data updated", (t, roomStore) => {
   const onRoomUpdated = room => {
     if (room.id != "7") {
       return
@@ -231,18 +225,13 @@ test("custom data updated", t => {
   }
 
   handleUserSubReconnection({
-    roomsData,
+    basicRooms,
     roomStore,
     hooks: { global: { onRoomUpdated } },
   })
-
-  t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test("custom data removed", t => {
-  const roomStore = new RoomStore({})
-  roomStoreRooms.forEach(room => roomStore.set(room))
-
+test("custom data removed", (t, roomStore) => {
   const onRoomUpdated = room => {
     if (room.id != "8") {
       return
@@ -255,18 +244,13 @@ test("custom data removed", t => {
   }
 
   handleUserSubReconnection({
-    roomsData,
+    basicRooms,
     roomStore,
     hooks: { global: { onRoomUpdated } },
   })
-
-  t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test("name changed", t => {
-  const roomStore = new RoomStore({})
-  roomStoreRooms.forEach(room => roomStore.set(room))
-
+test("name changed", (t, roomStore) => {
   const onRoomUpdated = room => {
     if (room.id != "5") {
       return
@@ -278,18 +262,13 @@ test("name changed", t => {
   }
 
   handleUserSubReconnection({
-    roomsData,
+    basicRooms,
     roomStore,
     hooks: { global: { onRoomUpdated } },
   })
-
-  t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test("multiple field changes (only one event!)", t => {
-  const roomStore = new RoomStore({})
-  roomStoreRooms.forEach(room => roomStore.set(room))
-
+test("multiple field changes (only one event!)", (t, roomStore) => {
   let called = false
 
   const onRoomUpdated = room => {
@@ -309,19 +288,14 @@ test("multiple field changes (only one event!)", t => {
   }
 
   handleUserSubReconnection({
-    roomsData,
+    basicRooms,
     roomStore,
     hooks: { global: { onRoomUpdated } },
   })
-
-  t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test("room added", t => {
-  const roomStore = new RoomStore({})
-  roomStoreRooms.forEach(room => roomStore.set(room))
-
-  const onRoomUpdated = room => {
+test("room added", (t, roomStore) => {
+  const onAddedToRoom = room => {
     if (room.id != "6") {
       return
     }
@@ -332,12 +306,11 @@ test("room added", t => {
   }
 
   handleUserSubReconnection({
-    roomsData,
+    basicRooms,
     roomStore,
-    hooks: { global: { onRoomUpdated } },
+    hooks: { global: { onAddedToRoom } },
   })
-
-  t.timeoutAfter(TEST_TIMEOUT)
 })
 
+// TODO test final state of roomStore
 // TODO current user changes

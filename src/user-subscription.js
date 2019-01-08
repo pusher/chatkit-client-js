@@ -1,5 +1,3 @@
-import { map } from "ramda"
-
 import { parseBasicRoom, parseBasicUser } from "./parsers"
 import { handleUserSubReconnection } from "./reconnection-handlers"
 
@@ -76,16 +74,15 @@ export class UserSubscription {
   }
 
   onInitialState({ current_user: userData, rooms: roomsData }) {
+    const user = parseBasicUser(userData)
+    const basicRooms = roomsData.map(d => parseBasicRoom(d))
     if (!this.established) {
       this.established = true
-      this.onSubscriptionEstablished({
-        user: parseBasicUser(userData),
-        basicRooms: map(parseBasicRoom, roomsData),
-      })
+      this.onSubscriptionEstablished({ user, basicRooms })
     } else {
       handleUserSubReconnection({
-        userData,
-        roomsData,
+        user,
+        basicRooms,
         currentUser: this.currentUser,
         roomStore: this.roomStore,
         hooks: this.hooks,

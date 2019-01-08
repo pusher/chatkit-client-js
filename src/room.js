@@ -14,6 +14,8 @@ export class Room {
     this.userStore = userStore
     this.isSubscribedTo = isSubscribedTo
     this.logger = logger
+
+    this.eq = this.eq.bind(this)
   }
 
   get users() {
@@ -27,6 +29,19 @@ export class Room {
     return filter(
       user => contains(user.id, this.userIds),
       values(this.userStore.snapshot()),
+    )
+  }
+
+  eq(other) {
+    return (
+      this.createdAt === other.createdAt &&
+      this.createdByUserId === other.createdByUserId &&
+      this.deletedAt === other.deletedAt &&
+      this.id === other.id &&
+      this.isPrivate === other.isPrivate &&
+      this.name === other.name &&
+      this.updatedAt === other.updatedAt &&
+      this.customData === other.customData
     )
   }
 }

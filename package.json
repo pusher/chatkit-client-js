@@ -57,6 +57,7 @@
     "lint:build": "clear && yarn lint && clear && yarn build",
     "lint:build:test": "yarn lint:build && clear && yarn test",
     "lint:build:test:chrome": "yarn lint:build && clear && yarn test:chrome",
+    "lint:test:unit": "yarn lint && clear && yarn test:unit",
     "publish-please": "publish-please",
     "prepublishOnly": "publish-please guard"
   },

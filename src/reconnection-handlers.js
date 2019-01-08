@@ -1,4 +1,12 @@
-export function handleUserSubReconnection({ basicRooms, roomStore, hooks }) {
+export function handleUserSubReconnection({
+  basicUser,
+  basicRooms,
+  currentUser,
+  roomStore,
+  hooks,
+}) {
+  currentUser.setPropertiesFromBasicUser(basicUser)
+
   for (const basicRoom of basicRooms) {
     const existingRoom = roomStore.getSync(basicRoom.id)
 

@@ -1,19 +1,39 @@
 import tape from "tape"
 
+import { CurrentUser } from "../../src/current-user.js"
 import { RoomStore } from "../../src/room-store.js"
 import { handleUserSubReconnection } from "../../src/reconnection-handlers.js"
-import { parseBasicRoom } from "../../src/parsers"
+import { parseBasicRoom, parseBasicUser } from "../../src/parsers"
 
 const TEST_TIMEOUT = 200
 
 function test(name, f) {
   tape(name, t => {
     t.timeoutAfter(TEST_TIMEOUT)
+
+    const currentUser = {
+      name: "Callum",
+      avatarURL: "old-avatar-url",
+      customData: { foo: "bar" },
+      createdAt: "old-created-at",
+      updatedAt: "old-updated-at",
+      setPropertiesFromBasicUser:
+        CurrentUser.prototype.setPropertiesFromBasicUser,
+    }
+
     const roomStore = new RoomStore({})
     roomStoreRooms.forEach(room => roomStore.set(parseBasicRoom(room)))
-    f(t, roomStore)
+    f(t, currentUser, roomStore)
   })
 }
+
+const basicUser = parseBasicUser({
+  name: "Callum",
+  avatar_url: "new-avatar-url",
+  custom_data: { baz: 42 },
+  created_at: "new-created-at",
+  updated_at: "new-updated-at",
+})
 
 const roomStoreRooms = [
   {
@@ -157,7 +177,7 @@ const roomsData = [
 
 const basicRooms = roomsData.map(d => parseBasicRoom(d))
 
-test("room removed", (t, roomStore) => {
+test("room removed", (t, currentUser, roomStore) => {
   const onRemovedFromRoom = room => {
     if (room.id != "2") {
       return
@@ -169,13 +189,15 @@ test("room removed", (t, roomStore) => {
   }
 
   handleUserSubReconnection({
+    basicUser,
     basicRooms,
+    currentUser,
     roomStore,
     hooks: { global: { onRemovedFromRoom } },
   })
 })
 
-test("privacy changed", (t, roomStore) => {
+test("privacy changed", (t, currentUser, roomStore) => {
   const onRoomUpdated = room => {
     if (room.id != "3") {
       return
@@ -187,13 +209,15 @@ test("privacy changed", (t, roomStore) => {
   }
 
   handleUserSubReconnection({
+    basicUser,
     basicRooms,
+    currentUser,
     roomStore,
     hooks: { global: { onRoomUpdated } },
   })
 })
 
-test("custom data added", (t, roomStore) => {
+test("custom data added", (t, currentUser, roomStore) => {
   const onRoomUpdated = room => {
     if (room.id != "4") {
       return
@@ -206,13 +230,15 @@ test("custom data added", (t, roomStore) => {
   }
 
   handleUserSubReconnection({
+    basicUser,
     basicRooms,
+    currentUser,
     roomStore,
     hooks: { global: { onRoomUpdated } },
   })
 })
 
-test("custom data updated", (t, roomStore) => {
+test("custom data updated", (t, currentUser, roomStore) => {
   const onRoomUpdated = room => {
     if (room.id != "7") {
       return
@@ -225,13 +251,15 @@ test("custom data updated", (t, roomStore) => {
   }
 
   handleUserSubReconnection({
+    basicUser,
     basicRooms,
+    currentUser,
     roomStore,
     hooks: { global: { onRoomUpdated } },
   })
 })
 
-test("custom data removed", (t, roomStore) => {
+test("custom data removed", (t, currentUser, roomStore) => {
   const onRoomUpdated = room => {
     if (room.id != "8") {
       return
@@ -244,13 +272,15 @@ test("custom data removed", (t, roomStore) => {
   }
 
   handleUserSubReconnection({
+    basicUser,
     basicRooms,
+    currentUser,
     roomStore,
     hooks: { global: { onRoomUpdated } },
   })
 })
 
-test("name changed", (t, roomStore) => {
+test("name changed", (t, currentUser, roomStore) => {
   const onRoomUpdated = room => {
     if (room.id != "5") {
       return
@@ -262,39 +292,46 @@ test("name changed", (t, roomStore) => {
   }
 
   handleUserSubReconnection({
+    basicUser,
     basicRooms,
+    currentUser,
     roomStore,
     hooks: { global: { onRoomUpdated } },
   })
 })
 
-test("multiple field changes (only one event!)", (t, roomStore) => {
-  let called = false
+test(
+  "multiple field changes (only one event!)",
+  (t, currentUser, roomStore) => {
+    let called = false
 
-  const onRoomUpdated = room => {
-    if (room.id != "9") {
-      return
+    const onRoomUpdated = room => {
+      if (room.id != "9") {
+        return
+      }
+      t.equal(room.createdByUserId, "ham")
+      t.equal(room.name, "9ine")
+      t.equal(room.isPrivate, true)
+      t.deepEqual(room.customData, { pre: "set", and: "updated" })
+      if (called) {
+        t.end("onRoomUpdated called more than once")
+        return
+      }
+      called = true
+      setTimeout(() => t.end(), 100)
     }
-    t.equal(room.createdByUserId, "ham")
-    t.equal(room.name, "9ine")
-    t.equal(room.isPrivate, true)
-    t.deepEqual(room.customData, { pre: "set", and: "updated" })
-    if (called) {
-      t.end("onRoomUpdated called more than once")
-      return
-    }
-    called = true
-    setTimeout(() => t.end(), 100)
-  }
 
-  handleUserSubReconnection({
-    basicRooms,
-    roomStore,
-    hooks: { global: { onRoomUpdated } },
-  })
-})
+    handleUserSubReconnection({
+      basicUser,
+      basicRooms,
+      currentUser,
+      roomStore,
+      hooks: { global: { onRoomUpdated } },
+    })
+  },
+)
 
-test("room added", (t, roomStore) => {
+test("room added", (t, currentUser, roomStore) => {
   const onAddedToRoom = room => {
     if (room.id != "6") {
       return
@@ -306,15 +343,19 @@ test("room added", (t, roomStore) => {
   }
 
   handleUserSubReconnection({
+    basicUser,
     basicRooms,
+    currentUser,
     roomStore,
     hooks: { global: { onAddedToRoom } },
   })
 })
 
-test("final state of room store", (t, roomStore) => {
+test("final state of room store", (t, currentUser, roomStore) => {
   handleUserSubReconnection({
+    basicUser,
     basicRooms,
+    currentUser,
     roomStore,
     hooks: { global: {} },
   })
@@ -327,4 +368,19 @@ test("final state of room store", (t, roomStore) => {
   t.end()
 })
 
-// TODO current user changes
+test("current user changes", (t, currentUser, roomStore) => {
+  handleUserSubReconnection({
+    basicUser,
+    basicRooms,
+    currentUser,
+    roomStore,
+    hooks: { global: {} },
+  })
+
+  t.equal(currentUser.name, "Callum")
+  t.equal(currentUser.avatarURL, "new-avatar-url")
+  t.deepEqual(currentUser.customData, { baz: 42 })
+  t.equal(currentUser.createdAt, "new-created-at")
+  t.equal(currentUser.updatedAt, "new-updated-at")
+  t.end()
+})

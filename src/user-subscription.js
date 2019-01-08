@@ -74,14 +74,14 @@ export class UserSubscription {
   }
 
   onInitialState({ current_user: userData, rooms: roomsData }) {
-    const user = parseBasicUser(userData)
+    const basicUser = parseBasicUser(userData)
     const basicRooms = roomsData.map(d => parseBasicRoom(d))
     if (!this.established) {
       this.established = true
-      this.onSubscriptionEstablished({ user, basicRooms })
+      this.onSubscriptionEstablished({ basicUser, basicRooms })
     } else {
       handleUserSubReconnection({
-        user,
+        basicUser,
         basicRooms,
         currentUser: this.currentUser,
         roomStore: this.roomStore,

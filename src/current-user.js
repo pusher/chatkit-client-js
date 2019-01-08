@@ -496,11 +496,11 @@ export class CurrentUser {
       hooks: this.hooks,
       userId: this.id,
       instance: this.apiInstance,
-      userStore: this.userStore,
       roomStore: this.roomStore,
       typingIndicators: this.typingIndicators,
       logger: this.logger,
       connectionTimeout: this.connectionTimeout,
+      currentUser: this,
     })
     return this.userSubscription
       .connect()

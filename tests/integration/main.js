@@ -18,8 +18,8 @@ import {
 
 import ChatkitServer from "@pusher/chatkit-server"
 /* eslint-disable import/no-duplicates */
-import { TokenProvider, ChatManager } from "../dist/web/chatkit.js"
-import Chatkit from "../dist/web/chatkit.js"
+import { TokenProvider, ChatManager } from "../../dist/web/chatkit.js"
+import Chatkit from "../../dist/web/chatkit.js"
 /* eslint-enable import/no-duplicates */
 import {
   INSTANCE_LOCATOR,

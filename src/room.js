@@ -41,7 +41,7 @@ export class Room {
       this.isPrivate === other.isPrivate &&
       this.name === other.name &&
       this.updatedAt === other.updatedAt &&
-      this.customData === other.customData
+      JSON.stringify(this.customData) === JSON.stringify(other.customData)
     )
   }
 }

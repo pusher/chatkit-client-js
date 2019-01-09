@@ -74,6 +74,7 @@ export class MembershipSubscription {
         userIds,
         roomId: this.roomId,
         roomStore: this.roomStore,
+        userStore: this.userStore,
         hooks: this.hooks,
       })
     }

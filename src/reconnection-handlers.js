@@ -87,7 +87,7 @@ export function handleCursorSubReconnection({
         basicCursor.roomId,
       )
 
-      if (!existingCursor || existingCursor.position !== basicCursor) {
+      if (!existingCursor || existingCursor.position !== basicCursor.position) {
         return cursorStore
           .set(basicCursor)
           .then(cursor => onNewCursorHook(cursor))

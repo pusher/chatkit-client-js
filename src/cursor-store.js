@@ -66,4 +66,5 @@ export class CursorStore {
   }
 }
 
-const key = (userId, roomId) => `${userId}/${roomId}`
+const key = (userId, roomId) =>
+  `${encodeURIComponent(userId)}/${encodeURIComponent(roomId)}`

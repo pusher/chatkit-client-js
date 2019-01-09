@@ -70,5 +70,24 @@ export function handleMembershipSubReconnection({
         }
       })
     }
+
+    roomStore.update(roomId, { userIds })
   })
+}
+
+export function handleCursorSubReconnection({
+  basicCursors,
+  cursorStore,
+  onNewCursorHook,
+}) {
+  for (const basicCursor of basicCursors) {
+    const existingCursor = cursorStore.getSync(
+      basicCursor.userId,
+      basicCursor.roomId,
+    )
+
+    if (!existingCursor || existingCursor.position !== basicCursor) {
+      cursorStore.set(basicCursor).then(cursor => onNewCursorHook(cursor))
+    }
+  }
 }

@@ -66,6 +66,9 @@ export class MembershipSubscription {
   onInitialState({ user_ids: userIds }) {
     if (!this.established) {
       this.established = true
+      this.roomStore.update(this.roomId, { userIds }).then(() => {
+        this.onSubscriptionEstablished()
+      })
     } else {
       handleMembershipSubReconnection({
         userIds,
@@ -74,10 +77,6 @@ export class MembershipSubscription {
         hooks: this.hooks,
       })
     }
-
-    this.roomStore.update(this.roomId, { userIds }).then(() => {
-      this.onSubscriptionEstablished()
-    })
   }
 
   onUserJoined({ user_id: userId }) {

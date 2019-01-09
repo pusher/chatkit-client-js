@@ -93,3 +93,5 @@ test("user joined (global hook)", (t, userStore, roomStore) => {
     hooks: { rooms: {}, global: { onUserLeftRoom } },
   })
 })
+
+// TODO check state of room store

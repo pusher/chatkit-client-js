@@ -1,3 +1,5 @@
+import { handleMembershipSubReconnection } from "./reconnection-handlers"
+
 export class MembershipSubscription {
   constructor(options) {
     this.roomId = options.roomId
@@ -62,6 +64,17 @@ export class MembershipSubscription {
   }
 
   onInitialState({ user_ids: userIds }) {
+    if (!this.established) {
+      this.established = true
+    } else {
+      handleMembershipSubReconnection({
+        userIds,
+        roomId: this.roomId,
+        roomStore: this.roomStore,
+        hooks: this.hooks,
+      })
+    }
+
     this.roomStore.update(this.roomId, { userIds }).then(() => {
       this.onSubscriptionEstablished()
     })

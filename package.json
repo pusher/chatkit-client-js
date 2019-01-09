@@ -49,7 +49,7 @@
     "build": "yarn build:web && yarn build:react-native",
     "build:web": "rollup -c rollup/web.js",
     "build:react-native": "rollup -c rollup/react-native.js",
-    "test:unit": "browserify tests/unit/*.js -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run --render=tap-colorize",
+    "test:unit": "set -e; for file in tests/unit/*.js; do printf '\\n\\e[1;34m%s\\e[0m\\n' $file; browserify $file -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run --render=tap-colorize; done",
     "test:integration": "browserify tests/integration/main.js -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run --render=tap-colorize",
     "test:integration:chrome": "browserify tests/integration/main.js -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run --render=tap-colorize",
     "test": "yarn test:unit && yarn test:integration",

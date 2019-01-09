@@ -42,7 +42,7 @@ export function handleMembershipSubReconnection({
   userStore,
   hooks,
 }) {
-  userStore.fetchMissingUsers(userIds).then(() => {
+  return userStore.fetchMissingUsers(userIds).then(() => {
     const room = roomStore.getSync(roomId)
 
     for (const userId of userIds.filter(
@@ -71,7 +71,7 @@ export function handleMembershipSubReconnection({
       })
     }
 
-    roomStore.update(roomId, { userIds })
+    return roomStore.update(roomId, { userIds })
   })
 }
 
@@ -80,14 +80,18 @@ export function handleCursorSubReconnection({
   cursorStore,
   onNewCursorHook,
 }) {
-  for (const basicCursor of basicCursors) {
-    const existingCursor = cursorStore.getSync(
-      basicCursor.userId,
-      basicCursor.roomId,
-    )
+  return Promise.all(
+    basicCursors.map(basicCursor => {
+      const existingCursor = cursorStore.getSync(
+        basicCursor.userId,
+        basicCursor.roomId,
+      )
 
-    if (!existingCursor || existingCursor.position !== basicCursor) {
-      cursorStore.set(basicCursor).then(cursor => onNewCursorHook(cursor))
-    }
-  }
+      if (!existingCursor || existingCursor.position !== basicCursor) {
+        return cursorStore
+          .set(basicCursor)
+          .then(cursor => onNewCursorHook(cursor))
+      }
+    }),
+  )
 }

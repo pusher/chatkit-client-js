@@ -94,4 +94,15 @@ test("user joined (global hook)", (t, userStore, roomStore) => {
   })
 })
 
-// TODO check state of room store
+test("room store memberships updated", (t, userStore, roomStore) => {
+  handleMembershipSubReconnection({
+    userIds: newUserIds,
+    roomId,
+    roomStore,
+    userStore,
+    hooks: { rooms: {}, global: {} },
+  }).then(() => {
+    t.equal(roomStore.getSync(roomId).userIds, newUserIds)
+    t.end()
+  })
+})

@@ -133,6 +133,19 @@ test("new (user)", (t, cursorStore) => {
   })
 })
 
+test("cursor store (user)", (t, cursorStore) => {
+  handleCursorSubReconnection({
+    basicCursors: newUserCursors,
+    cursorStore,
+    onNewCursorHook: () => {},
+  }).then(() => {
+    t.equal(cursorStore.getSync("callum", "1").position, 1)
+    t.equal(cursorStore.getSync("callum", "2").position, 3)
+    t.equal(cursorStore.getSync("callum", "3").position, 4)
+    t.end()
+  })
+})
+
 test("updated (room)", (t, cursorStore) => {
   const onNewCursorHook = cursor => {
     if (cursor.userId !== "mike") {
@@ -171,4 +184,15 @@ test("new (room)", (t, cursorStore) => {
   })
 })
 
-// TODO test state of cursor sub
+test("cursor store (room)", (t, cursorStore) => {
+  handleCursorSubReconnection({
+    basicCursors: newRoomCursors,
+    cursorStore,
+    onNewCursorHook: () => {},
+  }).then(() => {
+    t.equal(cursorStore.getSync("callum", "1").position, 1)
+    t.equal(cursorStore.getSync("mike", "1").position, 3)
+    t.equal(cursorStore.getSync("viv", "1").position, 3)
+    t.end()
+  })
+})

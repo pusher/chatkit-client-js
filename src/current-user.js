@@ -2,7 +2,6 @@ import {
   compose,
   contains,
   has,
-  indexBy,
   map,
   forEachObjIndexed,
   max,
@@ -21,7 +20,6 @@ import {
   urlEncode,
 } from "./utils"
 import { parseBasicMessage, parseBasicRoom } from "./parsers"
-import { Store } from "./store"
 import { UserStore } from "./user-store"
 import { RoomStore } from "./room-store"
 import { CursorStore } from "./cursor-store"
@@ -58,7 +56,7 @@ export class CurrentUser {
     this.connectionTimeout = connectionTimeout
     this.presenceInstance = presenceInstance
     this.logger = apiInstance.logger
-    this.presenceStore = new Store()
+    this.presenceStore = {}
     this.userStore = new UserStore({
       instance: this.apiInstance,
       presenceStore: this.presenceStore,
@@ -84,9 +82,6 @@ export class CurrentUser {
     this.userStore.onSetHooks.push(userId =>
       this.subscribeToUserPresence(userId),
     )
-    this.userStore.initialize({})
-    this.presenceStore.initialize({})
-    this.cursorStore.initialize({})
     this.roomSubscriptions = {}
     this.readCursorBuffer = {} // roomId -> { position, [{ resolve, reject }] }
     this.userPresenceSubscriptions = {}
@@ -191,10 +186,7 @@ export class CurrentUser {
           custom_data: customData,
         },
       })
-      .then(res => {
-        const basicRoom = parseBasicRoom(JSON.parse(res))
-        return this.roomStore.set(basicRoom.id, basicRoom)
-      })
+      .then(res => this.roomStore.set(parseBasicRoom(JSON.parse(res))))
       .catch(err => {
         this.logger.warn("error creating room:", err)
         throw err
@@ -231,10 +223,7 @@ export class CurrentUser {
           roomId,
         )}/join`,
       })
-      .then(res => {
-        const basicRoom = parseBasicRoom(JSON.parse(res))
-        return this.roomStore.set(basicRoom.id, basicRoom)
-      })
+      .then(res => this.roomStore.set(parseBasicRoom(JSON.parse(res))))
       .catch(err => {
         this.logger.warn(`error joining room ${roomId}:`, err)
         throw err
@@ -243,19 +232,14 @@ export class CurrentUser {
 
   leaveRoom({ roomId } = {}) {
     typeCheck("roomId", "string", roomId)
-    return this.roomStore
-      .get(roomId)
-      .then(room =>
-        this.apiInstance
-          .request({
-            method: "POST",
-            path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
-              roomId,
-            )}/leave`,
-          })
-          .then(() => this.roomStore.pop(roomId))
-          .then(() => room),
-      )
+    return this.apiInstance
+      .request({
+        method: "POST",
+        path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
+          roomId,
+        )}/leave`,
+      })
+      .then(() => this.roomStore.pop(roomId))
       .catch(err => {
         this.logger.warn(`error leaving room ${roomId}:`, err)
         throw err
@@ -522,7 +506,9 @@ export class CurrentUser {
         this.customData = user.customData
         this.name = user.name
         this.updatedAt = user.updatedAt
-        this.roomStore.initialize(indexBy(prop("id"), basicRooms))
+        return Promise.all(
+          basicRooms.map(basicRoom => this.roomStore.set(basicRoom)),
+        )
       })
       .catch(err => {
         this.logger.error("error establishing user subscription:", err)

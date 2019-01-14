@@ -1,6 +1,3 @@
-import { map } from "ramda"
-
-import { Store } from "./store"
 import { Cursor } from "./cursor"
 import { parseBasicCursor } from "./parsers"
 
@@ -10,9 +7,8 @@ export class CursorStore {
     this.userStore = userStore
     this.roomStore = roomStore
     this.logger = logger
-    this.store = new Store()
+    this.cursors = {}
 
-    this.initialize = this.initialize.bind(this)
     this.set = this.set.bind(this)
     this.get = this.get.bind(this)
     this.getSync = this.getSync.bind(this)
@@ -20,31 +16,26 @@ export class CursorStore {
     this.decorate = this.decorate.bind(this)
   }
 
-  initialize(initial) {
-    return this.store.initialize(map(this.decorate, initial))
-  }
-
-  set(userId, roomId, cursor) {
-    return Promise.all([
-      this.store.set(key(userId, roomId), this.decorate(cursor)),
-      this.userStore.fetchMissingUsers([userId]),
-    ])
+  set(basicCursor) {
+    const k = key(basicCursor.userId, basicCursor.roomId)
+    this.cursors[k] = this.decorate(basicCursor)
+    return this.userStore
+      .fetchMissingUsers([basicCursor.userId])
+      .then(() => this.cursors[k])
   }
 
   get(userId, roomId) {
-    return this.store
-      .get(key(userId, roomId))
-      .then(
-        cursor =>
-          cursor ||
-          this.fetchBasicCursor(userId, roomId).then(cursor =>
-            this.set(userId, roomId, cursor),
-          ),
-      )
+    const k = key(userId, roomId)
+    if (this.cursors[k]) {
+      return Promise.resolve(this.cursors[k])
+    }
+    return this.fetchBasicCursor(userId, roomId).then(basicCursor =>
+      this.set(basicCursor),
+    )
   }
 
   getSync(userId, roomId) {
-    return this.store.getSync(key(userId, roomId))
+    return this.cursors[key(userId, roomId)]
   }
 
   fetchBasicCursor(userId, roomId) {

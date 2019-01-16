@@ -31,6 +31,9 @@ let alicesRoom, bobsRoom, carolsRoom, alicesPrivateRoom
 let dataAttachmentUrl, bob, carol
 
 const TEST_TIMEOUT = 15 * 1000
+// Tests that involve presence subscriptions require a slightly longer timeout
+// due to the nature of how presence updates are delivered.
+const PRESENCE_TEST_TIMEOUT = 25 * 1000
 
 const server = new ChatkitServer({
   instanceLocator: INSTANCE_LOCATOR,
@@ -447,7 +450,7 @@ test("user came online hook (presence sub)", t => {
     })
     .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
     .catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
+  t.timeoutAfter(PRESENCE_TEST_TIMEOUT)
 })
 
 test("user went offline hook (presence sub)", t => {
@@ -476,7 +479,7 @@ test("user went offline hook (presence sub)", t => {
     .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
     .then(() => bob.disconnect())
     .catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
+  t.timeoutAfter(PRESENCE_TEST_TIMEOUT)
 })
 
 test("user left room hook (user sub) [removes Bob from his own room]", t => {

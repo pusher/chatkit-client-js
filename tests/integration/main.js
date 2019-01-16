@@ -432,8 +432,11 @@ test("user came online hook (presence sub)", t => {
         return // ignore our own updates
       }
 
+      if (state.current === "offline") {
+        return // ignore if we get a cached value of offline
+      }
+
       t.equal(state.current, "online")
-      t.equal(state.previous, "unknown")
       t.equal(user.id, "bob")
       t.equal(user.presence.state, "online")
 
@@ -444,11 +447,11 @@ test("user came online hook (presence sub)", t => {
     .then(a => {
       alice = a
     })
+    .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
     .then(() => fetchUser(t, "bob"))
     .then(b => {
       bob = b
     })
-    .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
     .catch(endWithErr(t))
   t.timeoutAfter(PRESENCE_TEST_TIMEOUT)
 })

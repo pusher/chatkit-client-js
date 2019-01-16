@@ -760,7 +760,7 @@ test(`leave room [Bob leaves Alice's room]`, t => {
         )
         bob.disconnect()
         t.end()
-      })
+      }).catch(endWithErr(t))
     })
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)

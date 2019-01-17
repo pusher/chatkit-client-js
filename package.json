@@ -14,7 +14,7 @@
     "url": "git+https://github.com/pusher/chatkit-client-js.git"
   },
   "dependencies": {
-    "@pusher/platform": "^0.16.0",
+    "@pusher/platform": "^0.16.1",
     "ramda": "^0.25.0"
   },
   "devDependencies": {

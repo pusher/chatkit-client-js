@@ -35,10 +35,10 @@
     jsonwebtoken "^8.3.0"
     pusher-platform-node "~0.13.0"
 
-"@pusher/platform@^0.16.0":
-  version "0.16.0"
-  resolved "https://registry.yarnpkg.com/@pusher/platform/-/platform-0.16.0.tgz#82510641fc3b4b7ee492726799266d59c5f35178"
-  integrity sha512-fN8GgHejm1U/WC6h9KcWfqK3kptFxMNSVXAhyCBkVek9mr63vvHnWBUmFcOZ1DBNWj8zBRxTSazfm2OvGOkkuQ==
+"@pusher/platform@^0.16.1":
+  version "0.16.1"
+  resolved "https://registry.yarnpkg.com/@pusher/platform/-/platform-0.16.1.tgz#d8da86c9261d2cf1b9d275893521bfc94aafa013"
+  integrity sha512-3GCY4oT5TUM83Cm6REz5ILpm9ZaQ8rg/kbYxf27VK3ErJGGZ4FhQKfaPkQRQZ1/+qImiMwWoDDD8GoqYpGT+vQ==
 
 "@types/node@^8.0.24":
   version "8.10.36"

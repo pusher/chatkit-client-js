@@ -232,14 +232,18 @@ export class CurrentUser {
 
   leaveRoom({ roomId } = {}) {
     typeCheck("roomId", "string", roomId)
-    return this.apiInstance
-      .request({
-        method: "POST",
-        path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
-          roomId,
-        )}/leave`,
-      })
-      .then(() => this.roomStore.pop(roomId))
+    return this.roomStore
+      .get(roomId)
+      .then(room =>
+        this.apiInstance
+          .request({
+            method: "POST",
+            path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
+              roomId,
+            )}/leave`,
+          })
+          .then(() => room),
+      )
       .catch(err => {
         this.logger.warn(`error leaving room ${roomId}:`, err)
         throw err

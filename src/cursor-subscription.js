@@ -1,4 +1,5 @@
 import { parseBasicCursor } from "./parsers"
+import { handleCursorSubReconnection } from "./reconnection-handlers"
 
 export class CursorSubscription {
   constructor(options) {
@@ -59,9 +60,20 @@ export class CursorSubscription {
   }
 
   onInitialState({ cursors }) {
-    return Promise.all(
-      cursors.map(c => this.cursorStore.set(parseBasicCursor(c))),
-    ).then(this.onSubscriptionEstablished)
+    const basicCursors = cursors.map(c => parseBasicCursor(c))
+
+    if (!this.established) {
+      this.established = true
+      Promise.all(basicCursors.map(c => this.cursorStore.set(c))).then(
+        this.onSubscriptionEstablished,
+      )
+    } else {
+      handleCursorSubReconnection({
+        basicCursors,
+        cursorStore: this.cursorStore,
+        onNewCursorHook: this.onNewCursorHook,
+      })
+    }
   }
 
   onNewCursor(data) {

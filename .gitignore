@@ -4,6 +4,6 @@ npm-debug.log
 yarn-error.log
 .DS_Store
 .vscode/
-tests/config/production.js
-tests/config/staging.js
-tests/config/development.js
+tests/integration/config/production.js
+tests/integration/config/staging.js
+tests/integration/config/development.js

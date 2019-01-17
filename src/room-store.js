@@ -11,11 +11,14 @@ export class RoomStore {
     this.logger = options.logger
     this.rooms = {}
 
+    this.setSync = this.setSync.bind(this)
     this.set = this.set.bind(this)
     this.get = this.get.bind(this)
+    this.popSync = this.popSync.bind(this)
     this.pop = this.pop.bind(this)
     this.addUserToRoom = this.addUserToRoom.bind(this)
     this.removeUserFromRoom = this.removeUserFromRoom.bind(this)
+    this.updateSync = this.updateSync.bind(this)
     this.update = this.update.bind(this)
     this.fetchBasicRoom = this.fetchBasicRoom.bind(this)
     this.snapshot = this.snapshot.bind(this)
@@ -23,11 +26,15 @@ export class RoomStore {
     this.decorate = this.decorate.bind(this)
   }
 
-  set(basicRoom) {
+  setSync(basicRoom) {
     if (!this.rooms[basicRoom.id]) {
       this.rooms[basicRoom.id] = this.decorate(basicRoom)
     }
-    return Promise.resolve(this.rooms[basicRoom.id])
+    return this.rooms[basicRoom.id]
+  }
+
+  set(basicRoom) {
+    return Promise.resolve(this.setSync(basicRoom))
   }
 
   get(roomId) {
@@ -40,10 +47,14 @@ export class RoomStore {
     )
   }
 
-  pop(roomId) {
+  popSync(roomId) {
     const room = this.rooms[roomId]
     delete this.rooms[roomId]
-    return Promise.resolve(room)
+    return room
+  }
+
+  pop(roomId) {
+    return Promise.resolve(this.popSync(roomId))
   }
 
   addUserToRoom(roomId, userId) {
@@ -63,14 +74,17 @@ export class RoomStore {
     })
   }
 
+  updateSync(roomId, updates) {
+    const room = this.getSync(roomId)
+    for (const k in updates) {
+      room[k] = updates[k]
+    }
+    return room
+  }
+
   update(roomId, updates) {
     return Promise.all([
-      this.get(roomId).then(room => {
-        for (const k in updates) {
-          room[k] = updates[k]
-        }
-        return room
-      }),
+      this.get(roomId).then(() => this.updateSync(roomId, updates)),
       this.userStore.fetchMissingUsers(updates.userIds || []),
     ]).then(([room]) => room)
   }

@@ -18,8 +18,8 @@ import {
 
 import ChatkitServer from "@pusher/chatkit-server"
 /* eslint-disable import/no-duplicates */
-import { TokenProvider, ChatManager } from "../dist/web/chatkit.js"
-import Chatkit from "../dist/web/chatkit.js"
+import { TokenProvider, ChatManager } from "../../dist/web/chatkit.js"
+import Chatkit from "../../dist/web/chatkit.js"
 /* eslint-enable import/no-duplicates */
 import {
   INSTANCE_LOCATOR,
@@ -31,6 +31,9 @@ let alicesRoom, bobsRoom, carolsRoom, alicesPrivateRoom
 let dataAttachmentUrl, bob, carol
 
 const TEST_TIMEOUT = 15 * 1000
+// Tests that involve presence subscriptions require a slightly longer timeout
+// due to the nature of how presence updates are delivered.
+const PRESENCE_TEST_TIMEOUT = 25 * 1000
 
 const server = new ChatkitServer({
   instanceLocator: INSTANCE_LOCATOR,
@@ -429,8 +432,11 @@ test("user came online hook (presence sub)", t => {
         return // ignore our own updates
       }
 
+      if (state.current === "offline") {
+        return // ignore if we get a cached value of offline
+      }
+
       t.equal(state.current, "online")
-      t.equal(state.previous, "unknown")
       t.equal(user.id, "bob")
       t.equal(user.presence.state, "online")
 
@@ -441,13 +447,13 @@ test("user came online hook (presence sub)", t => {
     .then(a => {
       alice = a
     })
+    .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
     .then(() => fetchUser(t, "bob"))
     .then(b => {
       bob = b
     })
-    .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
     .catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
+  t.timeoutAfter(PRESENCE_TEST_TIMEOUT)
 })
 
 test("user went offline hook (presence sub)", t => {
@@ -476,7 +482,7 @@ test("user went offline hook (presence sub)", t => {
     .then(() => alice.subscribeToRoom({ roomId: bobsRoom.id }))
     .then(() => bob.disconnect())
     .catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
+  t.timeoutAfter(PRESENCE_TEST_TIMEOUT)
 })
 
 test("user left room hook (user sub) [removes Bob from his own room]", t => {
@@ -746,15 +752,18 @@ test(`leave room [Bob leaves Alice's room]`, t => {
         any(r => r.id === alicesRoom.id, bob.rooms),
         `should include Bob's room`,
       )
-      bob.leaveRoom({ roomId: alicesRoom.id }).then(room => {
-        t.equal(room.id, alicesRoom.id)
-        t.false(
-          any(r => r.id === alicesRoom.id, bob.rooms),
-          `shouldn't include Alice's room`,
-        )
-        bob.disconnect()
-        t.end()
-      })
+      bob
+        .leaveRoom({ roomId: alicesRoom.id })
+        .then(room => {
+          t.equal(room.id, alicesRoom.id)
+          t.false(
+            any(r => r.id === alicesRoom.id, bob.rooms),
+            `shouldn't include Alice's room`,
+          )
+          bob.disconnect()
+          t.end()
+        })
+        .catch(endWithErr(t))
     })
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)

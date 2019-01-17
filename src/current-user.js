@@ -105,6 +105,7 @@ export class CurrentUser {
     this.isMemberOf = this.isMemberOf.bind(this)
     this.isSubscribedTo = this.isSubscribedTo.bind(this)
     this.decorateMessage = this.decorateMessage.bind(this)
+    this.setPropertiesFromBasicUser = this.setPropertiesFromBasicUser.bind(this)
     this.establishUserSubscription = this.establishUserSubscription.bind(this)
     this.establishCursorSubscription = this.establishCursorSubscription.bind(
       this,
@@ -491,25 +492,29 @@ export class CurrentUser {
     return new Message(basicMessage, this.userStore, this.roomStore)
   }
 
+  setPropertiesFromBasicUser(basicUser) {
+    this.avatarURL = basicUser.avatarURL
+    this.createdAt = basicUser.createdAt
+    this.customData = basicUser.customData
+    this.name = basicUser.name
+    this.updatedAt = basicUser.updatedAt
+  }
+
   establishUserSubscription() {
     this.userSubscription = new UserSubscription({
       hooks: this.hooks,
       userId: this.id,
       instance: this.apiInstance,
-      userStore: this.userStore,
       roomStore: this.roomStore,
       typingIndicators: this.typingIndicators,
       logger: this.logger,
       connectionTimeout: this.connectionTimeout,
+      currentUser: this,
     })
     return this.userSubscription
       .connect()
-      .then(({ user, basicRooms }) => {
-        this.avatarURL = user.avatarURL
-        this.createdAt = user.createdAt
-        this.customData = user.customData
-        this.name = user.name
-        this.updatedAt = user.updatedAt
+      .then(({ basicUser, basicRooms }) => {
+        this.setPropertiesFromBasicUser(basicUser)
         return Promise.all(
           basicRooms.map(basicRoom => this.roomStore.set(basicRoom)),
         )

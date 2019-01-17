@@ -4,7 +4,19 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.2.2...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.3.0...HEAD)
+
+## [1.3.0](https://github.com/pusher/chatkit-client-js/compare/1.2.2...1.3.0)
+
+### Changes
+
+- On reconnection hooks will now be fired for events that were missed during disconnection.
+
+### Fixes
+
+- Race condition between leaving a room and receiving the removed-from-room
+  event (the latter will now always fire).
+- Errors when unsubscribing while receiving an event.
 
 ## [1.2.2](https://github.com/pusher/chatkit-client-js/compare/1.2.1...1.2.2)
 

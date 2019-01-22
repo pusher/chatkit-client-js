@@ -3,12 +3,13 @@ import { handleMembershipSubReconnection } from "./reconnection-handlers"
 export class MembershipSubscription {
   constructor(options) {
     this.roomId = options.roomId
-    this.hooks = options.hooks
     this.instance = options.instance
     this.userStore = options.userStore
     this.roomStore = options.roomStore
     this.logger = options.logger
     this.connectionTimeout = options.connectionTimeout
+    this.onUserJoinedRoomHook = options.onUserJoinedRoomHook
+    this.onUserLeftRoomHook = options.onUserLeftRoomHook
 
     this.connect = this.connect.bind(this)
     this.cancel = this.cancel.bind(this)
@@ -75,40 +76,29 @@ export class MembershipSubscription {
         roomId: this.roomId,
         roomStore: this.roomStore,
         userStore: this.userStore,
-        hooks: this.hooks,
+        onUserJoinedRoomHook: this.onUserJoinedRoomHook,
+        onUserLeftRoomHook: this.onUserLeftRoomHook,
       })
     }
   }
 
   onUserJoined({ user_id: userId }) {
-    this.roomStore.addUserToRoom(this.roomId, userId).then(room => {
-      this.userStore.get(userId).then(user => {
-        if (this.hooks.global.onUserJoinedRoom) {
-          this.hooks.global.onUserJoinedRoom(room, user)
-        }
-        if (
-          this.hooks.rooms[this.roomId] &&
-          this.hooks.rooms[this.roomId].onUserJoined
-        ) {
-          this.hooks.rooms[this.roomId].onUserJoined(user)
-        }
-      })
-    })
+    this.roomStore
+      .addUserToRoom(this.roomId, userId)
+      .then(room =>
+        this.userStore
+          .get(userId)
+          .then(user => this.onUserJoinedRoomHook(room, user)),
+      )
   }
 
   onUserLeft({ user_id: userId }) {
-    this.roomStore.removeUserFromRoom(this.roomId, userId).then(room => {
-      this.userStore.get(userId).then(user => {
-        if (this.hooks.global.onUserLeftRoom) {
-          this.hooks.global.onUserLeftRoom(room, user)
-        }
-        if (
-          this.hooks.rooms[this.roomId] &&
-          this.hooks.rooms[this.roomId].onUserLeft
-        ) {
-          this.hooks.rooms[this.roomId].onUserLeft(user)
-        }
-      })
-    })
+    this.roomStore
+      .removeUserFromRoom(this.roomId, userId)
+      .then(room =>
+        this.userStore
+          .get(userId)
+          .then(user => this.onUserLeftRoomHook(room, user)),
+      )
   }
 }

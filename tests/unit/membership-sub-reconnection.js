@@ -38,7 +38,12 @@ test("user joined (room level hook)", (t, userStore, roomStore) => {
     roomId,
     roomStore,
     userStore,
-    hooks: { rooms: { "42": { onUserJoined } }, global: {} },
+    onUserJoinedRoomHook: (room, user) => {
+      if (room.id === "42") {
+        onUserJoined(user)
+      }
+    },
+    onUserLeftRoomHook: () => {},
   })
 })
 
@@ -56,7 +61,8 @@ test("user joined (global hook)", (t, userStore, roomStore) => {
     roomId,
     roomStore,
     userStore,
-    hooks: { rooms: {}, global: { onUserJoinedRoom } },
+    onUserJoinedRoomHook: (room, user) => onUserJoinedRoom(room, user),
+    onUserLeftRoomHook: () => {},
   })
 })
 
@@ -72,7 +78,12 @@ test("user left (room level hook)", (t, userStore, roomStore) => {
     roomId,
     roomStore,
     userStore,
-    hooks: { rooms: { "42": { onUserLeft } }, global: {} },
+    onUserJoinedRoomHook: () => {},
+    onUserLeftRoomHook: (room, user) => {
+      if (room.id === "42") {
+        onUserLeft(user)
+      }
+    },
   })
 })
 
@@ -90,7 +101,8 @@ test("user joined (global hook)", (t, userStore, roomStore) => {
     roomId,
     roomStore,
     userStore,
-    hooks: { rooms: {}, global: { onUserLeftRoom } },
+    onUserJoinedRoomHook: () => {},
+    onUserLeftRoomHook: (room, user) => onUserLeftRoom(room, user),
   })
 })
 
@@ -100,7 +112,8 @@ test("room store memberships updated", (t, userStore, roomStore) => {
     roomId,
     roomStore,
     userStore,
-    hooks: { rooms: {}, global: {} },
+    onUserJoinedRoomHook: () => {},
+    onUserLeftRoomHook: () => {},
   }).then(() => {
     t.equal(roomStore.getSync(roomId).userIds, newUserIds)
     t.end()

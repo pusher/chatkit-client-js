@@ -6,7 +6,6 @@ export class RoomSubscription {
   constructor(options) {
     this.messageSub = new MessageSubscription({
       roomId: options.roomId,
-      hooks: options.hooks,
       messageLimit: options.messageLimit,
       userId: options.userId,
       instance: options.apiInstance,
@@ -15,9 +14,22 @@ export class RoomSubscription {
       typingIndicators: options.typingIndicators,
       logger: options.logger,
       connectionTimeout: options.connectionTimeout,
+      onMessageHook: message => {
+        if (
+          options.hooks.rooms[options.roomId] &&
+          options.hooks.rooms[options.roomId].onMessage
+        ) {
+          options.hooks.rooms[options.roomId].onMessage(message)
+        }
+      },
     })
 
     this.cursorSub = new CursorSubscription({
+      path: `/cursors/0/rooms/${encodeURIComponent(options.roomId)}`,
+      cursorStore: options.cursorStore,
+      instance: options.cursorsInstance,
+      logger: options.logger,
+      connectionTimeout: options.connectionTimeout,
       onNewCursorHook: cursor => {
         if (
           options.hooks.rooms[options.roomId] &&
@@ -28,21 +40,37 @@ export class RoomSubscription {
           options.hooks.rooms[options.roomId].onNewReadCursor(cursor)
         }
       },
-      path: `/cursors/0/rooms/${encodeURIComponent(options.roomId)}`,
-      cursorStore: options.cursorStore,
-      instance: options.cursorsInstance,
-      logger: options.logger,
-      connectionTimeout: options.connectionTimeout,
     })
 
     this.membershipSub = new MembershipSubscription({
       roomId: options.roomId,
-      hooks: options.hooks,
       instance: options.apiInstance,
       userStore: options.userStore,
       roomStore: options.roomStore,
       logger: options.logger,
       connectionTimeout: options.connectionTimeout,
+      onUserJoinedRoomHook: (room, user) => {
+        if (options.hooks.global.onUserJoinedRoom) {
+          options.hooks.global.onUserJoinedRoom(room, user)
+        }
+        if (
+          options.hooks.rooms[room.id] &&
+          options.hooks.rooms[room.id].onUserJoined
+        ) {
+          options.hooks.rooms[room.id].onUserJoined(user)
+        }
+      },
+      onUserLeftRoomHook: (room, user) => {
+        if (options.hooks.global.onUserLeftRoom) {
+          options.hooks.global.onUserLeftRoom(room, user)
+        }
+        if (
+          options.hooks.rooms[room.id] &&
+          options.hooks.rooms[room.id].onUserLeft
+        ) {
+          options.hooks.rooms[room.id].onUserLeft(user)
+        }
+      },
     })
   }
 

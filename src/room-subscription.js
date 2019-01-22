@@ -4,6 +4,8 @@ import { MembershipSubscription } from "./membership-subscription"
 
 export class RoomSubscription {
   constructor(options) {
+    this.buffer = []
+
     this.messageSub = new MessageSubscription({
       roomId: options.roomId,
       messageLimit: options.messageLimit,
@@ -14,14 +16,14 @@ export class RoomSubscription {
       typingIndicators: options.typingIndicators,
       logger: options.logger,
       connectionTimeout: options.connectionTimeout,
-      onMessageHook: message => {
+      onMessageHook: this.bufferWhileConnecting(message => {
         if (
           options.hooks.rooms[options.roomId] &&
           options.hooks.rooms[options.roomId].onMessage
         ) {
           options.hooks.rooms[options.roomId].onMessage(message)
         }
-      },
+      }),
     })
 
     this.cursorSub = new CursorSubscription({
@@ -30,7 +32,7 @@ export class RoomSubscription {
       instance: options.cursorsInstance,
       logger: options.logger,
       connectionTimeout: options.connectionTimeout,
-      onNewCursorHook: cursor => {
+      onNewCursorHook: this.bufferWhileConnecting(cursor => {
         if (
           options.hooks.rooms[options.roomId] &&
           options.hooks.rooms[options.roomId].onNewReadCursor &&
@@ -39,7 +41,7 @@ export class RoomSubscription {
         ) {
           options.hooks.rooms[options.roomId].onNewReadCursor(cursor)
         }
-      },
+      }),
     })
 
     this.membershipSub = new MembershipSubscription({
@@ -49,7 +51,7 @@ export class RoomSubscription {
       roomStore: options.roomStore,
       logger: options.logger,
       connectionTimeout: options.connectionTimeout,
-      onUserJoinedRoomHook: (room, user) => {
+      onUserJoinedRoomHook: this.bufferWhileConnecting((room, user) => {
         if (options.hooks.global.onUserJoinedRoom) {
           options.hooks.global.onUserJoinedRoom(room, user)
         }
@@ -59,8 +61,8 @@ export class RoomSubscription {
         ) {
           options.hooks.rooms[room.id].onUserJoined(user)
         }
-      },
-      onUserLeftRoomHook: (room, user) => {
+      }),
+      onUserLeftRoomHook: this.bufferWhileConnecting((room, user) => {
         if (options.hooks.global.onUserLeftRoom) {
           options.hooks.global.onUserLeftRoom(room, user)
         }
@@ -70,7 +72,7 @@ export class RoomSubscription {
         ) {
           options.hooks.rooms[room.id].onUserLeft(user)
         }
-      },
+      }),
     })
   }
 
@@ -84,7 +86,7 @@ export class RoomSubscription {
       this.messageSub.connect(),
       this.cursorSub.connect(),
       this.membershipSub.connect(),
-    ])
+    ]).then(() => this.flushBuffer())
   }
 
   cancel() {
@@ -92,5 +94,21 @@ export class RoomSubscription {
     this.messageSub.cancel()
     this.cursorSub.cancel()
     this.membershipSub.cancel()
+  }
+
+  bufferWhileConnecting(f) {
+    return (...args) => {
+      if (this.connected) {
+        f(...args)
+      } else {
+        this.buffer.push(f.bind(this, ...args))
+      }
+    }
+  }
+
+  flushBuffer() {
+    this.connected = true
+    this.buffer.forEach(f => f())
+    delete this.buffer
   }
 }

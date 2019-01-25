@@ -1324,6 +1324,45 @@ test(`get another user's read cursor after subscribing to a room`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+test("subscribe to same room twice in quick succession, only one hook fired", t => {
+  let hookCalled = false
+
+  fetchUser(t, "alice")
+    .then(alice =>
+      Promise.all(
+        [0, 1].map(
+          () =>
+            alice
+              .subscribeToRoom({
+                roomId: alicesRoom.id,
+                hooks: {
+                  onMessage: m => {
+                    t.equal(m.text, "arbitrary")
+
+                    if (hookCalled) {
+                      endWithErr("onMessage called twice for one message send")
+                      return
+                    }
+                    hookCalled = true
+
+                    setTimeout(() => {
+                      alice.disconnect()
+                      t.end()
+                    }, 500)
+                  },
+                },
+                messageLimit: 0,
+              })
+              .catch(() => {}), // one of the two subs will error
+        ),
+      ).then(() =>
+        alice.sendMessage({ roomId: alicesRoom.id, text: "arbitrary" }),
+      ),
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test("non-admin update room fails gracefully", t => {
   fetchUser(t, "alice").then(alice =>
     alice

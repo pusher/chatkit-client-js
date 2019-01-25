@@ -1,5 +1,3 @@
-import { head, isEmpty } from "ramda"
-
 import { parseBasicMessage } from "./parsers"
 import { urlEncode } from "./utils"
 import { Message } from "./message"
@@ -7,7 +5,6 @@ import { Message } from "./message"
 export class MessageSubscription {
   constructor(options) {
     this.roomId = options.roomId
-    this.hooks = options.hooks
     this.messageLimit = options.messageLimit
     this.userId = options.userId
     this.instance = options.instance
@@ -17,6 +14,7 @@ export class MessageSubscription {
     this.messageBuffer = [] // { message, ready }
     this.logger = options.logger
     this.connectionTimeout = options.connectionTimeout
+    this.onMessageHook = options.onMessageHook
 
     this.connect = this.connect.bind(this)
     this.cancel = this.cancel.bind(this)
@@ -92,14 +90,8 @@ export class MessageSubscription {
   }
 
   flushBuffer() {
-    while (!isEmpty(this.messageBuffer) && head(this.messageBuffer).ready) {
-      const message = this.messageBuffer.shift().message
-      if (
-        this.hooks.rooms[this.roomId] &&
-        this.hooks.rooms[this.roomId].onMessage
-      ) {
-        this.hooks.rooms[this.roomId].onMessage(message)
-      }
+    while (this.messageBuffer.length > 0 && this.messageBuffer[0].ready) {
+      this.onMessageHook(this.messageBuffer.shift().message)
     }
   }
 

@@ -40,36 +40,23 @@ export function handleMembershipSubReconnection({
   roomId,
   roomStore,
   userStore,
-  hooks,
+  onUserJoinedRoomHook,
+  onUserLeftRoomHook,
 }) {
   return userStore.fetchMissingUsers(userIds).then(() => {
     const room = roomStore.getSync(roomId)
 
-    for (const userId of userIds.filter(
-      userId => !room.userIds.includes(userId),
-    )) {
-      userStore.get(userId).then(user => {
-        if (hooks.global.onUserJoinedRoom) {
-          hooks.global.onUserJoinedRoom(room, user)
-        }
-        if (hooks.rooms[roomId] && hooks.rooms[roomId].onUserJoined) {
-          hooks.rooms[roomId].onUserJoined(user)
-        }
-      })
-    }
+    userIds
+      .filter(userId => !room.userIds.includes(userId))
+      .forEach(userId =>
+        userStore.get(userId).then(user => onUserJoinedRoomHook(room, user)),
+      )
 
-    for (const userId of room.userIds.filter(
-      userId => !userIds.includes(userId),
-    )) {
-      userStore.get(userId).then(user => {
-        if (hooks.global.onUserLeftRoom) {
-          hooks.global.onUserLeftRoom(room, user)
-        }
-        if (hooks.rooms[roomId] && hooks.rooms[roomId].onUserLeft) {
-          hooks.rooms[roomId].onUserLeft(user)
-        }
-      })
-    }
+    room.userIds
+      .filter(userId => !userIds.includes(userId))
+      .forEach(userId =>
+        userStore.get(userId).then(user => onUserLeftRoomHook(room, user)),
+      )
 
     return roomStore.update(roomId, { userIds })
   })

@@ -28,8 +28,6 @@ import { UserSubscription } from "./user-subscription"
 import { PresenceSubscription } from "./presence-subscription"
 import { UserPresenceSubscription } from "./user-presence-subscription"
 import { CursorSubscription } from "./cursor-subscription"
-import { MessageSubscription } from "./message-subscription"
-import { MembershipSubscription } from "./membership-subscription"
 import { RoomSubscription } from "./room-subscription"
 import { Message } from "./message"
 import { SET_CURSOR_WAIT } from "./constants"
@@ -364,44 +362,18 @@ export class CurrentUser {
     }
     this.hooks.rooms[roomId] = hooks
     const roomSubscription = new RoomSubscription({
-      messageSub: new MessageSubscription({
-        roomId,
-        hooks: this.hooks,
-        messageLimit,
-        userId: this.id,
-        instance: this.apiInstance,
-        userStore: this.userStore,
-        roomStore: this.roomStore,
-        typingIndicators: this.typingIndicators,
-        logger: this.logger,
-        connectionTimeout: this.connectionTimeout,
-      }),
-      cursorSub: new CursorSubscription({
-        onNewCursorHook: cursor => {
-          if (
-            this.hooks.rooms[roomId] &&
-            this.hooks.rooms[roomId].onNewReadCursor &&
-            cursor.type === 0 &&
-            cursor.userId !== this.id
-          ) {
-            this.hooks.rooms[roomId].onNewReadCursor(cursor)
-          }
-        },
-        path: `/cursors/0/rooms/${encodeURIComponent(roomId)}`,
-        cursorStore: this.cursorStore,
-        instance: this.cursorsInstance,
-        logger: this.logger,
-        connectionTimeout: this.connectionTimeout,
-      }),
-      membershipSub: new MembershipSubscription({
-        roomId,
-        hooks: this.hooks,
-        instance: this.apiInstance,
-        userStore: this.userStore,
-        roomStore: this.roomStore,
-        logger: this.logger,
-        connectionTimeout: this.connectionTimeout,
-      }),
+      apiInstance: this.apiInstance,
+      connectionTimeout: this.connectionTimeout,
+      cursorStore: this.cursorStore,
+      cursorsInstance: this.cursorsInstance,
+      hooks: this.hooks,
+      logger: this.logger,
+      messageLimit,
+      roomId,
+      roomStore: this.roomStore,
+      typingIndicators: this.typingIndicators,
+      userId: this.id,
+      userStore: this.userStore,
     })
     this.roomSubscriptions[roomId] = roomSubscription
     return this.joinRoom({ roomId })

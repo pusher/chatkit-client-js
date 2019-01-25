@@ -6,6 +6,11 @@ export class RoomSubscription {
   }
 
   connect() {
+    if (this.cancelled) {
+      return Promise.reject(
+        new Error("attempt to connect a cancelled room subscription"),
+      )
+    }
     return Promise.all([
       this.messageSub.connect(),
       this.cursorSub.connect(),
@@ -14,6 +19,7 @@ export class RoomSubscription {
   }
 
   cancel() {
+    this.cancelled = true
     this.messageSub.cancel()
     this.cursorSub.cancel()
     this.membershipSub.cancel()

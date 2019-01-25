@@ -363,7 +363,7 @@ export class CurrentUser {
       this.roomSubscriptions[roomId].cancel()
     }
     this.hooks.rooms[roomId] = hooks
-    this.roomSubscriptions[roomId] = new RoomSubscription({
+    const roomSubscription = new RoomSubscription({
       messageSub: new MessageSubscription({
         roomId,
         hooks: this.hooks,
@@ -403,8 +403,9 @@ export class CurrentUser {
         connectionTimeout: this.connectionTimeout,
       }),
     })
+    this.roomSubscriptions[roomId] = roomSubscription
     return this.joinRoom({ roomId })
-      .then(room => this.roomSubscriptions[roomId].connect().then(() => room))
+      .then(room => roomSubscription.connect().then(() => room))
       .catch(err => {
         this.logger.warn(`error subscribing to room ${roomId}:`, err)
         throw err

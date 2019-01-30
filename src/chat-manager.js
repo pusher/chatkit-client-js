@@ -36,9 +36,14 @@ export class ChatManager {
       logger: options.logger,
       tokenProvider,
     }
-    this.apiInstance = new Instance({
+    this.serverInstanceV2 = new Instance({
       serviceName: "chatkit",
       serviceVersion: "v2",
+      ...instanceOptions,
+    })
+    this.serverInstanceV3 = new Instance({
+      serviceName: "chatkit",
+      serviceVersion: "v3",
       ...instanceOptions,
     })
     this.filesInstance = new Instance({
@@ -69,7 +74,8 @@ export class ChatManager {
     const currentUser = new CurrentUser({
       hooks,
       id: this.userId,
-      apiInstance: this.apiInstance,
+      serverInstanceV2: this.serverInstanceV2,
+      serverInstanceV3: this.serverInstanceV3,
       filesInstance: this.filesInstance,
       cursorsInstance: this.cursorsInstance,
       presenceInstance: this.presenceInstance,

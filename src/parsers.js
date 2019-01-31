@@ -24,15 +24,28 @@ export const parsePresence = data => ({
   state: contains(data.state, ["online", "offline"]) ? data.state : "unknown",
 })
 
-export const parseBasicMessage = data => ({
-  id: data.id,
-  senderId: data.user_id,
-  roomId: data.room_id,
-  text: data.text,
-  createdAt: data.created_at,
-  updatedAt: data.updated_at,
-  attachment: data.attachment && parseMessageAttachment(data.attachment),
-})
+export const parseBasicMessage = data => {
+  const basicMessage = {
+    id: data.id,
+    senderId: data.user_id,
+    roomId: data.room_id,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  }
+
+  if (data.parts) {
+    // v3 message
+    basicMessage.parts = data.parts.map(p => parseMessagePart(p))
+  } else {
+    // v2 message
+    basicMessage.text = data.text
+    if (data.attachment) {
+      basicMessage.attachment = parseMessageAttachment(data.attachment)
+    }
+  }
+
+  return basicMessage
+}
 
 export const parseBasicCursor = data => ({
   position: data.position,
@@ -47,3 +60,26 @@ const parseMessageAttachment = data => ({
   type: data.type,
   name: data.name,
 })
+
+const parseMessagePart = data => {
+  if (data.content) {
+    return {
+      partType: "inline",
+      payload: {
+        type: data.type,
+        content: data.content,
+      },
+    }
+  } else if (data.url) {
+    return {
+      partType: "url",
+      payload: {
+        type: data.type,
+        url: data.url,
+      },
+    }
+  } else {
+    // TODO attachment payload
+    throw new TypeError("failed to parse message part")
+  }
+}

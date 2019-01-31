@@ -918,6 +918,36 @@ test("subscribe to room and fetch initial messages", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+test("subscribe to room and fetch initial messages (v3)", t => {
+  fetchUser(t, "alice")
+    .then(alice =>
+      alice.subscribeToRoomMultipart({
+        roomId: bobsRoom.id,
+        hooks: {
+          onMessage: concatBatch(4, messages => {
+            messages.forEach(m => {
+              t.equal(m.sender.name, "Alice")
+              t.equal(m.room.name, `Bob's new room`)
+              t.equal(m.parts.length, 1)
+              t.equal(m.parts[0].partType, "inline")
+              t.equal(m.parts[0].payload.type, "text/plain")
+            })
+            t.deepEqual(messages.map(m => m.parts[0].payload.content), [
+              "hello",
+              "hey",
+              "hi",
+              "ho",
+            ])
+            alice.disconnect()
+            t.end()
+          }),
+        },
+      }),
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test("subscribe to room and fetch last two message only", t => {
   fetchUser(t, "alice")
     .then(alice =>
@@ -937,7 +967,36 @@ test("subscribe to room and fetch last two message only", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test("subscribe to room and receive sent messages", t => {
+test("subscribe to room and fetch last two message only (v3)", t => {
+  fetchUser(t, "alice")
+    .then(alice =>
+      alice.subscribeToRoomMultipart({
+        roomId: bobsRoom.id,
+        hooks: {
+          onMessage: concatBatch(2, messages => {
+            messages.forEach(m => {
+              t.equal(m.sender.name, "Alice")
+              t.equal(m.room.name, `Bob's new room`)
+              t.equal(m.parts.length, 1)
+              t.equal(m.parts[0].partType, "inline")
+              t.equal(m.parts[0].payload.type, "text/plain")
+            })
+            t.deepEqual(messages.map(m => m.parts[0].payload.content), [
+              "hi",
+              "ho",
+            ])
+            alice.disconnect()
+            t.end()
+          }),
+        },
+        messageLimit: 2,
+      }),
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test("subscribe to room and receive sent messages (v2 sends, v2 receives)", t => {
   fetchUser(t, "alice")
     .then(alice =>
       alice
@@ -960,7 +1019,7 @@ test("subscribe to room and receive sent messages", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test("subscribe to room and receive sent messages (v3 sends)", t => {
+test("subscribe to room and receive sent messages (v3 sends, v2 receives)", t => {
   fetchUser(t, "alice")
     .then(alice =>
       alice
@@ -968,7 +1027,7 @@ test("subscribe to room and receive sent messages (v3 sends)", t => {
           roomId: bobsRoom.id,
           hooks: {
             onMessage: concatBatch(3, messages => {
-              t.deepEqual(map(m => m.text, messages), ["yo3", "yoo3", "yooo3"])
+              t.deepEqual(map(m => m.text, messages), ["yo2", "yoo2", "yooo2"])
               t.equal(messages[0].sender.name, "Alice")
               t.equal(messages[0].room.name, `Bob's new room`)
               alice.disconnect()
@@ -978,7 +1037,73 @@ test("subscribe to room and receive sent messages (v3 sends)", t => {
           messageLimit: 0,
         })
         .then(() =>
-          sendSimpleMessages(alice, bobsRoom, ["yo3", "yoo3", "yooo3"]),
+          sendSimpleMessages(alice, bobsRoom, ["yo2", "yoo2", "yooo2"]),
+        ),
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test("subscribe to room and receive sent messages (v2 sends, v3 receives)", t => {
+  fetchUser(t, "alice")
+    .then(alice =>
+      alice
+        .subscribeToRoomMultipart({
+          roomId: bobsRoom.id,
+          hooks: {
+            onMessage: concatBatch(3, messages => {
+              messages.forEach(m => {
+                t.equal(m.sender.name, "Alice")
+                t.equal(m.room.name, `Bob's new room`)
+                t.equal(m.parts.length, 1)
+                t.equal(m.parts[0].partType, "inline")
+                t.equal(m.parts[0].payload.type, "text/plain")
+              })
+              t.deepEqual(messages.map(m => m.parts[0].payload.content), [
+                "yo3",
+                "yoo3",
+                "yooo3",
+              ])
+              alice.disconnect()
+              t.end()
+            }),
+          },
+          messageLimit: 0,
+        })
+        .then(() => sendMessages(alice, bobsRoom, ["yo3", "yoo3", "yooo3"])),
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test("subscribe to room and receive sent messages (v3 sends, v3 receives)", t => {
+  fetchUser(t, "alice")
+    .then(alice =>
+      alice
+        .subscribeToRoomMultipart({
+          roomId: bobsRoom.id,
+          hooks: {
+            onMessage: concatBatch(3, messages => {
+              messages.forEach(m => {
+                t.equal(m.sender.name, "Alice")
+                t.equal(m.room.name, `Bob's new room`)
+                t.equal(m.parts.length, 1)
+                t.equal(m.parts[0].partType, "inline")
+                t.equal(m.parts[0].payload.type, "text/plain")
+              })
+              t.deepEqual(messages.map(m => m.parts[0].payload.content), [
+                "yo4",
+                "yoo4",
+                "yooo4",
+              ])
+              alice.disconnect()
+              t.end()
+            }),
+          },
+          messageLimit: 0,
+        })
+        .then(() =>
+          sendSimpleMessages(alice, bobsRoom, ["yo4", "yoo4", "yooo4"]),
         ),
     )
     .catch(endWithErr(t))
@@ -990,6 +1115,33 @@ test("unsubscribe from room", t => {
     .then(alice =>
       alice
         .subscribeToRoom({
+          roomId: bobsRoom.id,
+          hooks: {
+            onMessage: () => {
+              endWithErr(t, "should not be called after unsubscribe")
+            },
+          },
+          messageLimit: 0,
+        })
+        .then(() => alice.roomSubscriptions[bobsRoom.id].cancel())
+        .then(() => sendMessages(alice, bobsRoom, ["yoooo"]))
+        .then(() => sendSimpleMessages(alice, bobsRoom, ["yoooo3"]))
+        .then(() =>
+          setTimeout(() => {
+            alice.disconnect()
+            t.end()
+          }, 1000),
+        ),
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test("unsubscribe from room (v3)", t => {
+  fetchUser(t, "alice")
+    .then(alice =>
+      alice
+        .subscribeToRoomMultipart({
           roomId: bobsRoom.id,
           hooks: {
             onMessage: () => {

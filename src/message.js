@@ -3,10 +3,20 @@ export class Message {
     this.id = basicMessage.id
     this.senderId = basicMessage.senderId
     this.roomId = basicMessage.roomId
-    this.text = basicMessage.text
-    this.attachment = basicMessage.attachment
     this.createdAt = basicMessage.createdAt
     this.updatedAt = basicMessage.updatedAt
+
+    if (basicMessage.parts) {
+      // v3 message
+      this.parts = basicMessage.parts
+    } else {
+      // v2 message
+      this.text = basicMessage.text
+      if (basicMessage.attachment) {
+        this.attachment = basicMessage.attachment
+      }
+    }
+
     this.userStore = userStore
     this.roomStore = roomStore
   }

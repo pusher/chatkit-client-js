@@ -100,6 +100,7 @@ export class CurrentUser {
     this.sendMultipartMessage = this.sendMultipartMessage.bind(this)
     this.fetchMessages = this.fetchMessages.bind(this)
     this.subscribeToRoom = this.subscribeToRoom.bind(this)
+    this.subscribeToRoomMultipart = this.subscribeToRoomMultipart.bind(this)
     this.updateRoom = this.updateRoom.bind(this)
     this.deleteRoom = this.deleteRoom.bind(this)
     this.setReadCursorRequest = this.setReadCursorRequest.bind(this)
@@ -397,7 +398,7 @@ export class CurrentUser {
       })
   }
 
-  subscribeToRoom({ roomId, hooks = {}, messageLimit } = {}) {
+  subscribeToRoom({ roomId, hooks = {}, messageLimit, serverInstance } = {}) {
     typeCheck("roomId", "string", roomId)
     typeCheckObj("hooks", "function", hooks)
     messageLimit && typeCheck("messageLimit", "number", messageLimit)
@@ -406,7 +407,7 @@ export class CurrentUser {
     }
     this.hooks.rooms[roomId] = hooks
     const roomSubscription = new RoomSubscription({
-      serverInstanceV2: this.serverInstanceV2,
+      serverInstance: serverInstance || this.serverInstanceV2,
       connectionTimeout: this.connectionTimeout,
       cursorStore: this.cursorStore,
       cursorsInstance: this.cursorsInstance,
@@ -426,6 +427,13 @@ export class CurrentUser {
         this.logger.warn(`error subscribing to room ${roomId}:`, err)
         throw err
       })
+  }
+
+  subscribeToRoomMultipart(options = {}) {
+    return this.subscribeToRoom({
+      ...options,
+      serverInstance: this.serverInstanceV3,
+    })
   }
 
   updateRoom({ roomId, name, customData, ...rest } = {}) {

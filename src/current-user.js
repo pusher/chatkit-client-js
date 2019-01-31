@@ -55,15 +55,15 @@ export class CurrentUser {
     this.cursorsInstance = cursorsInstance
     this.connectionTimeout = connectionTimeout
     this.presenceInstance = presenceInstance
-    this.logger = serverInstanceV2.logger
+    this.logger = serverInstanceV3.logger
     this.presenceStore = {}
     this.userStore = new UserStore({
-      instance: this.serverInstanceV2,
+      instance: this.serverInstanceV3,
       presenceStore: this.presenceStore,
       logger: this.logger,
     })
     this.roomStore = new RoomStore({
-      instance: this.serverInstanceV2,
+      instance: this.serverInstanceV3,
       userStore: this.userStore,
       isSubscribedTo: userId => this.isSubscribedTo(userId),
       logger: this.logger,
@@ -76,7 +76,7 @@ export class CurrentUser {
     })
     this.typingIndicators = new TypingIndicators({
       hooks: this.hooks,
-      instance: this.serverInstanceV2,
+      instance: this.serverInstanceV3,
       logger: this.logger,
     })
     this.userStore.onSetHooks.push(userId =>
@@ -177,7 +177,7 @@ export class CurrentUser {
     name && typeCheck("name", "string", name)
     addUserIds && typeCheckArr("addUserIds", "string", addUserIds)
     customData && typeCheck("customData", "object", customData)
-    return this.serverInstanceV2
+    return this.serverInstanceV3
       .request({
         method: "POST",
         path: "/rooms",
@@ -197,7 +197,7 @@ export class CurrentUser {
   }
 
   getJoinableRooms() {
-    return this.serverInstanceV2
+    return this.serverInstanceV3
       .request({
         method: "GET",
         path: `/users/${this.encodedId}/rooms?joinable=true`,
@@ -219,7 +219,7 @@ export class CurrentUser {
     if (this.isMemberOf(roomId)) {
       return this.roomStore.get(roomId)
     }
-    return this.serverInstanceV2
+    return this.serverInstanceV3
       .request({
         method: "POST",
         path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
@@ -238,7 +238,7 @@ export class CurrentUser {
     return this.roomStore
       .get(roomId)
       .then(room =>
-        this.serverInstanceV2
+        this.serverInstanceV3
           .request({
             method: "POST",
             path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
@@ -256,7 +256,7 @@ export class CurrentUser {
   addUserToRoom({ userId, roomId } = {}) {
     typeCheck("userId", "string", userId)
     typeCheck("roomId", "string", roomId)
-    return this.serverInstanceV2
+    return this.serverInstanceV3
       .request({
         method: "PUT",
         path: `/rooms/${encodeURIComponent(roomId)}/users/add`,
@@ -274,7 +274,7 @@ export class CurrentUser {
   removeUserFromRoom({ userId, roomId } = {}) {
     typeCheck("userId", "string", userId)
     typeCheck("roomId", "string", roomId)
-    return this.serverInstanceV2
+    return this.serverInstanceV3
       .request({
         method: "PUT",
         path: `/rooms/${encodeURIComponent(roomId)}/users/remove`,
@@ -433,7 +433,7 @@ export class CurrentUser {
     name && typeCheck("name", "string", name)
     rest.private && typeCheck("private", "boolean", rest.private)
     customData && typeCheck("customData", "object", customData)
-    return this.serverInstanceV2
+    return this.serverInstanceV3
       .request({
         method: "PUT",
         path: `/rooms/${encodeURIComponent(roomId)}`,
@@ -452,7 +452,7 @@ export class CurrentUser {
 
   deleteRoom({ roomId } = {}) {
     typeCheck("roomId", "string", roomId)
-    return this.serverInstanceV2
+    return this.serverInstanceV3
       .request({
         method: "DELETE",
         path: `/rooms/${encodeURIComponent(roomId)}`,
@@ -521,7 +521,7 @@ export class CurrentUser {
     this.userSubscription = new UserSubscription({
       hooks: this.hooks,
       userId: this.id,
-      instance: this.serverInstanceV2,
+      instance: this.serverInstanceV3,
       roomStore: this.roomStore,
       typingIndicators: this.typingIndicators,
       logger: this.logger,

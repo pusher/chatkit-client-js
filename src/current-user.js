@@ -1,5 +1,4 @@
 import {
-  compose,
   contains,
   has,
   map,
@@ -381,12 +380,8 @@ export class CurrentUser {
         })}`,
       })
       .then(res => {
-        const messages = map(
-          compose(
-            this.decorateMessage,
-            parseBasicMessage,
-          ),
-          JSON.parse(res),
+        const messages = JSON.parse(res).map(m =>
+          this.decorateMessage(parseBasicMessage(m, this.serverInstanceV3)),
         )
         return this.userStore
           .fetchMissingUsers(uniq(map(prop("senderId"), messages)))
@@ -514,7 +509,12 @@ export class CurrentUser {
   }
 
   decorateMessage(basicMessage) {
-    return new Message(basicMessage, this.userStore, this.roomStore)
+    return new Message(
+      basicMessage,
+      this.userStore,
+      this.roomStore,
+      this.serverInstanceV3,
+    )
   }
 
   setPropertiesFromBasicUser(basicUser) {

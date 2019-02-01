@@ -1255,6 +1255,50 @@ test("receive message with data attachment", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+test("receive message with data attachment (v3)", t => {
+  fetchUser(t, "alice")
+    .then(alice =>
+      alice
+        // TODO replace with fetchMessagesMultipart when it exists
+        .subscribeToRoomMultipart({
+          roomId: bobsRoom.id,
+          messageLimit: 1,
+          hooks: {
+            onMessage: m => {
+              t.equal(m.sender.name, "Alice")
+              t.equal(m.room.name, `Bob's new room`)
+              t.equal(m.parts.length, 2)
+
+              t.equal(m.parts[0].partType, "inline")
+              t.equal(m.parts[0].payload.type, "text/plain")
+              t.equal(m.parts[0].payload.content, "see attached json")
+
+              t.equal(m.parts[1].partType, "attachment")
+              t.equal(m.parts[1].payload.type, "file/x-pusher-file")
+              // TODO I think this is an API bug.
+              // t.equal(
+              //   m.parts[1].payload.name,
+              //   "file:///with/slashes and spaces.json",
+              // )
+              t.equal(m.parts[1].payload.size, 17)
+
+              m.parts[1].payload
+                .url()
+                .then(url => fetch(url))
+                .then(res => res.json())
+                .then(data => {
+                  t.deepEqual(data, { hello: "world" })
+                  alice.disconnect()
+                  t.end()
+                })
+            },
+          },
+        }),
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test("fetch data attachment", t => {
   fetchUser(t, "alice")
     .then(alice =>

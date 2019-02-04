@@ -100,6 +100,13 @@ const sendMessages = (user, room, texts) =>
         .sendMessage({ roomId: room.id, text: head(texts) })
         .then(() => sendMessages(user, room, tail(texts)))
 
+const sendSimpleMessages = (user, room, texts) =>
+  texts.length === 0
+    ? Promise.resolve()
+    : user
+        .sendSimpleMessage({ roomId: room.id, text: texts[0] })
+        .then(() => sendSimpleMessages(user, room, texts.slice(1)))
+
 // Teardown first so that we can kill the tests at any time, safe in the
 // knowledge that we'll always be starting with a blank slate next time
 
@@ -811,10 +818,22 @@ test("remove user [Alice removes Bob from her room]", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test(`send messages [sends four messages to Bob's room]`, t => {
+test(`send messages [sends two messages to Bob's room]`, t => {
   fetchUser(t, "alice")
     .then(alice =>
-      sendMessages(alice, bobsRoom, ["hello", "hey", "hi", "ho"]).then(() =>
+      sendMessages(alice, bobsRoom, ["hello", "hey"]).then(() =>
+        alice.disconnect(),
+      ),
+    )
+    .then(t.end)
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test(`send simple messages (v3) [sends two messages to Bob's room]`, t => {
+  fetchUser(t, "alice")
+    .then(alice =>
+      sendSimpleMessages(alice, bobsRoom, ["hi", "ho"]).then(() =>
         alice.disconnect(),
       ),
     )
@@ -935,6 +954,31 @@ test("subscribe to room and receive sent messages", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+test("subscribe to room and receive sent messages (v3 sends)", t => {
+  fetchUser(t, "alice")
+    .then(alice =>
+      alice
+        .subscribeToRoom({
+          roomId: bobsRoom.id,
+          hooks: {
+            onMessage: concatBatch(3, messages => {
+              t.deepEqual(map(m => m.text, messages), ["yo3", "yoo3", "yooo3"])
+              t.equal(messages[0].sender.name, "Alice")
+              t.equal(messages[0].room.name, `Bob's new room`)
+              alice.disconnect()
+              t.end()
+            }),
+          },
+          messageLimit: 0,
+        })
+        .then(() =>
+          sendSimpleMessages(alice, bobsRoom, ["yo3", "yoo3", "yooo3"]),
+        ),
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test("unsubscribe from room", t => {
   fetchUser(t, "alice")
     .then(alice =>
@@ -950,6 +994,7 @@ test("unsubscribe from room", t => {
         })
         .then(() => alice.roomSubscriptions[bobsRoom.id].cancel())
         .then(() => sendMessages(alice, bobsRoom, ["yoooo"]))
+        .then(() => sendSimpleMessages(alice, bobsRoom, ["yoooo3"]))
         .then(() =>
           setTimeout(() => {
             alice.disconnect()
@@ -1356,7 +1401,7 @@ test("subscribe to same room twice in quick succession, only one hook fired", t 
               .catch(() => {}), // one of the two subs will error
         ),
       ).then(() =>
-        alice.sendMessage({ roomId: alicesRoom.id, text: "arbitrary" }),
+        alice.sendSimpleMessage({ roomId: alicesRoom.id, text: "arbitrary" }),
       ),
     )
     .catch(endWithErr(t))

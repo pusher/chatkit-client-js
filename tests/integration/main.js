@@ -8,11 +8,9 @@ import {
   contains,
   curry,
   find,
-  head,
   length,
   map,
   reduce,
-  tail,
   toString,
 } from "ramda"
 
@@ -92,20 +90,6 @@ const fetchUser = (t, userId, hooks = {}) =>
     .catch(endWithErr(t))
 
 const endWithErr = curry((t, err) => t.end(`error: ${toString(err)}`))
-
-const sendMessages = (user, room, texts) =>
-  length(texts) === 0
-    ? Promise.resolve()
-    : user
-        .sendMessage({ roomId: room.id, text: head(texts) })
-        .then(() => sendMessages(user, room, tail(texts)))
-
-const sendSimpleMessages = (user, room, texts) =>
-  texts.length === 0
-    ? Promise.resolve()
-    : user
-        .sendSimpleMessage({ roomId: room.id, text: texts[0] })
-        .then(() => sendSimpleMessages(user, room, texts.slice(1)))
 
 // Teardown first so that we can kill the tests at any time, safe in the
 // knowledge that we'll always be starting with a blank slate next time
@@ -827,9 +811,10 @@ test("remove user [Alice removes Bob from her room]", t => {
 test(`send messages [sends two messages to Bob's room]`, t => {
   fetchUser(t, "alice")
     .then(alice =>
-      sendMessages(alice, bobsRoom, ["hello", "hey"]).then(() =>
-        alice.disconnect(),
-      ),
+      alice
+        .sendMessage({ roomId: bobsRoom.id, text: "hello" })
+        .then(() => alice.sendMessage({ roomId: bobsRoom.id, text: "hey" }))
+        .then(() => alice.disconnect()),
     )
     .then(t.end)
     .catch(endWithErr(t))
@@ -839,9 +824,10 @@ test(`send messages [sends two messages to Bob's room]`, t => {
 test(`send simple messages (v3) [sends two messages to Bob's room]`, t => {
   fetchUser(t, "alice")
     .then(alice =>
-      sendSimpleMessages(alice, bobsRoom, ["hi", "ho"]).then(() =>
-        alice.disconnect(),
-      ),
+      alice
+        .sendMessage({ roomId: bobsRoom.id, text: "hi" })
+        .then(() => alice.sendMessage({ roomId: bobsRoom.id, text: "ho" }))
+        .then(() => alice.disconnect()),
     )
     .then(t.end)
     .catch(endWithErr(t))
@@ -1004,16 +990,41 @@ test("subscribe to room and receive sent messages (v2 sends, v2 receives)", t =>
           roomId: bobsRoom.id,
           hooks: {
             onMessage: concatBatch(3, messages => {
-              t.deepEqual(map(m => m.text, messages), ["yo", "yoo", "yooo"])
+              t.equal(messages[0].text, "yo")
               t.equal(messages[0].sender.name, "Alice")
               t.equal(messages[0].room.name, `Bob's new room`)
+
+              t.equal(messages[1].text, "yoo")
+              t.equal(messages[1].sender.name, "Alice")
+              t.equal(messages[1].room.name, `Bob's new room`)
+              t.equal(typeof messages[1].attachment, "object")
+              t.equal(messages[1].attachment.type, "image")
+              t.equal(messages[1].attachment.name, "cat")
+              t.equal(messages[1].attachment.link, "https://cataas.com/cat")
+
+              t.equal(messages[2].text, "yooo")
+              t.equal(messages[2].sender.name, "Alice")
+              t.equal(messages[2].room.name, `Bob's new room`)
+
               alice.disconnect()
               t.end()
             }),
           },
           messageLimit: 0,
         })
-        .then(() => sendMessages(alice, bobsRoom, ["yo", "yoo", "yooo"])),
+        .then(() => alice.sendMessage({ roomId: bobsRoom.id, text: "yo" }))
+        .then(() =>
+          alice.sendMessage({
+            roomId: bobsRoom.id,
+            text: "yoo",
+            attachment: {
+              link: "https://cataas.com/cat",
+              type: "image",
+            },
+          }),
+        )
+        // TODO (now!) data attachment
+        .then(() => alice.sendMessage({ roomId: bobsRoom.id, text: "yooo" })),
     )
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
@@ -1027,9 +1038,22 @@ test("subscribe to room and receive sent messages (v3 sends, v2 receives)", t =>
           roomId: bobsRoom.id,
           hooks: {
             onMessage: concatBatch(3, messages => {
-              t.deepEqual(map(m => m.text, messages), ["yo2", "yoo2", "yooo2"])
+              t.equal(messages[0].text, "yo2")
               t.equal(messages[0].sender.name, "Alice")
               t.equal(messages[0].room.name, `Bob's new room`)
+
+              t.equal(messages[1].text, "yoo2")
+              t.equal(messages[1].sender.name, "Alice")
+              t.equal(messages[1].room.name, `Bob's new room`)
+              t.equal(typeof messages[1].attachment, "object")
+              t.equal(messages[1].attachment.type, "image")
+              t.equal(messages[1].attachment.name, "cat")
+              t.equal(messages[1].attachment.link, "https://cataas.com/cat")
+
+              t.equal(messages[2].text, "yooo2")
+              t.equal(messages[2].sender.name, "Alice")
+              t.equal(messages[2].room.name, `Bob's new room`)
+
               alice.disconnect()
               t.end()
             }),
@@ -1037,7 +1061,20 @@ test("subscribe to room and receive sent messages (v3 sends, v2 receives)", t =>
           messageLimit: 0,
         })
         .then(() =>
-          sendSimpleMessages(alice, bobsRoom, ["yo2", "yoo2", "yooo2"]),
+          alice.sendSimpleMessage({ roomId: bobsRoom.id, text: "yo2" }),
+        )
+        .then(() =>
+          alice.sendMultipartMessage({
+            roomId: bobsRoom.id,
+            parts: [
+              { type: "text/plain", content: "yoo2" },
+              { type: "image/cat", url: "https://cataas.com/cat" },
+            ],
+          }),
+        )
+        // TODO data attachment
+        .then(() =>
+          alice.sendSimpleMessage({ roomId: bobsRoom.id, text: "yooo2" }),
         ),
     )
     .catch(endWithErr(t))
@@ -1052,25 +1089,52 @@ test("subscribe to room and receive sent messages (v2 sends, v3 receives)", t =>
           roomId: bobsRoom.id,
           hooks: {
             onMessage: concatBatch(3, messages => {
-              messages.forEach(m => {
-                t.equal(m.sender.name, "Alice")
-                t.equal(m.room.name, `Bob's new room`)
-                t.equal(m.parts.length, 1)
-                t.equal(m.parts[0].partType, "inline")
-                t.equal(m.parts[0].payload.type, "text/plain")
-              })
-              t.deepEqual(messages.map(m => m.parts[0].payload.content), [
-                "yo3",
-                "yoo3",
-                "yooo3",
-              ])
+              t.equal(messages[0].sender.name, "Alice")
+              t.equal(messages[0].room.name, `Bob's new room`)
+              t.equal(messages[0].parts.length, 1)
+              t.equal(messages[0].parts[0].partType, "inline")
+              t.equal(messages[0].parts[0].payload.type, "text/plain")
+              t.equal(messages[0].parts[0].payload.content, "yo3")
+
+              t.equal(messages[1].sender.name, "Alice")
+              t.equal(messages[1].room.name, `Bob's new room`)
+              t.equal(messages[1].parts.length, 2)
+              t.equal(messages[1].parts[0].partType, "inline")
+              t.equal(messages[1].parts[0].payload.type, "text/plain")
+              t.equal(messages[1].parts[0].payload.content, "yoo3")
+              t.equal(messages[1].parts[1].partType, "url")
+              t.equal(messages[1].parts[1].payload.type, "image/x-pusher-img")
+              t.equal(
+                messages[1].parts[1].payload.url,
+                "https://cataas.com/cat",
+              )
+
+              t.equal(messages[2].sender.name, "Alice")
+              t.equal(messages[2].room.name, `Bob's new room`)
+              t.equal(messages[2].parts.length, 1)
+              t.equal(messages[2].parts[0].partType, "inline")
+              t.equal(messages[2].parts[0].payload.type, "text/plain")
+              t.equal(messages[2].parts[0].payload.content, "yooo3")
+
               alice.disconnect()
               t.end()
             }),
           },
           messageLimit: 0,
         })
-        .then(() => sendMessages(alice, bobsRoom, ["yo3", "yoo3", "yooo3"])),
+        .then(() => alice.sendMessage({ roomId: bobsRoom.id, text: "yo3" }))
+        .then(() =>
+          alice.sendMessage({
+            roomId: bobsRoom.id,
+            text: "yoo3",
+            attachment: {
+              link: "https://cataas.com/cat",
+              type: "image",
+            },
+          }),
+        )
+        // TODO (now!) data attachment
+        .then(() => alice.sendMessage({ roomId: bobsRoom.id, text: "yooo3" })),
     )
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
@@ -1084,18 +1148,33 @@ test("subscribe to room and receive sent messages (v3 sends, v3 receives)", t =>
           roomId: bobsRoom.id,
           hooks: {
             onMessage: concatBatch(3, messages => {
-              messages.forEach(m => {
-                t.equal(m.sender.name, "Alice")
-                t.equal(m.room.name, `Bob's new room`)
-                t.equal(m.parts.length, 1)
-                t.equal(m.parts[0].partType, "inline")
-                t.equal(m.parts[0].payload.type, "text/plain")
-              })
-              t.deepEqual(messages.map(m => m.parts[0].payload.content), [
-                "yo4",
-                "yoo4",
-                "yooo4",
-              ])
+              t.equal(messages[0].sender.name, "Alice")
+              t.equal(messages[0].room.name, `Bob's new room`)
+              t.equal(messages[0].parts.length, 1)
+              t.equal(messages[0].parts[0].partType, "inline")
+              t.equal(messages[0].parts[0].payload.type, "text/plain")
+              t.equal(messages[0].parts[0].payload.content, "yo4")
+
+              t.equal(messages[1].sender.name, "Alice")
+              t.equal(messages[1].room.name, `Bob's new room`)
+              t.equal(messages[1].parts.length, 2)
+              t.equal(messages[1].parts[0].partType, "inline")
+              t.equal(messages[1].parts[0].payload.type, "text/plain")
+              t.equal(messages[1].parts[0].payload.content, "yoo4")
+              t.equal(messages[1].parts[1].partType, "url")
+              t.equal(messages[1].parts[1].payload.type, "image/cat")
+              t.equal(
+                messages[1].parts[1].payload.url,
+                "https://cataas.com/cat",
+              )
+
+              t.equal(messages[2].sender.name, "Alice")
+              t.equal(messages[2].room.name, `Bob's new room`)
+              t.equal(messages[2].parts.length, 1)
+              t.equal(messages[2].parts[0].partType, "inline")
+              t.equal(messages[2].parts[0].payload.type, "text/plain")
+              t.equal(messages[2].parts[0].payload.content, "yooo4")
+
               alice.disconnect()
               t.end()
             }),
@@ -1103,7 +1182,20 @@ test("subscribe to room and receive sent messages (v3 sends, v3 receives)", t =>
           messageLimit: 0,
         })
         .then(() =>
-          sendSimpleMessages(alice, bobsRoom, ["yo4", "yoo4", "yooo4"]),
+          alice.sendSimpleMessage({ roomId: bobsRoom.id, text: "yo4" }),
+        )
+        .then(() =>
+          alice.sendMultipartMessage({
+            roomId: bobsRoom.id,
+            parts: [
+              { type: "text/plain", content: "yoo4" },
+              { type: "image/cat", url: "https://cataas.com/cat" },
+            ],
+          }),
+        )
+        // TODO data attachment
+        .then(() =>
+          alice.sendSimpleMessage({ roomId: bobsRoom.id, text: "yooo4" }),
         ),
     )
     .catch(endWithErr(t))
@@ -1124,8 +1216,10 @@ test("unsubscribe from room", t => {
           messageLimit: 0,
         })
         .then(() => alice.roomSubscriptions[bobsRoom.id].cancel())
-        .then(() => sendMessages(alice, bobsRoom, ["yoooo"]))
-        .then(() => sendSimpleMessages(alice, bobsRoom, ["yoooo3"]))
+        .then(() => alice.sendMessage({ roomId: bobsRoom.id, text: "yoooo" }))
+        .then(() =>
+          alice.sendSimpleMessage({ roomId: bobsRoom.id, text: "yoooo" }),
+        )
         .then(() =>
           setTimeout(() => {
             alice.disconnect()
@@ -1151,8 +1245,10 @@ test("unsubscribe from room (v3)", t => {
           messageLimit: 0,
         })
         .then(() => alice.roomSubscriptions[bobsRoom.id].cancel())
-        .then(() => sendMessages(alice, bobsRoom, ["yoooo"]))
-        .then(() => sendSimpleMessages(alice, bobsRoom, ["yoooo3"]))
+        .then(() => alice.sendMessage({ roomId: bobsRoom.id, text: "yoooo" }))
+        .then(() =>
+          alice.sendSimpleMessage({ roomId: bobsRoom.id, text: "yoooo" }),
+        )
         .then(() =>
           setTimeout(() => {
             alice.disconnect()

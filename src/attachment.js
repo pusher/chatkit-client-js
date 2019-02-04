@@ -4,7 +4,7 @@ export class Attachment {
     this.name = basicAttachment.name
     this.size = basicAttachment.size
 
-    if (basicAttachment.customData) {
+    if (basicAttachment.customData !== undefined) {
       this.customData = basicAttachment.customData
     }
 

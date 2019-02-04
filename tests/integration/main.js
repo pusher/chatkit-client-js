@@ -1377,11 +1377,10 @@ test("receive message with data attachment (v3)", t => {
 
               t.equal(m.parts[1].partType, "attachment")
               t.equal(m.parts[1].payload.type, "file/x-pusher-file")
-              // TODO I think this is an API bug.
-              // t.equal(
-              //   m.parts[1].payload.name,
-              //   "file:///with/slashes and spaces.json",
-              // )
+              t.equal(
+                m.parts[1].payload.name,
+                "file:///with/slashes and spaces.json",
+              )
               t.equal(m.parts[1].payload.size, 17)
 
               m.parts[1].payload

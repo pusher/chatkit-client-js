@@ -381,7 +381,7 @@ export class CurrentUser {
       })
       .then(res => {
         const messages = JSON.parse(res).map(m =>
-          this.decorateMessage(parseBasicMessage(m, this.serverInstanceV3)),
+          this.decorateMessage(parseBasicMessage(m)),
         )
         return this.userStore
           .fetchMissingUsers(uniq(map(prop("senderId"), messages)))

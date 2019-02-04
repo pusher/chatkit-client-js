@@ -999,9 +999,18 @@ test("subscribe to room and receive sent messages (v2 sends, v2 receives)", t =>
               t.equal(messages[2].text, "yooo")
               t.equal(messages[2].sender.name, "Alice")
               t.equal(messages[2].room.name, `Bob's new room`)
-
-              alice.disconnect()
-              t.end()
+              t.equal(messages[2].attachment.type, "file")
+              t.equal(
+                messages[2].attachment.name,
+                "file:///with/slashes and spaces.json",
+              )
+              fetch(messages[2].attachment.link)
+                .then(res => res.json())
+                .then(data => {
+                  t.deepEqual(data, { hello: "world" })
+                  alice.disconnect()
+                  t.end()
+                })
             }),
           },
           messageLimit: 0,
@@ -1017,8 +1026,19 @@ test("subscribe to room and receive sent messages (v2 sends, v2 receives)", t =>
             },
           }),
         )
-        // TODO (now!) data attachment
-        .then(() => alice.sendMessage({ roomId: bobsRoom.id, text: "yooo" })),
+        .then(() =>
+          alice.sendMessage({
+            roomId: bobsRoom.id,
+            text: "yooo",
+
+            attachment: {
+              file: new File([JSON.stringify({ hello: "world" })], {
+                type: "application/json",
+              }),
+              name: "file:///with/slashes and spaces.json",
+            },
+          }),
+        ),
     )
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)
@@ -1105,13 +1125,27 @@ test("subscribe to room and receive sent messages (v2 sends, v3 receives)", t =>
 
               t.equal(messages[2].sender.name, "Alice")
               t.equal(messages[2].room.name, `Bob's new room`)
-              t.equal(messages[2].parts.length, 1)
+              t.equal(messages[2].parts.length, 2)
               t.equal(messages[2].parts[0].partType, "inline")
               t.equal(messages[2].parts[0].payload.type, "text/plain")
               t.equal(messages[2].parts[0].payload.content, "yooo3")
-
-              alice.disconnect()
-              t.end()
+              t.equal(messages[2].parts[1].partType, "attachment")
+              t.equal(messages[2].parts[1].payload.type, "file/x-pusher-file")
+              t.equal(
+                messages[2].parts[1].payload.name,
+                "file:///with/slashes and spaces.json",
+              )
+              t.equal(messages[2].parts[1].payload.size, 17)
+              t.true(messages[2].parts[1].payload.urlExpiry())
+              messages[2].parts[1].payload
+                .url()
+                .then(url => fetch(url))
+                .then(res => res.json())
+                .then(data => {
+                  t.deepEqual(data, { hello: "world" })
+                  alice.disconnect()
+                  t.end()
+                })
             }),
           },
           messageLimit: 0,
@@ -1127,8 +1161,19 @@ test("subscribe to room and receive sent messages (v2 sends, v3 receives)", t =>
             },
           }),
         )
-        // TODO (now!) data attachment
-        .then(() => alice.sendMessage({ roomId: bobsRoom.id, text: "yooo3" })),
+        .then(() =>
+          alice.sendMessage({
+            roomId: bobsRoom.id,
+            text: "yooo3",
+
+            attachment: {
+              file: new File([JSON.stringify({ hello: "world" })], {
+                type: "application/json",
+              }),
+              name: "file:///with/slashes and spaces.json",
+            },
+          }),
+        ),
     )
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)

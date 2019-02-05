@@ -1,12 +1,32 @@
+import { Attachment } from "./attachment"
+
 export class Message {
-  constructor(basicMessage, userStore, roomStore) {
+  constructor(basicMessage, userStore, roomStore, instance) {
     this.id = basicMessage.id
     this.senderId = basicMessage.senderId
     this.roomId = basicMessage.roomId
-    this.text = basicMessage.text
-    this.attachment = basicMessage.attachment
     this.createdAt = basicMessage.createdAt
     this.updatedAt = basicMessage.updatedAt
+
+    if (basicMessage.parts) {
+      // v3 message
+      this.parts = basicMessage.parts.map(
+        ({ partType, payload }) =>
+          partType === "attachment"
+            ? {
+                partType,
+                payload: new Attachment(payload, this.roomId, instance),
+              }
+            : { partType, payload },
+      )
+    } else {
+      // v2 message
+      this.text = basicMessage.text
+      if (basicMessage.attachment) {
+        this.attachment = basicMessage.attachment
+      }
+    }
+
     this.userStore = userStore
     this.roomStore = roomStore
   }

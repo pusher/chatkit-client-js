@@ -26,7 +26,7 @@ import {
 } from "./config/production"
 
 let alicesRoom, bobsRoom, carolsRoom, alicesPrivateRoom
-let dataAttachmentUrl, bob, carol
+let bob, carol
 
 const TEST_TIMEOUT = 15 * 1000
 // Tests that involve presence subscriptions require a slightly longer timeout
@@ -854,6 +854,31 @@ test("fetch messages", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+test("fetch multipart messages", t => {
+  let alice
+  fetchUser(t, "alice")
+    .then(a => {
+      alice = a
+      return alice.fetchMultipartMessages({ roomId: bobsRoom.id })
+    })
+    .then(messages => {
+      t.deepEqual(messages.map(m => m.parts[0].payload.content), [
+        "hello",
+        "hey",
+        "hi",
+        "ho",
+      ])
+      t.equal(messages[0].sender.id, "alice")
+      t.equal(messages[0].sender.name, "Alice")
+      t.equal(messages[0].room.id, bobsRoom.id)
+      t.equal(messages[0].room.name, bobsRoom.name)
+      alice.disconnect()
+      t.end()
+    })
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test("fetch messages with pagination", t => {
   fetchUser(t, "alice")
     .then(alice =>
@@ -871,6 +896,37 @@ test("fetch messages with pagination", t => {
         )
         .then(messages => {
           t.deepEqual(messages.map(m => m.text), ["hello", "hey"])
+          alice.disconnect()
+          t.end()
+        }),
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test("fetch multipart messages with pagination", t => {
+  fetchUser(t, "alice")
+    .then(alice =>
+      alice
+        .fetchMultipartMessages({ roomId: bobsRoom.id, limit: 2 })
+        .then(messages => {
+          t.deepEqual(messages.map(m => m.parts[0].payload.content), [
+            "hi",
+            "ho",
+          ])
+          return messages[0].id
+        })
+        .then(initialId =>
+          alice.fetchMultipartMessages({
+            roomId: bobsRoom.id,
+            initialId,
+          }),
+        )
+        .then(messages => {
+          t.deepEqual(messages.map(m => m.parts[0].payload.content), [
+            "hello",
+            "hey",
+          ])
           alice.disconnect()
           t.end()
         }),
@@ -1358,6 +1414,26 @@ test("receive message with link attachment", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+test("receive multipart message with link attachment", t => {
+  fetchUser(t, "alice").then(alice =>
+    alice
+      .fetchMultipartMessages({ roomId: bobsRoom.id, limit: 1 })
+      .then(([message]) => {
+        t.equal(
+          message.parts.find(p => p.partType === "inline").payload.content,
+          "see attached link",
+        )
+        t.equal(
+          message.parts.find(p => p.partType === "url").payload.url,
+          "https://cataas.com/cat",
+        )
+        alice.disconnect()
+        t.end()
+      }),
+  )
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test(`send message with data attachment [sends a message to Bob's room]`, t => {
   fetchUser(t, "alice")
     .then(alice =>
@@ -1393,9 +1469,13 @@ test("receive message with data attachment", t => {
             message.attachment.name,
             "file:///with/slashes and spaces.json",
           )
-          dataAttachmentUrl = message.attachment.link
-          alice.disconnect()
-          t.end()
+          return fetch(message.attachment.link)
+            .then(res => res.json())
+            .then(data => {
+              t.deepEqual(data, { hello: "world" })
+              alice.disconnect()
+              t.end()
+            })
         }),
     )
     .catch(endWithErr(t))
@@ -1406,54 +1486,33 @@ test("receive message with data attachment (v3)", t => {
   fetchUser(t, "alice")
     .then(alice =>
       alice
-        // TODO replace with fetchMessagesMultipart when it exists
-        .subscribeToRoomMultipart({
-          roomId: bobsRoom.id,
-          messageLimit: 1,
-          hooks: {
-            onMessage: m => {
-              t.equal(m.sender.name, "Alice")
-              t.equal(m.room.name, `Bob's new room`)
-              t.equal(m.parts.length, 2)
+        .fetchMultipartMessages({ roomId: bobsRoom.id, limit: 1 })
+        .then(([message]) => {
+          t.equal(message.sender.name, "Alice")
+          t.equal(message.room.name, `Bob's new room`)
+          t.equal(message.parts.length, 2)
 
-              t.equal(m.parts[0].partType, "inline")
-              t.equal(m.parts[0].payload.type, "text/plain")
-              t.equal(m.parts[0].payload.content, "see attached json")
+          t.equal(message.parts[0].partType, "inline")
+          t.equal(message.parts[0].payload.type, "text/plain")
+          t.equal(message.parts[0].payload.content, "see attached json")
 
-              t.equal(m.parts[1].partType, "attachment")
-              t.equal(m.parts[1].payload.type, "file/x-pusher-file")
-              t.equal(
-                m.parts[1].payload.name,
-                "file:///with/slashes and spaces.json",
-              )
-              t.equal(m.parts[1].payload.size, 17)
+          t.equal(message.parts[1].partType, "attachment")
+          t.equal(message.parts[1].payload.type, "file/x-pusher-file")
+          t.equal(
+            message.parts[1].payload.name,
+            "file:///with/slashes and spaces.json",
+          )
+          t.equal(message.parts[1].payload.size, 17)
 
-              m.parts[1].payload
-                .url()
-                .then(url => fetch(url))
-                .then(res => res.json())
-                .then(data => {
-                  t.deepEqual(data, { hello: "world" })
-                  alice.disconnect()
-                  t.end()
-                })
-            },
-          },
-        }),
-    )
-    .catch(endWithErr(t))
-  t.timeoutAfter(TEST_TIMEOUT)
-})
-
-test("fetch data attachment", t => {
-  fetchUser(t, "alice")
-    .then(alice =>
-      fetch(dataAttachmentUrl)
-        .then(res => res.json())
-        .then(data => {
-          t.deepEqual(data, { hello: "world" })
-          alice.disconnect()
-          t.end()
+          return message.parts[1].payload
+            .url()
+            .then(url => fetch(url))
+            .then(res => res.json())
+            .then(data => {
+              t.deepEqual(data, { hello: "world" })
+              alice.disconnect()
+              t.end()
+            })
         }),
     )
     .catch(endWithErr(t))

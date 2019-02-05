@@ -98,6 +98,7 @@ export class CurrentUser {
     this.sendSimpleMessage = this.sendSimpleMessage.bind(this)
     this.sendMultipartMessage = this.sendMultipartMessage.bind(this)
     this.fetchMessages = this.fetchMessages.bind(this)
+    this.fetchMultipartMessages = this.fetchMultipartMessages.bind(this)
     this.subscribeToRoom = this.subscribeToRoom.bind(this)
     this.subscribeToRoomMultipart = this.subscribeToRoomMultipart.bind(this)
     this.updateRoom = this.updateRoom.bind(this)
@@ -365,12 +366,12 @@ export class CurrentUser {
       })
   }
 
-  fetchMessages({ roomId, initialId, limit, direction } = {}) {
+  fetchMessages({ roomId, initialId, limit, direction, serverInstance } = {}) {
     typeCheck("roomId", "string", roomId)
     initialId && typeCheck("initialId", "number", initialId)
     limit && typeCheck("limit", "number", limit)
     direction && checkOneOf("direction", ["older", "newer"], direction)
-    return this.serverInstanceV2
+    return (serverInstance || this.serverInstanceV2)
       .request({
         method: "GET",
         path: `/rooms/${encodeURIComponent(roomId)}/messages?${urlEncode({
@@ -391,6 +392,13 @@ export class CurrentUser {
         this.logger.warn(`error fetching messages from room ${roomId}:`, err)
         throw err
       })
+  }
+
+  fetchMultipartMessages(options = {}) {
+    return this.fetchMessages({
+      ...options,
+      serverInstance: this.serverInstanceV3,
+    })
   }
 
   subscribeToRoom({ roomId, hooks = {}, messageLimit, serverInstance } = {}) {

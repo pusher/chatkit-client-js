@@ -1094,9 +1094,13 @@ test("subscribe to room and receive sent messages (v2 sends, v2 receives)", t =>
             text: "yooo",
 
             attachment: {
-              file: new File([JSON.stringify({ hello: "world" })], {
-                type: "application/json",
-              }),
+              file: new File(
+                [JSON.stringify({ hello: "world" })],
+                "file:///with/slashes and spaces.json",
+                {
+                  type: "application/json",
+                },
+              ),
               name: "file:///with/slashes and spaces.json",
             },
           }),
@@ -1129,9 +1133,18 @@ test("subscribe to room and receive sent messages (v3 sends, v2 receives)", t =>
               t.equal(messages[2].text, "yooo2")
               t.equal(messages[2].sender.name, "Alice")
               t.equal(messages[2].room.name, `Bob's new room`)
-
-              alice.disconnect()
-              t.end()
+              t.equal(messages[2].attachment.type, "file")
+              t.equal(
+                messages[2].attachment.name,
+                "file:///with/slashes and spaces.json",
+              )
+              fetch(messages[2].attachment.link)
+                .then(res => res.json())
+                .then(data => {
+                  t.deepEqual(data, { hello: "world" })
+                  alice.disconnect()
+                  t.end()
+                })
             }),
           },
           messageLimit: 0,
@@ -1148,9 +1161,22 @@ test("subscribe to room and receive sent messages (v3 sends, v2 receives)", t =>
             ],
           }),
         )
-        // TODO data attachment
         .then(() =>
-          alice.sendSimpleMessage({ roomId: bobsRoom.id, text: "yooo2" }),
+          alice.sendMultipartMessage({
+            roomId: bobsRoom.id,
+            parts: [
+              { type: "text/plain", content: "yooo2" },
+              {
+                file: new File(
+                  [JSON.stringify({ hello: "world" })],
+                  "file:///with/slashes and spaces.json",
+                  {
+                    type: "application/json",
+                  },
+                ),
+              },
+            ],
+          }),
         ),
     )
     .catch(endWithErr(t))
@@ -1229,9 +1255,13 @@ test("subscribe to room and receive sent messages (v2 sends, v3 receives)", t =>
             text: "yooo3",
 
             attachment: {
-              file: new File([JSON.stringify({ hello: "world" })], {
-                type: "application/json",
-              }),
+              file: new File(
+                [JSON.stringify({ hello: "world" })],
+                "file:///with/slashes and spaces.json",
+                {
+                  type: "application/json",
+                },
+              ),
               name: "file:///with/slashes and spaces.json",
             },
           }),
@@ -1271,13 +1301,27 @@ test("subscribe to room and receive sent messages (v3 sends, v3 receives)", t =>
 
               t.equal(messages[2].sender.name, "Alice")
               t.equal(messages[2].room.name, `Bob's new room`)
-              t.equal(messages[2].parts.length, 1)
+              t.equal(messages[2].parts.length, 2)
               t.equal(messages[2].parts[0].partType, "inline")
               t.equal(messages[2].parts[0].payload.type, "text/plain")
               t.equal(messages[2].parts[0].payload.content, "yooo4")
-
-              alice.disconnect()
-              t.end()
+              t.equal(messages[2].parts[1].partType, "attachment")
+              t.equal(messages[2].parts[1].payload.type, "application/json")
+              t.equal(
+                messages[2].parts[1].payload.name,
+                "file:///with/slashes and spaces.json",
+              )
+              t.equal(messages[2].parts[1].payload.size, 17)
+              t.true(messages[2].parts[1].payload.urlExpiry())
+              messages[2].parts[1].payload
+                .url()
+                .then(url => fetch(url))
+                .then(res => res.json())
+                .then(data => {
+                  t.deepEqual(data, { hello: "world" })
+                  alice.disconnect()
+                  t.end()
+                })
             }),
           },
           messageLimit: 0,
@@ -1294,9 +1338,22 @@ test("subscribe to room and receive sent messages (v3 sends, v3 receives)", t =>
             ],
           }),
         )
-        // TODO data attachment
         .then(() =>
-          alice.sendSimpleMessage({ roomId: bobsRoom.id, text: "yooo4" }),
+          alice.sendMultipartMessage({
+            roomId: bobsRoom.id,
+            parts: [
+              { type: "text/plain", content: "yooo4" },
+              {
+                file: new File(
+                  [JSON.stringify({ hello: "world" })],
+                  "file:///with/slashes and spaces.json",
+                  {
+                    type: "application/json",
+                  },
+                ),
+              },
+            ],
+          }),
         ),
     )
     .catch(endWithErr(t))
@@ -1442,9 +1499,13 @@ test(`send message with data attachment [sends a message to Bob's room]`, t => {
           roomId: bobsRoom.id,
           text: "see attached json",
           attachment: {
-            file: new File([JSON.stringify({ hello: "world" })], {
-              type: "application/json",
-            }),
+            file: new File(
+              [JSON.stringify({ hello: "world" })],
+              "file:///with/slashes and spaces.json",
+              {
+                type: "application/json",
+              },
+            ),
             name: "file:///with/slashes and spaces.json",
           },
         })
@@ -1482,6 +1543,36 @@ test("receive message with data attachment", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+test(`send message with data attachment (v3) [sends a message to Bob's room]`, t => {
+  fetchUser(t, "alice")
+    .then(alice =>
+      alice
+        .sendMultipartMessage({
+          roomId: bobsRoom.id,
+          parts: [
+            {
+              type: "text/plain",
+              content: "see attached json (v3)",
+            },
+            {
+              file: new File(
+                [JSON.stringify({ hello: "world" })],
+                "file:///with/slashes and spaces.json",
+                { type: "application/json" },
+              ),
+              customData: { foo: "bar" },
+            },
+          ],
+        })
+        .then(() => {
+          alice.disconnect()
+          t.end()
+        }),
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test("receive message with data attachment (v3)", t => {
   fetchUser(t, "alice")
     .then(alice =>
@@ -1494,15 +1585,16 @@ test("receive message with data attachment (v3)", t => {
 
           t.equal(message.parts[0].partType, "inline")
           t.equal(message.parts[0].payload.type, "text/plain")
-          t.equal(message.parts[0].payload.content, "see attached json")
+          t.equal(message.parts[0].payload.content, "see attached json (v3)")
 
           t.equal(message.parts[1].partType, "attachment")
-          t.equal(message.parts[1].payload.type, "file/x-pusher-file")
+          t.equal(message.parts[1].payload.type, "application/json")
           t.equal(
             message.parts[1].payload.name,
             "file:///with/slashes and spaces.json",
           )
           t.equal(message.parts[1].payload.size, 17)
+          t.deepEqual(message.parts[1].payload.customData, { foo: "bar" })
 
           return message.parts[1].payload
             .url()

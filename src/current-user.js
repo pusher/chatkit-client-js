@@ -11,6 +11,8 @@ import {
   values,
 } from "ramda"
 
+import { sendRawRequest } from "@pusher/platform"
+
 import {
   checkOneOf,
   typeCheck,
@@ -118,6 +120,7 @@ export class CurrentUser {
     )
     this.subscribeToUserPresence = this.subscribeToUserPresence.bind(this)
     this.disconnect = this.disconnect.bind(this)
+    this._uploadAttachment = this._uploadAttachment.bind(this)
   }
 
   /* public */
@@ -333,7 +336,6 @@ export class CurrentUser {
     })
   }
 
-  // TODO handle attachment parts
   sendMultipartMessage({ roomId, parts } = {}) {
     typeCheck("roomId", "string", roomId)
     typeCheckArr("parts", "object", parts)
@@ -342,23 +344,30 @@ export class CurrentUser {
         new TypeError("message must contain at least one part"),
       )
     }
-    parts.forEach(part => {
-      typeCheck("part.type", "string", part.type)
-      part.content && typeCheck("part.content", "string", part.content)
-      part.url && typeCheck("part.url", "string", part.url)
-    })
-    return this.serverInstanceV3
-      .request({
-        method: "POST",
-        path: `/rooms/${encodeURIComponent(roomId)}/messages`,
-        json: {
-          parts: parts.map(({ type, content, url }) => ({
-            type,
-            content,
-            url,
-          })),
-        },
-      })
+    return Promise.all(
+      parts.map(part => {
+        part.type = part.type || (part.file && part.file.type)
+        typeCheck("part.type", "string", part.type)
+        part.content && typeCheck("part.content", "string", part.content)
+        part.url && typeCheck("part.url", "string", part.url)
+        part.name && typeCheck("part.name", "string", part.name)
+        return part.file ? this._uploadAttachment({ roomId, part }) : part
+      }),
+    )
+      .then(parts =>
+        this.serverInstanceV3.request({
+          method: "POST",
+          path: `/rooms/${encodeURIComponent(roomId)}/messages`,
+          json: {
+            parts: parts.map(({ type, content, url, attachment }) => ({
+              type,
+              content,
+              url,
+              attachment,
+            })),
+          },
+        }),
+      )
       .then(res => JSON.parse(res).message_id)
       .catch(err => {
         this.logger.warn(`error sending message to room ${roomId}:`, err)
@@ -506,6 +515,32 @@ export class CurrentUser {
         body,
       })
       .then(JSON.parse)
+  }
+
+  _uploadAttachment({ roomId, part: { type, name, customData, file } }) {
+    return this.serverInstanceV3
+      .request({
+        method: "POST",
+        path: `/rooms/${encodeURIComponent(roomId)}/attachments`,
+        json: {
+          content_type: type,
+          content_length: file.size,
+          origin: window && window.location && window.location.origin,
+          name: name || file.name,
+          custom_data: customData,
+        },
+      })
+      .then(res => {
+        const {
+          attachment_id: attachmentId,
+          upload_url: uploadURL,
+        } = JSON.parse(res)
+        return sendRawRequest({
+          method: "PUT",
+          url: uploadURL,
+          body: file,
+        }).then(() => ({ type, attachment: { id: attachmentId } }))
+      })
   }
 
   isMemberOf(roomId) {

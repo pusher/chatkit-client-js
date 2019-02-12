@@ -1611,6 +1611,46 @@ test("receive message with data attachment (v3)", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+test(`large inline part is upgraded to attachment [sends a message to Bob's room]`, t => {
+  let buns = "🐇🐇"
+  while (buns.length < 2000) {
+    buns = buns + buns
+  }
+  fetchUser(t, "alice")
+    .then(alice =>
+      alice
+        .sendSimpleMessage({
+          roomId: bobsRoom.id,
+          text: buns,
+        })
+        .then(() =>
+          alice.fetchMultipartMessages({ roomId: bobsRoom.id, limit: 1 }),
+        )
+        .then(([message]) => {
+          t.equal(message.sender.name, "Alice")
+          t.equal(message.room.name, `Bob's new room`)
+          t.equal(message.parts.length, 1)
+
+          t.equal(message.parts[0].partType, "attachment")
+          t.equal(message.parts[0].payload.type, "text/plain")
+          t.true(message.parts[0].payload.name, "message part has a name")
+          t.equal(message.parts[0].payload.size, new Blob([buns]).size)
+
+          return message.parts[0].payload
+            .url()
+            .then(url => fetch(url))
+            .then(res => res.text())
+            .then(data => {
+              t.equal(data, buns)
+              alice.disconnect()
+              t.end()
+            })
+        }),
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test("[setup] create Carol", t => {
   server
     .createUser({ id: "carol", name: "Carol" })
@@ -1630,7 +1670,7 @@ test("subscribe to room implicitly joins", t => {
         .subscribeToRoom({ roomId: carolsRoom.id })
         .then(room => {
           t.equal(room.id, carolsRoom.id)
-          t.true(room.name, `Carol's room`)
+          t.equal(room.name, `Carol's room`)
           t.true(
             any(r => r.id === carolsRoom.id, alice.rooms),
             `Alice's rooms include Carol's room`,

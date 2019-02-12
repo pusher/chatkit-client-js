@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@pusher/platform": "^0.16.1",
-    "ramda": "^0.25.0"
+    "ramda": "^0.25.0",
+    "uuid": "^3.3.2"
   },
   "devDependencies": {
     "@pusher/chatkit-server": "0.13.0",

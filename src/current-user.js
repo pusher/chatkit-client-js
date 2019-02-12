@@ -10,6 +10,7 @@ import {
   uniq,
   values,
 } from "ramda"
+import uuid from "uuid/v4"
 
 import { sendRawRequest } from "@pusher/platform"
 
@@ -31,7 +32,7 @@ import { UserPresenceSubscription } from "./user-presence-subscription"
 import { CursorSubscription } from "./cursor-subscription"
 import { RoomSubscription } from "./room-subscription"
 import { Message } from "./message"
-import { SET_CURSOR_WAIT } from "./constants"
+import { SET_CURSOR_WAIT, MAX_INLINE_CONTENT_BYTES } from "./constants"
 
 export class CurrentUser {
   constructor({
@@ -351,6 +352,11 @@ export class CurrentUser {
         part.content && typeCheck("part.content", "string", part.content)
         part.url && typeCheck("part.url", "string", part.url)
         part.name && typeCheck("part.name", "string", part.name)
+        if (part.content && part.content.length > MAX_INLINE_CONTENT_BYTES) {
+          part.file = new File([part.content], uuid(), {
+            type: part.type,
+          })
+        }
         return part.file ? this._uploadAttachment({ roomId, part }) : part
       }),
     )

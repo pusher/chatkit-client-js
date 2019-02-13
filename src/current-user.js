@@ -545,6 +545,9 @@ export class CurrentUser {
           method: "PUT",
           url: uploadURL,
           body: file,
+          headers: {
+            "content-type": type,
+          },
         }).then(() => ({ type, attachment: { id: attachmentId } }))
       })
   }

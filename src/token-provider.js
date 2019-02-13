@@ -3,13 +3,14 @@ import { sendRawRequest } from "@pusher/platform"
 import { appendQueryParams, typeCheck, unixSeconds, urlEncode } from "./utils"
 
 export class TokenProvider {
-  constructor({ url, queryParams, headers } = {}) {
+  constructor({ url, queryParams, headers, withCredentials } = {}) {
     typeCheck("url", "string", url)
     queryParams && typeCheck("queryParams", "object", queryParams)
     headers && typeCheck("headers", "object", headers)
     this.url = url
     this.queryParams = queryParams
     this.headers = headers
+    this.withCredentials = withCredentials
 
     this.fetchToken = this.fetchToken.bind(this)
     this.fetchFreshToken = this.fetchFreshToken.bind(this)
@@ -40,6 +41,7 @@ export class TokenProvider {
         "content-type": "application/x-www-form-urlencoded",
         ...this.headers,
       },
+      withCredentials: this.withCredentials,
     })
       .then(res => {
         const { access_token: token, expires_in: expiresIn } = JSON.parse(res)

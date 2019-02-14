@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.3.1...HEAD)
 
+## [1.3.2](https://github.com/pusher/chatkit-client-js/compare/1.3.1...1.3.2)
+
+### Additions
+
+- The `TokenProvider` now accepts a `withCredentials` option which it forwards
+  to `XMLHttpRequest` internally. [See
+  here.](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials)
+
 ## [1.3.1](https://github.com/pusher/chatkit-client-js/compare/1.3.0...1.3.1)
 
 ### Fixes

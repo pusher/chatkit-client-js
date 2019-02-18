@@ -1611,7 +1611,7 @@ test("receive message with data attachment (v3)", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
-test(`large inline part is upgraded to attachment [sends a message to Bob's room]`, t => {
+test(`large inline parts are rejected with an error`, t => {
   let buns = "🐇🐇"
   while (buns.length < 2000) {
     buns = buns + buns
@@ -1623,28 +1623,13 @@ test(`large inline part is upgraded to attachment [sends a message to Bob's room
           roomId: bobsRoom.id,
           text: buns,
         })
-        .then(() =>
-          alice.fetchMultipartMessages({ roomId: bobsRoom.id, limit: 1 }),
-        )
-        .then(([message]) => {
-          t.equal(message.sender.name, "Alice")
-          t.equal(message.room.name, `Bob's new room`)
-          t.equal(message.parts.length, 1)
-
-          t.equal(message.parts[0].partType, "attachment")
-          t.equal(message.parts[0].payload.type, "text/plain")
-          t.true(message.parts[0].payload.name, "message part has a name")
-          t.equal(message.parts[0].payload.size, new Blob([buns]).size)
-
-          return message.parts[0].payload
-            .url()
-            .then(url => fetch(url))
-            .then(res => res.text())
-            .then(data => {
-              t.equal(data, buns)
-              alice.disconnect()
-              t.end()
-            })
+        .catch(err => {
+          t.true(
+            toString(err).match(/message_size_limit_exceeded/),
+            "part too large error",
+          )
+          alice.disconnect()
+          t.end()
         }),
     )
     .catch(endWithErr(t))

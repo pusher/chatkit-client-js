@@ -4,7 +4,21 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.3.1...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.4.0...HEAD)
+
+## [1.4.0](https://github.com/pusher/chatkit-client-js/compare/1.3.2...1.4.0)
+
+### Additions
+
+- Multipart messaging support: `sendSimpleMessage`, `sendMultipartMessage`,
+  `fetchMessagesMultipart`, and `subscribeToRoomMultipart` all use the new
+  multipart message format.
+
+### Deprications
+
+- `sendMessage`, `fetchMessages`, and `subscribeToRoom` are depricated in
+  favour of their multipart counterparts. They will be removed in a future
+  major release.
 
 ## [1.3.2](https://github.com/pusher/chatkit-client-js/compare/1.3.1...1.3.2)
 

@@ -10,7 +10,7 @@ export class RoomSubscription {
       roomId: options.roomId,
       messageLimit: options.messageLimit,
       userId: options.userId,
-      instance: options.apiInstance,
+      instance: options.serverInstance,
       userStore: options.userStore,
       roomStore: options.roomStore,
       typingIndicators: options.typingIndicators,
@@ -46,7 +46,7 @@ export class RoomSubscription {
 
     this.membershipSub = new MembershipSubscription({
       roomId: options.roomId,
-      instance: options.apiInstance,
+      instance: options.serverInstance,
       userStore: options.userStore,
       roomStore: options.roomStore,
       logger: options.logger,

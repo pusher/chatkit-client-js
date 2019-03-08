@@ -1,5 +1,4 @@
 import {
-  compose,
   contains,
   has,
   map,
@@ -11,6 +10,8 @@ import {
   uniq,
   values,
 } from "ramda"
+
+import { sendRawRequest } from "@pusher/platform"
 
 import {
   checkOneOf,
@@ -34,7 +35,8 @@ import { SET_CURSOR_WAIT } from "./constants"
 
 export class CurrentUser {
   constructor({
-    apiInstance,
+    serverInstanceV2,
+    serverInstanceV3,
     connectionTimeout,
     cursorsInstance,
     filesInstance,
@@ -48,20 +50,21 @@ export class CurrentUser {
     }
     this.id = id
     this.encodedId = encodeURIComponent(this.id)
-    this.apiInstance = apiInstance
+    this.serverInstanceV2 = serverInstanceV2
+    this.serverInstanceV3 = serverInstanceV3
     this.filesInstance = filesInstance
     this.cursorsInstance = cursorsInstance
     this.connectionTimeout = connectionTimeout
     this.presenceInstance = presenceInstance
-    this.logger = apiInstance.logger
+    this.logger = serverInstanceV3.logger
     this.presenceStore = {}
     this.userStore = new UserStore({
-      instance: this.apiInstance,
+      instance: this.serverInstanceV3,
       presenceStore: this.presenceStore,
       logger: this.logger,
     })
     this.roomStore = new RoomStore({
-      instance: this.apiInstance,
+      instance: this.serverInstanceV3,
       userStore: this.userStore,
       isSubscribedTo: userId => this.isSubscribedTo(userId),
       logger: this.logger,
@@ -74,7 +77,7 @@ export class CurrentUser {
     })
     this.typingIndicators = new TypingIndicators({
       hooks: this.hooks,
-      instance: this.apiInstance,
+      instance: this.serverInstanceV3,
       logger: this.logger,
     })
     this.userStore.onSetHooks.push(userId =>
@@ -94,8 +97,12 @@ export class CurrentUser {
     this.addUserToRoom = this.addUserToRoom.bind(this)
     this.removeUserFromRoom = this.removeUserFromRoom.bind(this)
     this.sendMessage = this.sendMessage.bind(this)
+    this.sendSimpleMessage = this.sendSimpleMessage.bind(this)
+    this.sendMultipartMessage = this.sendMultipartMessage.bind(this)
     this.fetchMessages = this.fetchMessages.bind(this)
+    this.fetchMultipartMessages = this.fetchMultipartMessages.bind(this)
     this.subscribeToRoom = this.subscribeToRoom.bind(this)
+    this.subscribeToRoomMultipart = this.subscribeToRoomMultipart.bind(this)
     this.updateRoom = this.updateRoom.bind(this)
     this.deleteRoom = this.deleteRoom.bind(this)
     this.setReadCursorRequest = this.setReadCursorRequest.bind(this)
@@ -113,6 +120,7 @@ export class CurrentUser {
     )
     this.subscribeToUserPresence = this.subscribeToUserPresence.bind(this)
     this.disconnect = this.disconnect.bind(this)
+    this._uploadAttachment = this._uploadAttachment.bind(this)
   }
 
   /* public */
@@ -173,7 +181,7 @@ export class CurrentUser {
     name && typeCheck("name", "string", name)
     addUserIds && typeCheckArr("addUserIds", "string", addUserIds)
     customData && typeCheck("customData", "object", customData)
-    return this.apiInstance
+    return this.serverInstanceV3
       .request({
         method: "POST",
         path: "/rooms",
@@ -193,7 +201,7 @@ export class CurrentUser {
   }
 
   getJoinableRooms() {
-    return this.apiInstance
+    return this.serverInstanceV3
       .request({
         method: "GET",
         path: `/users/${this.encodedId}/rooms?joinable=true`,
@@ -215,7 +223,7 @@ export class CurrentUser {
     if (this.isMemberOf(roomId)) {
       return this.roomStore.get(roomId)
     }
-    return this.apiInstance
+    return this.serverInstanceV3
       .request({
         method: "POST",
         path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
@@ -234,7 +242,7 @@ export class CurrentUser {
     return this.roomStore
       .get(roomId)
       .then(room =>
-        this.apiInstance
+        this.serverInstanceV3
           .request({
             method: "POST",
             path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
@@ -252,7 +260,7 @@ export class CurrentUser {
   addUserToRoom({ userId, roomId } = {}) {
     typeCheck("userId", "string", userId)
     typeCheck("roomId", "string", roomId)
-    return this.apiInstance
+    return this.serverInstanceV3
       .request({
         method: "PUT",
         path: `/rooms/${encodeURIComponent(roomId)}/users/add`,
@@ -270,7 +278,7 @@ export class CurrentUser {
   removeUserFromRoom({ userId, roomId } = {}) {
     typeCheck("userId", "string", userId)
     typeCheck("roomId", "string", roomId)
-    return this.apiInstance
+    return this.serverInstanceV3
       .request({
         method: "PUT",
         path: `/rooms/${encodeURIComponent(roomId)}/users/remove`,
@@ -303,7 +311,7 @@ export class CurrentUser {
       }
     })
       .then(attachment =>
-        this.apiInstance.request({
+        this.serverInstanceV2.request({
           method: "POST",
           path: `/rooms/${encodeURIComponent(roomId)}/messages`,
           json: { text, attachment },
@@ -321,12 +329,58 @@ export class CurrentUser {
       })
   }
 
-  fetchMessages({ roomId, initialId, limit, direction } = {}) {
+  sendSimpleMessage({ roomId, text } = {}) {
+    return this.sendMultipartMessage({
+      roomId,
+      parts: [{ type: "text/plain", content: text }],
+    })
+  }
+
+  sendMultipartMessage({ roomId, parts } = {}) {
+    typeCheck("roomId", "string", roomId)
+    typeCheckArr("parts", "object", parts)
+    if (parts.length === 0) {
+      return Promise.reject(
+        new TypeError("message must contain at least one part"),
+      )
+    }
+    return Promise.all(
+      parts.map(part => {
+        part.type = part.type || (part.file && part.file.type)
+        typeCheck("part.type", "string", part.type)
+        part.content && typeCheck("part.content", "string", part.content)
+        part.url && typeCheck("part.url", "string", part.url)
+        part.name && typeCheck("part.name", "string", part.name)
+        return part.file ? this._uploadAttachment({ roomId, part }) : part
+      }),
+    )
+      .then(parts =>
+        this.serverInstanceV3.request({
+          method: "POST",
+          path: `/rooms/${encodeURIComponent(roomId)}/messages`,
+          json: {
+            parts: parts.map(({ type, content, url, attachment }) => ({
+              type,
+              content,
+              url,
+              attachment,
+            })),
+          },
+        }),
+      )
+      .then(res => JSON.parse(res).message_id)
+      .catch(err => {
+        this.logger.warn(`error sending message to room ${roomId}:`, err)
+        throw err
+      })
+  }
+
+  fetchMessages({ roomId, initialId, limit, direction, serverInstance } = {}) {
     typeCheck("roomId", "string", roomId)
     initialId && typeCheck("initialId", "number", initialId)
     limit && typeCheck("limit", "number", limit)
     direction && checkOneOf("direction", ["older", "newer"], direction)
-    return this.apiInstance
+    return (serverInstance || this.serverInstanceV2)
       .request({
         method: "GET",
         path: `/rooms/${encodeURIComponent(roomId)}/messages?${urlEncode({
@@ -336,12 +390,8 @@ export class CurrentUser {
         })}`,
       })
       .then(res => {
-        const messages = map(
-          compose(
-            this.decorateMessage,
-            parseBasicMessage,
-          ),
-          JSON.parse(res),
+        const messages = JSON.parse(res).map(m =>
+          this.decorateMessage(parseBasicMessage(m)),
         )
         return this.userStore
           .fetchMissingUsers(uniq(map(prop("senderId"), messages)))
@@ -353,7 +403,14 @@ export class CurrentUser {
       })
   }
 
-  subscribeToRoom({ roomId, hooks = {}, messageLimit } = {}) {
+  fetchMultipartMessages(options = {}) {
+    return this.fetchMessages({
+      ...options,
+      serverInstance: this.serverInstanceV3,
+    })
+  }
+
+  subscribeToRoom({ roomId, hooks = {}, messageLimit, serverInstance } = {}) {
     typeCheck("roomId", "string", roomId)
     typeCheckObj("hooks", "function", hooks)
     messageLimit && typeCheck("messageLimit", "number", messageLimit)
@@ -362,7 +419,7 @@ export class CurrentUser {
     }
     this.hooks.rooms[roomId] = hooks
     const roomSubscription = new RoomSubscription({
-      apiInstance: this.apiInstance,
+      serverInstance: serverInstance || this.serverInstanceV2,
       connectionTimeout: this.connectionTimeout,
       cursorStore: this.cursorStore,
       cursorsInstance: this.cursorsInstance,
@@ -384,12 +441,19 @@ export class CurrentUser {
       })
   }
 
+  subscribeToRoomMultipart(options = {}) {
+    return this.subscribeToRoom({
+      ...options,
+      serverInstance: this.serverInstanceV3,
+    })
+  }
+
   updateRoom({ roomId, name, customData, ...rest } = {}) {
     typeCheck("roomId", "string", roomId)
     name && typeCheck("name", "string", name)
     rest.private && typeCheck("private", "boolean", rest.private)
     customData && typeCheck("customData", "object", customData)
-    return this.apiInstance
+    return this.serverInstanceV3
       .request({
         method: "PUT",
         path: `/rooms/${encodeURIComponent(roomId)}`,
@@ -408,7 +472,7 @@ export class CurrentUser {
 
   deleteRoom({ roomId } = {}) {
     typeCheck("roomId", "string", roomId)
-    return this.apiInstance
+    return this.serverInstanceV3
       .request({
         method: "DELETE",
         path: `/rooms/${encodeURIComponent(roomId)}`,
@@ -453,6 +517,35 @@ export class CurrentUser {
       .then(JSON.parse)
   }
 
+  _uploadAttachment({ roomId, part: { type, name, customData, file } }) {
+    return this.serverInstanceV3
+      .request({
+        method: "POST",
+        path: `/rooms/${encodeURIComponent(roomId)}/attachments`,
+        json: {
+          content_type: type,
+          content_length: file.size,
+          origin: window && window.location && window.location.origin,
+          name: name || file.name,
+          custom_data: customData,
+        },
+      })
+      .then(res => {
+        const {
+          attachment_id: attachmentId,
+          upload_url: uploadURL,
+        } = JSON.parse(res)
+        return sendRawRequest({
+          method: "PUT",
+          url: uploadURL,
+          body: file,
+          headers: {
+            "content-type": type,
+          },
+        }).then(() => ({ type, attachment: { id: attachmentId } }))
+      })
+  }
+
   isMemberOf(roomId) {
     return contains(roomId, map(prop("id"), this.rooms))
   }
@@ -462,7 +555,12 @@ export class CurrentUser {
   }
 
   decorateMessage(basicMessage) {
-    return new Message(basicMessage, this.userStore, this.roomStore)
+    return new Message(
+      basicMessage,
+      this.userStore,
+      this.roomStore,
+      this.serverInstanceV3,
+    )
   }
 
   setPropertiesFromBasicUser(basicUser) {
@@ -477,7 +575,7 @@ export class CurrentUser {
     this.userSubscription = new UserSubscription({
       hooks: this.hooks,
       userId: this.id,
-      instance: this.apiInstance,
+      instance: this.serverInstanceV3,
       roomStore: this.roomStore,
       typingIndicators: this.typingIndicators,
       logger: this.logger,

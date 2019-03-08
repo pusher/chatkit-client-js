@@ -74,6 +74,7 @@ export class MessageSubscription {
         parseBasicMessage(data),
         this.userStore,
         this.roomStore,
+        this.instance,
       ),
       ready: false,
     }

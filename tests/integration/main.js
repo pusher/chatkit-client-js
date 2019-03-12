@@ -1543,6 +1543,37 @@ test("receive message with data attachment", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+test("send multipart message with malformed file fails", t => {
+  let alice
+  fetchUser(t, "alice")
+    .then(a => {
+      alice = a
+      alice.sendMultipartMessage({
+        roomId: bobsRoom.id,
+        parts: [
+          {
+            type: "some/rubbish",
+            file: {
+              name: "some-file.rubbish",
+              uri: "file:///some-file.rubbish",
+            },
+          },
+        ],
+      })
+    })
+    .catch(err => {
+      t.true(
+        toString(err).match(
+          /expected part\.file\.size to be of type number but was of type undefined/,
+        ),
+        "attachment error",
+      )
+      alice.disconnect()
+      t.end()
+    }),
+    t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test(`send message with data attachment (v3) [sends a message to Bob's room]`, t => {
   fetchUser(t, "alice")
     .then(alice =>

@@ -351,6 +351,7 @@ export class CurrentUser {
         part.content && typeCheck("part.content", "string", part.content)
         part.url && typeCheck("part.url", "string", part.url)
         part.name && typeCheck("part.name", "string", part.name)
+        part.file && typeCheck("part.file.size", "number", part.file.size)
         return part.file ? this._uploadAttachment({ roomId, part }) : part
       }),
     )

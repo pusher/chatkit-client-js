@@ -1990,7 +1990,7 @@ test("non-admin delete room fails gracefully", t => {
 
 test("[setup] promote Alice to admin", t => {
   server
-    .assignGlobalRoleToUser({ userId: "alice", roleName: "admin" })
+    .assignGlobalRoleToUser({ userId: "alice", name: "admin" })
     .then(() => t.end())
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)

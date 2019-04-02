@@ -4,6 +4,7 @@
 [![Twitter](https://img.shields.io/badge/twitter-@Pusher-blue.svg?style=flat)](http://twitter.com/Pusher)
 [![GitHub license](https://img.shields.io/badge/license-MIT-lightgrey.svg)](https://github.com/pusher/chatkit-client-js/blob/master/LICENSE.md)
 [![npm version](https://badge.fury.io/js/%40pusher%2Fchatkit-client.svg)](https://badge.fury.io/js/%40pusher%2Fchatkit-client)
+[![Build Status](https://travis-ci.org/pusher/chatkit-client-js.svg?branch=master)](https://travis-ci.org/pusher/chatkit-client-js)
 
 The JavaScript client for Pusher Chatkit. If you aren't already here, you can find the source [on Github](https://github.com/pusher/chatkit-client-js).
 

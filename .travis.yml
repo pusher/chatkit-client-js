@@ -27,4 +27,4 @@ before_script:
   - sed -i -e "s|https://token.provider.url|$CHATKIT_TOKEN_PROVIDER_URL|g" tests/integration/config/production.js
 
 script:
-  - xvfb-run yarn lint:build:test
+  - xvfb-run yarn lint:build:test:$BROWSER

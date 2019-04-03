@@ -9,6 +9,10 @@ addons:
     packages:
       - xvfb
 
+env:
+  - BROWSER=chrome
+  - BROWSER=firefox
+
 before_script:
   - yarn
   - cp tests/integration/config/example.js tests/integration/config/production.js

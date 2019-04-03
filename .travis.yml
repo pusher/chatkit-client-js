@@ -3,6 +3,8 @@ node_js:
   - "node"
 
 addons:
+  chrome:
+    stable
   apt:
     packages:
       - xvfb

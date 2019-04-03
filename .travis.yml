@@ -10,8 +10,14 @@ addons:
       - xvfb
 
 env:
-  - BROWSER=chrome
-  - BROWSER=firefox
+  - env: BROWSER=chrome
+    addons:
+      chrome:
+        stable
+  - env: BROWSER=firefox
+    addons:
+      firefox:
+        latest
 
 before_script:
   - yarn

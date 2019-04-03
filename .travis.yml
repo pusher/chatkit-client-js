@@ -27,4 +27,5 @@ before_script:
   - sed -i -e "s|https://token.provider.url|$CHATKIT_TOKEN_PROVIDER_URL|g" tests/integration/config/production.js
 
 script:
+  - env
   - yarn lint:build:test:$BROWSER

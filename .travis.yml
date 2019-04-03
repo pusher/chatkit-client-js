@@ -5,9 +5,15 @@ node_js:
 addons:
   chrome:
     stable
+  firefox:
+    latest
   apt:
     packages:
       - xvfb
+
+env:
+  - BROWSER=chrome
+  - BROWSER=firefox
 
 install:
   - export DISPLAY=':99.0'
@@ -21,4 +27,4 @@ before_script:
   - sed -i -e "s|https://token.provider.url|$CHATKIT_TOKEN_PROVIDER_URL|g" tests/integration/config/production.js
 
 script:
-  - yarn lint:build:test
+  - yarn lint:build:test:$BROWSER

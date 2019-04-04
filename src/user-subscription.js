@@ -1,4 +1,4 @@
-import { parseBasicRoom, parseBasicUser } from "./parsers"
+import { parseBasicRoom, parseBasicUser, parseBasicCursor } from "./parsers"
 import { handleUserSubReconnection } from "./reconnection-handlers"
 
 export class UserSubscription {
@@ -7,6 +7,7 @@ export class UserSubscription {
     this.hooks = options.hooks
     this.instance = options.instance
     this.roomStore = options.roomStore
+    this.cursorStore = options.cursorStore
     this.roomSubscriptions = options.roomSubscriptions
     this.logger = options.logger
     this.connectionTimeout = options.connectionTimeout
@@ -70,21 +71,31 @@ export class UserSubscription {
       case "room_deleted":
         this.onRoomDeleted(body.data)
         break
+      case "new_cursor":
+        this.onNewCursor(body.data)
+        break
     }
   }
 
-  onInitialState({ current_user: userData, rooms: roomsData }) {
+  onInitialState({
+    current_user: userData,
+    rooms: roomsData,
+    cursors: cursorsData,
+  }) {
     const basicUser = parseBasicUser(userData)
     const basicRooms = roomsData.map(d => parseBasicRoom(d))
+    const basicCursors = cursorsData.map(d => parseBasicCursor(d))
     if (!this.established) {
       this.established = true
-      this.onSubscriptionEstablished({ basicUser, basicRooms })
+      this.onSubscriptionEstablished({ basicUser, basicRooms, basicCursors })
     } else {
       handleUserSubReconnection({
         basicUser,
         basicRooms,
+        basicCursors,
         currentUser: this.currentUser,
         roomStore: this.roomStore,
+        cursorStore: this.cursorStore,
         hooks: this.hooks,
       })
     }
@@ -119,6 +130,14 @@ export class UserSubscription {
     this.roomStore.pop(roomId).then(room => {
       if (room && this.hooks.global.onRoomDeleted) {
         this.hooks.global.onRoomDeleted(room)
+      }
+    })
+  }
+
+  onNewCursor(data) {
+    return this.cursorStore.set(parseBasicCursor(data)).then(cursor => {
+      if (this.hooks.global.onNewReadCursor && cursor.type === 0) {
+        this.hooks.global.onNewReadCursor(cursor)
       }
     })
   }

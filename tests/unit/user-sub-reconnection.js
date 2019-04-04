@@ -2,6 +2,7 @@ import tape from "tape"
 
 import { CurrentUser } from "../../src/current-user.js"
 import { RoomStore } from "../../src/room-store.js"
+import { CursorStore } from "../../src/cursor-store.js"
 import { handleUserSubReconnection } from "../../src/reconnection-handlers.js"
 import { parseBasicRoom, parseBasicUser } from "../../src/parsers"
 
@@ -23,7 +24,7 @@ function test(name, f) {
 
     const roomStore = new RoomStore({})
     roomStoreRooms.forEach(room => roomStore.set(parseBasicRoom(room)))
-    f(t, currentUser, roomStore)
+    f(t, currentUser, roomStore, new CursorStore({}))
   })
 }
 
@@ -176,8 +177,9 @@ const roomsData = [
 ]
 
 const basicRooms = roomsData.map(d => parseBasicRoom(d))
+const basicCursors = []
 
-test("room removed", (t, currentUser, roomStore) => {
+test("room removed", (t, currentUser, roomStore, cursorStore) => {
   const onRemovedFromRoom = room => {
     if (room.id != "2") {
       return
@@ -191,13 +193,15 @@ test("room removed", (t, currentUser, roomStore) => {
   handleUserSubReconnection({
     basicUser,
     basicRooms,
+    basicCursors,
     currentUser,
     roomStore,
+    cursorStore,
     hooks: { global: { onRemovedFromRoom } },
   })
 })
 
-test("privacy changed", (t, currentUser, roomStore) => {
+test("privacy changed", (t, currentUser, roomStore, cursorStore) => {
   const onRoomUpdated = room => {
     if (room.id != "3") {
       return
@@ -211,13 +215,15 @@ test("privacy changed", (t, currentUser, roomStore) => {
   handleUserSubReconnection({
     basicUser,
     basicRooms,
+    basicCursors,
     currentUser,
     roomStore,
+    cursorStore,
     hooks: { global: { onRoomUpdated } },
   })
 })
 
-test("custom data added", (t, currentUser, roomStore) => {
+test("custom data added", (t, currentUser, roomStore, cursorStore) => {
   const onRoomUpdated = room => {
     if (room.id != "4") {
       return
@@ -232,13 +238,15 @@ test("custom data added", (t, currentUser, roomStore) => {
   handleUserSubReconnection({
     basicUser,
     basicRooms,
+    basicCursors,
     currentUser,
     roomStore,
+    cursorStore,
     hooks: { global: { onRoomUpdated } },
   })
 })
 
-test("custom data updated", (t, currentUser, roomStore) => {
+test("custom data updated", (t, currentUser, roomStore, cursorStore) => {
   const onRoomUpdated = room => {
     if (room.id != "7") {
       return
@@ -253,13 +261,15 @@ test("custom data updated", (t, currentUser, roomStore) => {
   handleUserSubReconnection({
     basicUser,
     basicRooms,
+    basicCursors,
     currentUser,
     roomStore,
+    cursorStore,
     hooks: { global: { onRoomUpdated } },
   })
 })
 
-test("custom data removed", (t, currentUser, roomStore) => {
+test("custom data removed", (t, currentUser, roomStore, cursorStore) => {
   const onRoomUpdated = room => {
     if (room.id != "8") {
       return
@@ -274,13 +284,15 @@ test("custom data removed", (t, currentUser, roomStore) => {
   handleUserSubReconnection({
     basicUser,
     basicRooms,
+    basicCursors,
     currentUser,
     roomStore,
+    cursorStore,
     hooks: { global: { onRoomUpdated } },
   })
 })
 
-test("name changed", (t, currentUser, roomStore) => {
+test("name changed", (t, currentUser, roomStore, cursorStore) => {
   const onRoomUpdated = room => {
     if (room.id != "5") {
       return
@@ -294,15 +306,17 @@ test("name changed", (t, currentUser, roomStore) => {
   handleUserSubReconnection({
     basicUser,
     basicRooms,
+    basicCursors,
     currentUser,
     roomStore,
+    cursorStore,
     hooks: { global: { onRoomUpdated } },
   })
 })
 
 test(
   "multiple field changes (only one event!)",
-  (t, currentUser, roomStore) => {
+  (t, currentUser, roomStore, cursorStore) => {
     let called = false
 
     const onRoomUpdated = room => {
@@ -324,14 +338,16 @@ test(
     handleUserSubReconnection({
       basicUser,
       basicRooms,
+      basicCursors,
       currentUser,
       roomStore,
+      cursorStore,
       hooks: { global: { onRoomUpdated } },
     })
   },
 )
 
-test("room added", (t, currentUser, roomStore) => {
+test("room added", (t, currentUser, roomStore, cursorStore) => {
   const onAddedToRoom = room => {
     if (room.id != "6") {
       return
@@ -345,18 +361,22 @@ test("room added", (t, currentUser, roomStore) => {
   handleUserSubReconnection({
     basicUser,
     basicRooms,
+    basicCursors,
     currentUser,
     roomStore,
+    cursorStore,
     hooks: { global: { onAddedToRoom } },
   })
 })
 
-test("final state of room store", (t, currentUser, roomStore) => {
+test("final state of room store", (t, currentUser, roomStore, cursorStore) => {
   handleUserSubReconnection({
     basicUser,
     basicRooms,
+    basicCursors,
     currentUser,
     roomStore,
+    cursorStore,
     hooks: { global: {} },
   })
 
@@ -368,12 +388,14 @@ test("final state of room store", (t, currentUser, roomStore) => {
   t.end()
 })
 
-test("current user changes", (t, currentUser, roomStore) => {
+test("current user changes", (t, currentUser, roomStore, cursorStore) => {
   handleUserSubReconnection({
     basicUser,
     basicRooms,
+    basicCursors,
     currentUser,
     roomStore,
+    cursorStore,
     hooks: { global: {} },
   })
 

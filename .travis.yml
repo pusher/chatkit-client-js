@@ -10,11 +10,11 @@ addons:
       - xvfb
 
 env:
-  - env: BROWSER=chrome
+  - BROWSER=chrome
     addons:
       chrome:
         stable
-  - env: BROWSER=firefox
+  - BROWSER=firefox
     addons:
       firefox:
         latest

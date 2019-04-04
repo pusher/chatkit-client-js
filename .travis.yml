@@ -9,7 +9,7 @@ addons:
     packages:
       - xvfb
 
-matrix::
+matrix:
   - env: BROWSER=chrome
     addons:
       chrome:

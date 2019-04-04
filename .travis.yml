@@ -5,19 +5,15 @@ node_js:
 addons:
   chrome:
     stable
+  firefox:
+    latest
   apt:
     packages:
       - xvfb
 
-matrix:
-  - env: BROWSER=chrome
-    addons:
-      chrome:
-        stable
-  - env: BROWSER=firefox
-    addons:
-      firefox:
-        latest
+env:
+  - BROWSER=chrome
+  - BROWSER=firefox
 
 before_script:
   - yarn

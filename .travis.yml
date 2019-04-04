@@ -9,12 +9,12 @@ addons:
     packages:
       - xvfb
 
-env:
-  - BROWSER=chrome
+matrix::
+  - env: BROWSER=chrome
     addons:
       chrome:
         stable
-  - BROWSER=firefox
+  - env: BROWSER=firefox
     addons:
       firefox:
         latest

@@ -41,9 +41,9 @@ export class ChatManager {
       serviceVersion: "v2",
       ...instanceOptions,
     })
-    this.serverInstanceV3 = new Instance({
+    this.serverInstanceV4 = new Instance({
       serviceName: "chatkit",
-      serviceVersion: "v3",
+      serviceVersion: "v4",
       ...instanceOptions,
     })
     this.filesInstance = new Instance({
@@ -75,7 +75,7 @@ export class ChatManager {
       hooks,
       id: this.userId,
       serverInstanceV2: this.serverInstanceV2,
-      serverInstanceV3: this.serverInstanceV3,
+      serverInstanceV4: this.serverInstanceV4,
       filesInstance: this.filesInstance,
       cursorsInstance: this.cursorsInstance,
       presenceInstance: this.presenceInstance,

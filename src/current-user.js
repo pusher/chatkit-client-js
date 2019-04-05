@@ -36,7 +36,7 @@ import { SET_CURSOR_WAIT } from "./constants"
 export class CurrentUser {
   constructor({
     serverInstanceV2,
-    serverInstanceV3,
+    serverInstanceV4,
     connectionTimeout,
     cursorsInstance,
     filesInstance,
@@ -51,20 +51,20 @@ export class CurrentUser {
     this.id = id
     this.encodedId = encodeURIComponent(this.id)
     this.serverInstanceV2 = serverInstanceV2
-    this.serverInstanceV3 = serverInstanceV3
+    this.serverInstanceV4 = serverInstanceV4
     this.filesInstance = filesInstance
     this.cursorsInstance = cursorsInstance
     this.connectionTimeout = connectionTimeout
     this.presenceInstance = presenceInstance
-    this.logger = serverInstanceV3.logger
+    this.logger = serverInstanceV4.logger
     this.presenceStore = {}
     this.userStore = new UserStore({
-      instance: this.serverInstanceV3,
+      instance: this.serverInstanceV4,
       presenceStore: this.presenceStore,
       logger: this.logger,
     })
     this.roomStore = new RoomStore({
-      instance: this.serverInstanceV3,
+      instance: this.serverInstanceV4,
       userStore: this.userStore,
       isSubscribedTo: userId => this.isSubscribedTo(userId),
       logger: this.logger,
@@ -77,7 +77,7 @@ export class CurrentUser {
     })
     this.typingIndicators = new TypingIndicators({
       hooks: this.hooks,
-      instance: this.serverInstanceV3,
+      instance: this.serverInstanceV4,
       logger: this.logger,
     })
     this.userStore.onSetHooks.push(userId =>
@@ -181,7 +181,7 @@ export class CurrentUser {
     name && typeCheck("name", "string", name)
     addUserIds && typeCheckArr("addUserIds", "string", addUserIds)
     customData && typeCheck("customData", "object", customData)
-    return this.serverInstanceV3
+    return this.serverInstanceV4
       .request({
         method: "POST",
         path: "/rooms",
@@ -201,7 +201,7 @@ export class CurrentUser {
   }
 
   getJoinableRooms() {
-    return this.serverInstanceV3
+    return this.serverInstanceV4
       .request({
         method: "GET",
         path: `/users/${this.encodedId}/rooms?joinable=true`,
@@ -223,7 +223,7 @@ export class CurrentUser {
     if (this.isMemberOf(roomId)) {
       return this.roomStore.get(roomId)
     }
-    return this.serverInstanceV3
+    return this.serverInstanceV4
       .request({
         method: "POST",
         path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
@@ -242,7 +242,7 @@ export class CurrentUser {
     return this.roomStore
       .get(roomId)
       .then(room =>
-        this.serverInstanceV3
+        this.serverInstanceV4
           .request({
             method: "POST",
             path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
@@ -260,7 +260,7 @@ export class CurrentUser {
   addUserToRoom({ userId, roomId } = {}) {
     typeCheck("userId", "string", userId)
     typeCheck("roomId", "string", roomId)
-    return this.serverInstanceV3
+    return this.serverInstanceV4
       .request({
         method: "PUT",
         path: `/rooms/${encodeURIComponent(roomId)}/users/add`,
@@ -278,7 +278,7 @@ export class CurrentUser {
   removeUserFromRoom({ userId, roomId } = {}) {
     typeCheck("userId", "string", userId)
     typeCheck("roomId", "string", roomId)
-    return this.serverInstanceV3
+    return this.serverInstanceV4
       .request({
         method: "PUT",
         path: `/rooms/${encodeURIComponent(roomId)}/users/remove`,
@@ -356,7 +356,7 @@ export class CurrentUser {
       }),
     )
       .then(parts =>
-        this.serverInstanceV3.request({
+        this.serverInstanceV4.request({
           method: "POST",
           path: `/rooms/${encodeURIComponent(roomId)}/messages`,
           json: {
@@ -407,7 +407,7 @@ export class CurrentUser {
   fetchMultipartMessages(options = {}) {
     return this.fetchMessages({
       ...options,
-      serverInstance: this.serverInstanceV3,
+      serverInstance: this.serverInstanceV4,
     })
   }
 
@@ -445,7 +445,7 @@ export class CurrentUser {
   subscribeToRoomMultipart(options = {}) {
     return this.subscribeToRoom({
       ...options,
-      serverInstance: this.serverInstanceV3,
+      serverInstance: this.serverInstanceV4,
     })
   }
 
@@ -454,7 +454,7 @@ export class CurrentUser {
     name && typeCheck("name", "string", name)
     rest.private && typeCheck("private", "boolean", rest.private)
     customData && typeCheck("customData", "object", customData)
-    return this.serverInstanceV3
+    return this.serverInstanceV4
       .request({
         method: "PUT",
         path: `/rooms/${encodeURIComponent(roomId)}`,
@@ -473,7 +473,7 @@ export class CurrentUser {
 
   deleteRoom({ roomId } = {}) {
     typeCheck("roomId", "string", roomId)
-    return this.serverInstanceV3
+    return this.serverInstanceV4
       .request({
         method: "DELETE",
         path: `/rooms/${encodeURIComponent(roomId)}`,
@@ -519,7 +519,7 @@ export class CurrentUser {
   }
 
   _uploadAttachment({ roomId, part: { type, name, customData, file } }) {
-    return this.serverInstanceV3
+    return this.serverInstanceV4
       .request({
         method: "POST",
         path: `/rooms/${encodeURIComponent(roomId)}/attachments`,
@@ -560,7 +560,7 @@ export class CurrentUser {
       basicMessage,
       this.userStore,
       this.roomStore,
-      this.serverInstanceV3,
+      this.serverInstanceV4,
     )
   }
 
@@ -576,7 +576,7 @@ export class CurrentUser {
     this.userSubscription = new UserSubscription({
       hooks: this.hooks,
       userId: this.id,
-      instance: this.serverInstanceV3,
+      instance: this.serverInstanceV4,
       roomStore: this.roomStore,
       typingIndicators: this.typingIndicators,
       logger: this.logger,

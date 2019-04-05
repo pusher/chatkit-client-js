@@ -1062,10 +1062,7 @@ test("subscribe to room and receive sent messages (v2 sends, v2 receives)", t =>
               t.equal(messages[2].sender.name, "Alice")
               t.equal(messages[2].room.name, `Bob's new room`)
               t.equal(messages[2].attachment.type, "file")
-              t.equal(
-                messages[2].attachment.name,
-                "file:///with/slashes and spaces.json",
-              )
+              t.equal(messages[2].attachment.name, "file: with spaces.json")
               fetch(messages[2].attachment.link)
                 .then(res => res.json())
                 .then(data => {
@@ -1096,12 +1093,12 @@ test("subscribe to room and receive sent messages (v2 sends, v2 receives)", t =>
             attachment: {
               file: new File(
                 [JSON.stringify({ hello: "world" })],
-                "file:///with/slashes and spaces.json",
+                "file: with spaces.json",
                 {
                   type: "application/json",
                 },
               ),
-              name: "file:///with/slashes and spaces.json",
+              name: "file: with spaces.json",
             },
           }),
         ),
@@ -1134,10 +1131,7 @@ test("subscribe to room and receive sent messages (v3 sends, v2 receives)", t =>
               t.equal(messages[2].sender.name, "Alice")
               t.equal(messages[2].room.name, `Bob's new room`)
               t.equal(messages[2].attachment.type, "file")
-              t.equal(
-                messages[2].attachment.name,
-                "file:///with/slashes and spaces.json",
-              )
+              t.equal(messages[2].attachment.name, "file: with spaces.json")
               fetch(messages[2].attachment.link)
                 .then(res => res.json())
                 .then(data => {
@@ -1169,7 +1163,7 @@ test("subscribe to room and receive sent messages (v3 sends, v2 receives)", t =>
               {
                 file: new File(
                   [JSON.stringify({ hello: "world" })],
-                  "file:///with/slashes and spaces.json",
+                  "file: with spaces.json",
                   {
                     type: "application/json",
                   },
@@ -1221,7 +1215,7 @@ test("subscribe to room and receive sent messages (v2 sends, v3 receives)", t =>
               t.equal(messages[2].parts[1].payload.type, "file/x-pusher-file")
               t.equal(
                 messages[2].parts[1].payload.name,
-                "file:///with/slashes and spaces.json",
+                "file: with spaces.json",
               )
               t.equal(messages[2].parts[1].payload.size, 17)
               t.true(messages[2].parts[1].payload.urlExpiry())
@@ -1257,12 +1251,12 @@ test("subscribe to room and receive sent messages (v2 sends, v3 receives)", t =>
             attachment: {
               file: new File(
                 [JSON.stringify({ hello: "world" })],
-                "file:///with/slashes and spaces.json",
+                "file: with spaces.json",
                 {
                   type: "application/json",
                 },
               ),
-              name: "file:///with/slashes and spaces.json",
+              name: "file: with spaces.json",
             },
           }),
         ),
@@ -1309,7 +1303,7 @@ test("subscribe to room and receive sent messages (v3 sends, v3 receives)", t =>
               t.equal(messages[2].parts[1].payload.type, "application/json")
               t.equal(
                 messages[2].parts[1].payload.name,
-                "file:///with/slashes and spaces.json",
+                "file: with spaces.json",
               )
               t.equal(messages[2].parts[1].payload.size, 17)
               t.true(messages[2].parts[1].payload.urlExpiry())
@@ -1346,7 +1340,7 @@ test("subscribe to room and receive sent messages (v3 sends, v3 receives)", t =>
               {
                 file: new File(
                   [JSON.stringify({ hello: "world" })],
-                  "file:///with/slashes and spaces.json",
+                  "file: with spaces.json",
                   {
                     type: "application/json",
                   },
@@ -1501,12 +1495,12 @@ test(`send message with data attachment [sends a message to Bob's room]`, t => {
           attachment: {
             file: new File(
               [JSON.stringify({ hello: "world" })],
-              "file:///with/slashes and spaces.json",
+              "file: with spaces.json",
               {
                 type: "application/json",
               },
             ),
-            name: "file:///with/slashes and spaces.json",
+            name: "file: with spaces.json",
           },
         })
         .then(() => {
@@ -1526,10 +1520,7 @@ test("receive message with data attachment", t => {
         .then(([message]) => {
           t.equal(message.text, "see attached json")
           t.equal(message.attachment.type, "file")
-          t.equal(
-            message.attachment.name,
-            "file:///with/slashes and spaces.json",
-          )
+          t.equal(message.attachment.name, "file: with spaces.json")
           return fetch(message.attachment.link)
             .then(res => res.json())
             .then(data => {
@@ -1588,7 +1579,7 @@ test(`send message with data attachment (v3) [sends a message to Bob's room]`, t
             {
               file: new File(
                 [JSON.stringify({ hello: "world" })],
-                "file:///with/slashes and spaces.json",
+                "file: with spaces.json",
                 { type: "application/json" },
               ),
               customData: { foo: "bar" },
@@ -1620,10 +1611,7 @@ test("receive message with data attachment (v3)", t => {
 
           t.equal(message.parts[1].partType, "attachment")
           t.equal(message.parts[1].payload.type, "application/json")
-          t.equal(
-            message.parts[1].payload.name,
-            "file:///with/slashes and spaces.json",
-          )
+          t.equal(message.parts[1].payload.name, "file: with spaces.json")
           t.equal(message.parts[1].payload.size, 17)
           t.deepEqual(message.parts[1].payload.customData, { foo: "bar" })
 

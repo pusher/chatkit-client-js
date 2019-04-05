@@ -4,7 +4,7 @@ import { handleCursorSubReconnection } from "./reconnection-handlers"
 export class CursorSubscription {
   constructor(options) {
     this.onNewCursorHook = options.onNewCursorHook
-    this.path = options.path
+    this.roomId = options.roomId
     this.cursorStore = options.cursorStore
     this.instance = options.instance
     this.logger = options.logger
@@ -27,7 +27,7 @@ export class CursorSubscription {
         resolve(initialState)
       }
       this.sub = this.instance.subscribeNonResuming({
-        path: this.path,
+        path: `/cursors/0/rooms/${encodeURIComponent(this.roomId)}`,
         listeners: {
           onError: err => {
             clearTimeout(this.timeout)

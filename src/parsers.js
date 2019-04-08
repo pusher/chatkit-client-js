@@ -7,6 +7,8 @@ export const parseBasicRoom = data => ({
   updatedAt: data.updated_at,
   customData: data.custom_data,
   deletedAt: data.deleted_at,
+  unreadCount: data.unread_count,
+  lastMessageAt: data.last_message_at,
 })
 
 export const parseBasicUser = data => ({

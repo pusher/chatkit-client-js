@@ -1632,7 +1632,7 @@ test("receive message with data attachment (v3)", t => {
 
 test(`large inline parts are rejected with an error`, t => {
   let buns = "🐇🐇"
-  while (buns.length < 2000) {
+  while (buns.length < 5000) {
     buns = buns + buns
   }
   fetchUser(t, "alice")

@@ -4,7 +4,15 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.4.1...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.5.0...HEAD)
+
+## [1.5.0](https://github.com/pusher/chatkit-client-js/compare/1.4.1...1.5.0)
+
+### Additions
+
+- `unreadCount` and `lastMessageAt` properties on room objects which contain
+  the number of unread messages and the timestamp of the most recent message in
+  a room.
 
 ## [1.4.1](https://github.com/pusher/chatkit-client-js/compare/1.4.0...1.4.1)
 

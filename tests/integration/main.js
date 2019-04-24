@@ -821,6 +821,18 @@ test(`send messages [sends two messages to Bob's room]`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+test(`check unread messages [Bob has 2 in Bob's room]`, t => {
+  fetchUser(t, "bob")
+    .then(bob => {
+      const r = bob.rooms.find(r => r.id === bobsRoom.id)
+      t.equal(r.unreadCount, 2)
+      bob.disconnect()
+      t.end()
+    })
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test(`send simple messages (v3) [sends two messages to Bob's room]`, t => {
   fetchUser(t, "alice")
     .then(alice =>
@@ -847,6 +859,9 @@ test("fetch messages", t => {
       t.equal(messages[0].sender.name, "Alice")
       t.equal(messages[0].room.id, bobsRoom.id)
       t.equal(messages[0].room.name, bobsRoom.name)
+      const r = alice.rooms.find(room => room.id === bobsRoom.id)
+      t.equal(r.unreadCount, 4)
+      t.equal(messages[3].createdAt, r.lastMessageAt)
       alice.disconnect()
       t.end()
     })

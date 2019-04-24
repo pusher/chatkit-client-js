@@ -10,6 +10,8 @@ export class Room {
     this.name = basicRoom.name
     this.updatedAt = basicRoom.updatedAt
     this.customData = basicRoom.customData
+    this.unreadCount = basicRoom.unreadCount
+    this.lastMessageAt = basicRoom.lastMessageAt
     this.userIds = []
     this.userStore = userStore
     this.isSubscribedTo = isSubscribedTo

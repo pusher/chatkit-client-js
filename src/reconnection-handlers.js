@@ -1,8 +1,10 @@
 export function handleUserSubReconnection({
   basicUser,
   basicRooms,
+  basicCursors,
   currentUser,
   roomStore,
+  cursorStore,
   hooks,
 }) {
   currentUser.setPropertiesFromBasicUser(basicUser)
@@ -33,6 +35,12 @@ export function handleUserSubReconnection({
       }
     }
   }
+
+  return handleCursorSubReconnection({
+    basicCursors,
+    cursorStore,
+    onNewCursorHook: hooks.global.onNewReadCursor,
+  })
 }
 
 export function handleMembershipSubReconnection({
@@ -75,9 +83,11 @@ export function handleCursorSubReconnection({
       )
 
       if (!existingCursor || existingCursor.position !== basicCursor.position) {
-        return cursorStore
-          .set(basicCursor)
-          .then(cursor => onNewCursorHook(cursor))
+        return cursorStore.set(basicCursor).then(cursor => {
+          if (onNewCursorHook) {
+            onNewCursorHook(cursor)
+          }
+        })
       }
     }),
   )

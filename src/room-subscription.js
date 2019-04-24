@@ -27,7 +27,7 @@ export class RoomSubscription {
     })
 
     this.cursorSub = new CursorSubscription({
-      path: `/cursors/0/rooms/${encodeURIComponent(options.roomId)}`,
+      roomId: options.roomId,
       cursorStore: options.cursorStore,
       instance: options.cursorsInstance,
       logger: options.logger,

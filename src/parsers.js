@@ -33,6 +33,7 @@ export const parseBasicMessage = data => {
     senderId: data.user_id,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
+    deletedAt: data.deleted_at,
   }
 
   if (data.parts) {

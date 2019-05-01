@@ -41,7 +41,10 @@
     "snazzy": "^7.0.0",
     "tap-colorize": "^1.2.0",
     "tape": "^4.8.0",
-    "tape-run": "^4.0.0"
+    "tape-run": "^4.0.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4",
+    "jsonwebtoken": "^8.5.1"
   },
   "scripts": {
     "lint": "eslint src tests rollup",

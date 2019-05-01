@@ -25,6 +25,9 @@ import {
   TOKEN_PROVIDER_URL,
 } from "./config/production"
 
+import request from "request-promise"
+import jwt from "jsonwebtoken"
+
 let alicesRoom, bobsRoom, carolsRoom, alicesPrivateRoom
 let bob, carol
 
@@ -90,6 +93,64 @@ const fetchUser = (t, userId, hooks = {}) =>
     .catch(endWithErr(t))
 
 const endWithErr = curry((t, err) => t.end(`error: ${toString(err)}`))
+
+const instanceUrl = (instanceLocator, service, version, path) => {
+  const [, cluster, instanceID] = instanceLocator.split(":")
+  let baseUrl = `https://${cluster}.pusherplatform.io`
+
+  if (path.startsWith("/")) {
+    path = path.substr(1)
+  }
+
+  return `${baseUrl}/services/${service}/${version}/${instanceID}/${path}`
+}
+
+const serverRequest = (method, path, version, token, body, qs) => {
+  let options = {
+    method: method,
+    uri: instanceUrl(INSTANCE_LOCATOR, "chatkit", version, path),
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    qs: qs,
+    body: body,
+    json: true,
+  }
+
+  return request(options)
+}
+
+const generateToken = (su = false, sub) => {
+  const [key, secret] = INSTANCE_KEY.split(":")
+  const [, , instanceID] = INSTANCE_LOCATOR.split(":")
+  const now = Math.floor(Date.now() / 1000)
+
+  let options = {
+    instance: instanceID,
+    iss: `api_keys/${key}`,
+    iat: now,
+    exp: now + 86400,
+  }
+
+  if (sub && !su) {
+    options.sub = sub
+  }
+
+  if (su) {
+    options.su = true
+  }
+
+  return jwt.sign(options, secret, { algorithm: "HS256" })
+}
+
+const deleteMessageV5 = (roomId, messageId) => {
+  return serverRequest(
+    "DELETE",
+    `rooms/${roomId}/messages/${messageId}`,
+    "v5",
+    generateToken(true),
+  )
+}
 
 // Teardown first so that we can kill the tests at any time, safe in the
 // knowledge that we'll always be starting with a blank slate next time
@@ -1955,6 +2016,33 @@ test("subscribe to same room twice in quick succession, only one hook fired", t 
       ).then(() =>
         alice.sendSimpleMessage({ roomId: alicesRoom.id, text: "arbitrary" }),
       ),
+    )
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
+test("message_deleted hook should fire if a message has been deleted", t => {
+  fetchUser(t, "alice")
+    .then(alice =>
+      alice
+        .sendSimpleMessage({ roomId: alicesRoom.id, text: "yo2" })
+        .then(sentMessageId => {
+          alice
+            .subscribeToRoomMultipart({
+              roomId: alicesRoom.id,
+              hooks: {
+                onMessageDeleted: deletedMessageId => {
+                  t.equal(sentMessageId, deletedMessageId)
+                  alice.disconnect()
+                  t.end()
+                },
+              },
+            })
+            .then(room => {
+              deleteMessageV5(room.id, sentMessageId).catch(endWithErr(t))
+            })
+            .catch(endWithErr(t))
+        }),
     )
     .catch(endWithErr(t))
   t.timeoutAfter(TEST_TIMEOUT)

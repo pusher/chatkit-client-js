@@ -29,14 +29,14 @@ export const appendQueryParamsAsArray = (key, values, url) => {
   return url + separator + join("&", encodedPairs)
 }
 
-// export const typeCheck = (name, expectedType, value) => {
-//   const type = typeof value
-//   if (type !== expectedType) {
-//     throw new TypeError(
-//       `expected ${name} to be of type ${expectedType} but was of type ${type}`,
-//     )
-//   }
-// }
+export const typeCheck = (name, expectedType, value) => {
+  const type = typeof value
+  if (type !== expectedType) {
+    throw new TypeError(
+      `expected ${name} to be of type ${expectedType} but was of type ${type}`,
+    )
+  }
+}
 
 // checks that value is a string or function
 export const typeCheckStringOrFunction = (name, value) => {

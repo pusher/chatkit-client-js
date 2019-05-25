@@ -1,6 +1,11 @@
 import { sendRawRequest } from "@pusher/platform"
-
-import { appendQueryParams, typeCheckStringOrFunction, typeCheckObjectOrFunction, unixSeconds, urlEncode } from "./utils"
+import {
+  appendQueryParams,
+  typeCheckStringOrFunction,
+  typeCheckObjectOrFunction,
+  unixSeconds,
+  urlEncode,
+} from "./utils"
 
 export class TokenProvider {
   constructor({ url, queryParams, headers, withCredentials } = {}) {
@@ -29,7 +34,7 @@ export class TokenProvider {
       }
     })
   }
-  
+
   fetchToken() {
     return !this.cacheIsStale()
       ? Promise.resolve(this.cachedToken)

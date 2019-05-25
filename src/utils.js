@@ -38,6 +38,26 @@ export const typeCheck = (name, expectedType, value) => {
   }
 }
 
+// checks that value is a string or function
+export const typeCheckStringOrFunction = (name, value) => {
+  const type = typeof value
+  if (type !== "string" && type !== "function") {
+    throw new TypeError(
+      `expected ${name} to be a string or function but was of type ${type}`,
+    )
+  }
+}
+
+// checks that value is an object or function
+export const typeCheckObjectOrFunction = (name, value) => {
+  const type = typeof value
+  if (type !== "object" && type !== "function") {
+    throw new TypeError(
+      `expected ${name} to be an object or function but was of type ${type}`,
+    )
+  }
+}
+
 // checks that all of an arrays elements are of the given type
 export const typeCheckArr = (name, expectedType, arr) => {
   if (!Array.isArray(arr)) {

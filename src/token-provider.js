@@ -4,9 +4,9 @@ import { appendQueryParams, typeCheck, unixSeconds, urlEncode } from "./utils"
 
 export class TokenProvider {
   constructor({ url, queryParams, headers, withCredentials } = {}) {
-    typeCheck("url", "string", url)
-    queryParams && typeCheck("queryParams", "object", queryParams)
-    headers && typeCheck("headers", "object", headers)
+    typeCheckStringOrFunction("url", url)
+    queryParams && typeCheckObjectOrFunction("queryParams", queryParams)
+    headers && typeCheckObjectOrFunction("headers", headers)
     this.url = url
     this.queryParams = queryParams
     this.headers = headers
@@ -20,6 +20,16 @@ export class TokenProvider {
     this.setUserId = this.setUserId.bind(this)
   }
 
+  getValueOrFunction(value) {
+    return new Promise(resolve => {
+      if (typeof value === "function") {
+        resolve(value())
+      } else {
+        resolve(value)
+      }
+    })
+  }
+  
   fetchToken() {
     return !this.cacheIsStale()
       ? Promise.resolve(this.cachedToken)
@@ -30,19 +40,23 @@ export class TokenProvider {
   }
 
   fetchFreshToken() {
-    this.req = sendRawRequest({
-      method: "POST",
-      url: appendQueryParams(
-        { user_id: this.userId, ...this.queryParams },
-        this.url,
-      ),
-      body: urlEncode({ grant_type: "client_credentials" }),
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-        ...this.headers,
-      },
-      withCredentials: this.withCredentials,
-    })
+    this.req = Promise.all([
+      this.getValueOrFunction(this.url),
+      this.getValueOrFunction(this.queryParams),
+      this.getValueOrFunction(this.headers),
+    ])
+      .then(([url, queryParams, headers]) => {
+        return sendRawRequest({
+          method: "POST",
+          url: appendQueryParams({ user_id: this.userId, ...queryParams }, url),
+          body: urlEncode({ grant_type: "client_credentials" }),
+          headers: {
+            "content-type": "application/x-www-form-urlencoded",
+            ...headers,
+          },
+          withCredentials: this.withCredentials,
+        })
+      })
       .then(res => {
         const { access_token: token, expires_in: expiresIn } = JSON.parse(res)
         delete this.req

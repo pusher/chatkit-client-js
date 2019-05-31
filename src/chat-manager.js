@@ -1,4 +1,5 @@
 import { BaseClient, HOST_BASE, Instance } from "@pusher/platform"
+import * as PusherPushNotifications from "@pusher/push-notifications-web"
 import { split } from "ramda"
 
 import { CurrentUser } from "./current-user"
@@ -61,6 +62,13 @@ export class ChatManager {
       serviceVersion: "v2",
       ...instanceOptions,
     })
+    this.beamsTokenProviderInstance = new Instance({
+      serviceName: "chatkit_beams_token_provider",
+      serviceVersion: "v1",
+      ...instanceOptions,
+    })
+
+    this.beamsClient = null
     this.userId = userId
     this.connectionTimeout =
       options.connectionTimeout || DEFAULT_CONNECTION_TIMEOUT
@@ -71,23 +79,37 @@ export class ChatManager {
 
   connect(hooks = {}) {
     typeCheckObj("hooks", "function", hooks)
-    const currentUser = new CurrentUser({
-      hooks,
-      id: this.userId,
-      serverInstanceV2: this.serverInstanceV2,
-      serverInstanceV4: this.serverInstanceV4,
-      filesInstance: this.filesInstance,
-      cursorsInstance: this.cursorsInstance,
-      presenceInstance: this.presenceInstance,
-      connectionTimeout: this.connectionTimeout,
+
+    return PusherPushNotifications.init({
+      instanceId: "d1ff7d38-06e2-4794-b966-26254948ecc1",
     })
-    return Promise.all([
-      currentUser.establishUserSubscription(),
-      currentUser.establishPresenceSubscription(),
-    ]).then(() => {
-      this.currentUser = currentUser
-      return currentUser
-    })
+      .then(beamsClient => {
+        this.beamsClient = beamsClient
+      })
+      .then(
+        () =>
+          (this.currentUser = new CurrentUser({
+            hooks,
+            id: this.userId,
+            serverInstanceV2: this.serverInstanceV2,
+            serverInstanceV4: this.serverInstanceV4,
+            filesInstance: this.filesInstance,
+            cursorsInstance: this.cursorsInstance,
+            presenceInstance: this.presenceInstance,
+            beamsTokenProviderInstance: this.beamsTokenProviderInstance,
+            beamsClient: this.beamsClient,
+            connectionTimeout: this.connectionTimeout,
+          })),
+      )
+      .then(() =>
+        Promise.all([
+          this.currentUser.establishUserSubscription(),
+          this.currentUser.establishPresenceSubscription(),
+        ]),
+      )
+      .then(() => {
+        return this.currentUser
+      })
   }
 
   disconnect() {

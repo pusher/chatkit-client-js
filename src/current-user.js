@@ -39,9 +39,11 @@ export class CurrentUser {
     connectionTimeout,
     cursorsInstance,
     filesInstance,
+    beamsTokenProviderInstance,
     hooks,
     id,
     presenceInstance,
+    beamsClient,
   }) {
     this.hooks = {
       global: hooks,
@@ -55,6 +57,7 @@ export class CurrentUser {
     this.cursorsInstance = cursorsInstance
     this.connectionTimeout = connectionTimeout
     this.presenceInstance = presenceInstance
+    this.beamsTokenProviderInstance = beamsTokenProviderInstance
     this.logger = serverInstanceV4.logger
     this.presenceStore = {}
     this.userStore = new UserStore({
@@ -85,6 +88,8 @@ export class CurrentUser {
     this.roomSubscriptions = {}
     this.readCursorBuffer = {} // roomId -> { position, [{ resolve, reject }] }
     this.userPresenceSubscriptions = {}
+
+    this.beamsClient = beamsClient
 
     this.setReadCursor = this.setReadCursor.bind(this)
     this.readCursor = this.readCursor.bind(this)
@@ -631,6 +636,26 @@ export class CurrentUser {
 
     this.userPresenceSubscriptions[userId] = userPresenceSub
     return userPresenceSub.connect()
+  }
+
+  enablePushNotifications() {
+    const fetchBeamsToken = userId =>
+      this.beamsTokenProviderInstance
+        .request({
+          method: "GET",
+          path: `/beams-tokens?user_id=${encodeURIComponent(userId)}`,
+        })
+        .then(JSON.parse)
+
+    const tokenProvider = { fetchToken: fetchBeamsToken }
+
+    tokenProvider
+      .fetchToken(this.id)
+      .then(token => console.log("TOKEN ==== ", token))
+
+    return this.beamsClient
+      .start()
+      .then(() => this.beamsClient.setUserId(this.id, tokenProvider))
   }
 
   disconnect() {

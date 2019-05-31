@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@pusher/platform": "^0.16.1",
+    "@pusher/push-notifications-web": "file:///home/jonathan/code/push-notifications-web",
     "ramda": "^0.25.0"
   },
   "devDependencies": {

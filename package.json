@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@pusher/platform": "^0.16.1",
+    "@pusher/push-notifications-web": "https://github.com/pusher/push-notifications-web#afe8385c51aff024c4436ba4a4ee9a7c716293c2",
     "ramda": "^0.25.0"
   },
   "devDependencies": {
@@ -23,7 +24,9 @@
     "babel-core": "^6.26.0",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-env": "^1.6.1",
+    "babel-preset-es2015": "^6.24.1",
     "babelify": "^8.0.0",
     "browserify": "^15.2.0",
     "eslint": "^5.8.0",
@@ -50,7 +53,7 @@
     "build:web": "rollup -c rollup/web.js",
     "build:react-native": "rollup -c rollup/react-native.js",
     "test:unit": "set -e; for file in tests/unit/*.js; do printf '\\n\\e[1;34m%s\\e[0m\\n' $file; browserify $file -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run --render=tap-colorize; done",
-    "test:integration": "browserify tests/integration/main.js -t [ babelify --presets env --plugins transform-object-rest-spread ] | tape-run --render=tap-colorize -b chrome",
+    "test:integration": "browserify tests/integration/main.js -t [ babelify --presets env --plugins transform-runtime transform-object-rest-spread ] | tape-run --render=tap-colorize -b chrome",
     "test": "yarn test:unit && yarn test:integration",
     "lint:build": "clear && yarn lint && clear && yarn build",
     "lint:build:test": "yarn lint:build && clear && yarn test",

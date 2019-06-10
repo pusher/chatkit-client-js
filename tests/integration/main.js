@@ -455,6 +455,85 @@ test("web push notifications fails to register with Beams and CK rejects the pro
     })
 })
 
+test("chat manager succeeds to disable all web push notifications", t => {
+  let stopHasBeenCalled = false
+  let mockBeamsClientSDK = {
+    stop: () => {
+      stopHasBeenCalled = true
+      return Promise.resolve()
+    },
+  }
+
+  const chatManager = new ChatManager({
+    instanceLocator: INSTANCE_LOCATOR,
+    userId: "alice",
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
+    beamsInstanceInitFn: () => {
+      return Promise.resolve(mockBeamsClientSDK)
+    },
+  })
+
+  chatManager
+    .disablePushNotifications()
+    .then(() => {
+      t.true(stopHasBeenCalled)
+      t.end()
+    })
+    .catch(endWithErr(t))
+})
+
+test("chat manager fails to disable web push notifications and CK rejects the promise on `disablePushNotifications`", t => {
+  const chatManager = new ChatManager({
+    instanceLocator: INSTANCE_LOCATOR,
+    userId: "alice",
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
+    beamsInstanceInitFn: () => {
+      throw Error("omg, bad beams instance")
+    },
+  })
+
+  chatManager
+    .disablePushNotifications()
+    .then(() => {
+      t.fail("promise was a success, unfortunately")
+    })
+    .catch(err => {
+      t.true(
+        toString(err).match(/Chatkit error when disabling push notifications/),
+        "error",
+      )
+      t.end()
+    })
+})
+
+test("chat manager fails to disable web push notifications and CK rejects the promise on `disablePushNotifications` 2", t => {
+  let mockBeamsClientSDK = {
+    stop: () => Promise.reject("failed to stop"),
+  }
+
+  const chatManager = new ChatManager({
+    instanceLocator: INSTANCE_LOCATOR,
+    userId: "alice",
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
+    beamsInstanceInitFn: () => {
+      return Promise.resolve(mockBeamsClientSDK)
+    },
+  })
+
+  chatManager
+    .disablePushNotifications()
+    .then(() => {
+      t.fail("promise was a success, unfortunately")
+    })
+    .catch(err => {
+      t.true(
+        toString(err).match(/Chatkit error when disabling push notifications/),
+        "error",
+      )
+      t.end()
+    })
+})
+
 // User subscription
 
 test("own read cursor undefined if not set", t => {

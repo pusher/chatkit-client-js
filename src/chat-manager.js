@@ -76,6 +76,7 @@ export class ChatManager {
         })
       })
 
+    this.logger = this.serverInstanceV4.logger
     this.userId = userId
     this.connectionTimeout =
       options.connectionTimeout || DEFAULT_CONNECTION_TIMEOUT
@@ -109,5 +110,28 @@ export class ChatManager {
 
   disconnect() {
     if (this.currentUser) this.currentUser.disconnect()
+  }
+
+  disablePushNotifications() {
+    try {
+      return this.beamsInstanceInitFn()
+        .then(beamsClient => {
+          return beamsClient.stop()
+        })
+        .catch(err => {
+          this.logger.warn(
+            `Chatkit error when disabling push notifications`,
+            err,
+          )
+          return Promise.reject(
+            `Chatkit error when disabling push notifications: ${err.message}`,
+          )
+        })
+    } catch (err) {
+      this.logger.warn(`Chatkit error when disabling push notifications`, err)
+      return Promise.reject(
+        `Chatkit error when disabling push notifications: ${err.message}`,
+      )
+    }
   }
 }

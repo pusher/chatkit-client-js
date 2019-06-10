@@ -5,7 +5,7 @@ import { CurrentUser } from "./current-user"
 import { typeCheck, typeCheckObj } from "./utils"
 import { DEFAULT_CONNECTION_TIMEOUT } from "./constants"
 
-import { version } from "../package.json"
+import { version as sdkVersion } from "../package.json"
 
 export class ChatManager {
   constructor({ instanceLocator, tokenProvider, userId, ...options } = {}) {
@@ -13,8 +13,8 @@ export class ChatManager {
     typeCheck("tokenProvider", "object", tokenProvider)
     typeCheck("tokenProvider.fetchToken", "function", tokenProvider.fetchToken)
     typeCheck("userId", "string", userId)
-    const cluster = split(":", instanceLocator)[1]
-    if (cluster === undefined) {
+    const [version, cluster, instanceId] = split(":", instanceLocator)
+    if (!version || !cluster || !instanceId) {
       throw new TypeError(
         `expected instanceLocator to be of the format x:y:z, but was ${instanceLocator}`,
       )
@@ -25,7 +25,7 @@ export class ChatManager {
         host: `${cluster}.${HOST_BASE}`,
         logger: options.logger,
         sdkProduct: "chatkit",
-        sdkVersion: version,
+        sdkVersion,
       })
     if (typeof tokenProvider.setUserId === "function") {
       tokenProvider.setUserId(userId)

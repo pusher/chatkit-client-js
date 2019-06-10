@@ -6,6 +6,7 @@ import { typeCheck, typeCheckObj } from "./utils"
 import { DEFAULT_CONNECTION_TIMEOUT } from "./constants"
 
 import { version as sdkVersion } from "../package.json"
+import * as PusherPushNotifications from "@pusher/push-notifications-web"
 
 export class ChatManager {
   constructor({ instanceLocator, tokenProvider, userId, ...options } = {}) {
@@ -61,6 +62,20 @@ export class ChatManager {
       serviceVersion: "v2",
       ...instanceOptions,
     })
+    this.beamsTokenProviderInstance = new Instance({
+      serviceName: "chatkit_beams_token_provider",
+      serviceVersion: "v1",
+      ...instanceOptions,
+    })
+    this.beamsInstanceInitFn =
+      options.beamsInstanceInitFn ||
+      (args => {
+        return PusherPushNotifications.init({
+          instanceId,
+          ...args,
+        })
+      })
+
     this.userId = userId
     this.connectionTimeout =
       options.connectionTimeout || DEFAULT_CONNECTION_TIMEOUT
@@ -79,6 +94,8 @@ export class ChatManager {
       filesInstance: this.filesInstance,
       cursorsInstance: this.cursorsInstance,
       presenceInstance: this.presenceInstance,
+      beamsTokenProviderInstance: this.beamsTokenProviderInstance,
+      beamsInstanceInitFn: this.beamsInstanceInitFn,
       connectionTimeout: this.connectionTimeout,
     })
     return Promise.all([

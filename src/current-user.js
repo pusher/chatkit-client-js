@@ -30,7 +30,7 @@ import { PresenceSubscription } from "./presence-subscription"
 import { UserPresenceSubscription } from "./user-presence-subscription"
 import { RoomSubscription } from "./room-subscription"
 import { Message } from "./message"
-import { SET_CURSOR_WAIT } from "./constants"
+import { DEFAULT_SERVICE_WORKER_URL, SET_CURSOR_WAIT } from "./constants"
 
 export class CurrentUser {
   constructor({
@@ -42,6 +42,8 @@ export class CurrentUser {
     hooks,
     id,
     presenceInstance,
+    beamsTokenProviderInstance,
+    beamsInstanceInitFn,
   }) {
     this.hooks = {
       global: hooks,
@@ -55,6 +57,8 @@ export class CurrentUser {
     this.cursorsInstance = cursorsInstance
     this.connectionTimeout = connectionTimeout
     this.presenceInstance = presenceInstance
+    this.beamsTokenProviderInstance = beamsTokenProviderInstance
+    this.beamsInstanceInitFn = beamsInstanceInitFn
     this.logger = serverInstanceV4.logger
     this.presenceStore = {}
     this.userStore = new UserStore({
@@ -631,6 +635,47 @@ export class CurrentUser {
 
     this.userPresenceSubscriptions[userId] = userPresenceSub
     return userPresenceSub.connect()
+  }
+
+  enablePushNotifications(config) {
+    config = config || {}
+
+    try {
+      return this.beamsInstanceInitFn({
+        serviceWorkerURL: config.serviceWorkerURL || DEFAULT_SERVICE_WORKER_URL,
+      })
+        .then(beamsClient => {
+          beamsClient.start()
+          return beamsClient
+        })
+        .then(beamsClient => {
+          const fetchBeamsToken = userId =>
+            this.beamsTokenProviderInstance
+              .request({
+                method: "GET",
+                path: `/beams-tokens?user_id=${encodeURIComponent(userId)}`,
+              })
+              .then(JSON.parse)
+
+          return beamsClient.setUserId(this.id, {
+            fetchToken: fetchBeamsToken,
+          })
+        })
+        .catch(err => {
+          this.logger.warn(
+            `Chatkit error when enabling push notifications`,
+            err,
+          )
+          return Promise.reject(
+            `Chatkit error when enabling push notifications: ${err.message}`,
+          )
+        })
+    } catch (err) {
+      this.logger.warn(`Chatkit error when enabling push notifications`, err)
+      return Promise.reject(
+        `Chatkit error when enabling push notifications: ${err.message}`,
+      )
+    }
   }
 
   disconnect() {

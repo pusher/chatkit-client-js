@@ -637,9 +637,7 @@ export class CurrentUser {
     return userPresenceSub.connect()
   }
 
-  enablePushNotifications(config) {
-    config = config || {}
-
+  enablePushNotifications(config = {}) {
     try {
       return this.beamsInstanceInitFn({
         serviceWorkerURL: config.serviceWorkerURL || DEFAULT_SERVICE_WORKER_URL,

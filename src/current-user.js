@@ -522,7 +522,6 @@ export class CurrentUser {
         json: {
           content_type: type,
           content_length: file.size,
-          origin: window && window.location && window.location.origin,
           name: name || file.name,
           custom_data: customData,
         },

@@ -9,13 +9,13 @@ export class TypingIndicators {
   private hooks: {
     rooms: {
       [roomId: string]: {
-        onUserStartedTyping: (user: User) => void;
-        onUserStoppedTyping: (user: User) => void;
+        onUserStartedTyping?: (user: User) => void;
+        onUserStoppedTyping?: (user: User) => void;
       }
     },
     global: {
-      onUserStartedTyping: (room: Room, user: User) => void;
-      onUserStoppedTyping: (room: Room, user: User) => void;
+      onUserStartedTyping?: (room: Room, user: User) => void;
+      onUserStoppedTyping?: (room: Room, user: User) => void;
     }
   };
   private lastSentRequests: { [roomId: string]: number };
@@ -38,7 +38,7 @@ export class TypingIndicators {
     this.onStopped = this.onStopped.bind(this)
   }
 
-  private sendThrottledRequest(roomId: string): Promise<void> {
+  public sendThrottledRequest(roomId: string): Promise<void> {
     const now = Date.now()
     const sent = this.lastSentRequests[roomId]
     if (sent && now - sent < TYPING_INDICATOR_TTL - TYPING_INDICATOR_LEEWAY) {

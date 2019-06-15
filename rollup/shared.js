@@ -3,6 +3,7 @@ import commonjs from "rollup-plugin-commonjs"
 import resolve from "rollup-plugin-node-resolve"
 import uglify from "rollup-plugin-uglify"
 import json from "rollup-plugin-json"
+import typescript from "rollup-plugin-typescript"
 
 const pusherPlatformExports = [
   "BaseClient",
@@ -12,27 +13,17 @@ const pusherPlatformExports = [
 ]
 
 export default {
-  input: "src/main.js",
+  input: "src/main.ts",
   plugins: [
     json(),
-    babel({
-      presets: [
-        [
-          "env",
-          {
-            modules: false,
-          },
-        ],
-      ],
-      plugins: ["external-helpers", "transform-object-rest-spread"],
-      exclude: ["node_modules/**"],
-    }),
     resolve(),
+    typescript({tsconfig: "tsconfig.json"}),
     commonjs({
       namedExports: {
         "node_modules/@pusher/platform/dist/web/pusher-platform.js": pusherPlatformExports,
         "node_modules/@pusher/platform/react-native.js": pusherPlatformExports,
       },
+      extensions: ['.js', '.ts'],
     }),
     uglify(),
   ],

@@ -36,17 +36,18 @@
     "rollup-plugin-commonjs": "^8.3.0",
     "rollup-plugin-json": "^2.3.0",
     "rollup-plugin-node-resolve": "^3.0.2",
+    "rollup-plugin-typescript": "^1.0.1",
     "rollup-plugin-uglify": "^3.0.0",
     "snazzy": "^7.0.0",
     "tap-colorize": "^1.2.0",
     "tape": "^4.8.0",
     "tape-run": "^4.0.0",
     "tslint": "^5.8.0",
-    "typescript": "^2.6.1"
+    "typescript": "^3.4.0"
   },
   "scripts": {
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "format": "prettier --write src/**/*.js tests/**/*.js rollup/**/*.js example/**/*.js",
+    "format": "prettier --write src/**/*.ts tests/**/*.js rollup/**/*.js example/**/*.js",
     "build": "yarn build:web && yarn build:react-native",
     "build:web": "rollup -c rollup/web.js",
     "build:react-native": "rollup -c rollup/react-native.js",

@@ -10,7 +10,7 @@ export class UserStore {
   private presenceStore: PresenceStore;
   private logger: Logger;
   private reqs: { [userId: string]: Promise<void> }
-  private onSetHooks: ((userId: string) => void)[];
+  public onSetHooks: ((userId: string) => void)[];
   private users: { [userId: string]: User };
 
   public constructor(options: {

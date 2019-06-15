@@ -11,11 +11,11 @@ export class UserPresenceSubscription {
   private userId: string;
   private hooks: {
     global: {
-      onPresenceChanged: (state: { current: Presence, previous: Presence }, user: User) => void;
+      onPresenceChanged?: (state: { current: Presence, previous: Presence }, user: User) => void;
     };
     rooms: {
       [roomId: string]: {
-        onPresenceChanged: (state: { current: Presence, previous: Presence }, user: User) => void;
+        onPresenceChanged?: (state: { current: Presence, previous: Presence }, user: User) => void;
       }
     }
   }

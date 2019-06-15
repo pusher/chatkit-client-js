@@ -22,7 +22,7 @@ export class User implements BasicUser {
   public updatedAt: string;
   private presenceStore: PresenceStore;
 
-  public constructor(basicUser, presenceStore) {
+  public constructor(basicUser: BasicUser, presenceStore: PresenceStore) {
     this.avatarURL = basicUser.avatarURL
     this.createdAt = basicUser.createdAt
     this.customData = basicUser.customData

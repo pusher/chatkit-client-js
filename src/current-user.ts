@@ -13,13 +13,7 @@ import {
 
 import { sendRawRequest, Instance, Logger } from "@pusher/platform"
 
-import {
-  checkOneOf,
-  typeCheck,
-  typeCheckArr,
-  typeCheckObj,
-  urlEncode,
-} from "./utils"
+import { urlEncode } from "./utils"
 import { parseBasicMessage, parseBasicRoom } from "./parsers"
 import { UserStore } from "./user-store"
 import { RoomStore } from "./room-store"
@@ -32,7 +26,7 @@ import { RoomSubscription } from "./room-subscription"
 import { Message, BasicMessage, MessagePart } from "./message"
 import { SET_CURSOR_WAIT } from "./constants"
 import { Room } from "./room";
-import { User, PresenceStore, BasicUser } from "./user";
+import { User, PresenceStore, BasicUser, Presence } from "./user";
 import { Cursor } from "./cursor";
 
 type Callbacks = { resolve: (data?: any) => void, reject: (error?: any) => void };
@@ -76,6 +70,7 @@ export class CurrentUser {
       onUserStoppedTyping?: (room: Room, user: User) => void;
       onUserJoinedRoom?: (room: Room, user: User) => void;
       onUserLeftRoom?: (room: Room, user: User) => void;
+      onPresenceChanged?: (state: { current: Presence, previous: Presence }, user: User) => void;
     },
     rooms: {
       
@@ -254,7 +249,6 @@ export class CurrentUser {
   }
 
   public joinRoom(roomId: string) {
-    typeCheck("roomId", "string", roomId)
     if (this.isMemberOf(roomId)) {
       return this.roomStore.get(roomId)
     }
@@ -273,7 +267,6 @@ export class CurrentUser {
   }
 
   public leaveRoom(roomId: string) {
-    typeCheck("roomId", "string", roomId)
     return this.roomStore
       .get(roomId)
       .then(room =>
@@ -439,7 +432,7 @@ export class CurrentUser {
         )
         return this.userStore
           .fetchMissingUsers(uniq(map(prop("senderId"), messages)))
-          .then(() => sort((x, y) => x.id - y.id, messages))
+          .then(() => sort((x: any, y: any) => x.id - y.id, messages))
       })
       .catch(err => {
         this.logger.warn(`error fetching messages from room ${options.roomId}:`, err)
@@ -654,11 +647,11 @@ export class CurrentUser {
     })
     return this.userSubscription
       .connect()
-      .then(({ basicUser, basicRooms, basicCursors }) => {
-        this.setPropertiesFromBasicUser(basicUser)
+      .then((data) => {
+        this.setPropertiesFromBasicUser(data.user)
         return Promise.all([
-          ...basicRooms.map(basicRoom => this.roomStore.set(basicRoom)),
-          ...basicCursors.map(basicCursor => this.cursorStore.set(basicCursor)),
+          data.rooms.map(room => this.roomStore.set(room)),
+          data.cursors.map(cursor => this.cursorStore.set(cursor)),
         ])
       })
       .catch(err => {

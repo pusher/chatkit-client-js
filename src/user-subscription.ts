@@ -8,6 +8,7 @@ import { CurrentUser } from "./current-user";
 import { Room, BasicRoom } from "./room";
 import { Cursor, BasicCursor } from "./cursor";
 import { BasicUser } from "./user";
+import { TypingIndicators } from "./typing-indicators";
 
 export class UserSubscription {
   private userId: string;
@@ -20,22 +21,22 @@ export class UserSubscription {
       onNewReadCursor?: (cursor: Cursor) => void;
     }
   };
-  private instance: Instance;
-  private roomStore: RoomStore;
-  private cursorStore: CursorStore;
-  private roomSubscriptions: RoomSubscription[];
-  private logger: Logger;
-  private connectionTimeout: number;
-  private currentUser: CurrentUser;
+  private readonly instance: Instance;
+  private readonly roomStore: RoomStore;
+  private readonly cursorStore: CursorStore;
+  private readonly typingIndicators: TypingIndicators;
+  private readonly logger: Logger;
+  private readonly connectionTimeout: number;
+  private readonly currentUser: CurrentUser;
 
-  private timeout: NodeJS.Timeout;
-  private onSubscriptionEstablished: (
+  private timeout?: NodeJS.Timeout;
+  private onSubscriptionEstablished?: (
     basicUser: BasicUser,
     basicRooms: BasicRoom[],
     basicCursors: BasicCursor[]
     ) => void;
-  private established: boolean;
-  private sub: Subscription;
+  private established: boolean = false;
+  private sub?: Subscription;
 
   constructor(options: {
     userId: string;
@@ -43,7 +44,7 @@ export class UserSubscription {
     instance: Instance;
     roomStore: RoomStore;
     cursorStore: CursorStore;
-    roomSubscriptions: RoomSubscription[];
+    typingIndicators: TypingIndicators,
     logger: Logger;
     connectionTimeout: number;
     currentUser: CurrentUser;
@@ -53,7 +54,7 @@ export class UserSubscription {
     this.instance = options.instance
     this.roomStore = options.roomStore
     this.cursorStore = options.cursorStore
-    this.roomSubscriptions = options.roomSubscriptions
+    this.typingIndicators = options.typingIndicators
     this.logger = options.logger
     this.connectionTimeout = options.connectionTimeout
     this.currentUser = options.currentUser
@@ -107,7 +108,7 @@ export class UserSubscription {
     }
   }
 
-  private onEvent({ body }) {
+  private onEvent(body: any) {
     switch (body.event_name) {
       case "initial_state":
         this.onInitialState(body.data)
@@ -130,14 +131,14 @@ export class UserSubscription {
     }
   }
 
-  private onInitialState({
-    current_user: userData,
-    rooms: roomsData,
-    cursors: cursorsData,
+  private onInitialState(data: {
+    current_user: any,
+    rooms: any,
+    cursors: any,
   }) {
-    const basicUser = parseBasicUser(userData)
-    const basicRooms = roomsData.map(d => parseBasicRoom(d))
-    const basicCursors = cursorsData.map(d => parseBasicCursor(d))
+    const basicUser = parseBasicUser(data.current_user)
+    const basicRooms = data.rooms.map((d: any) => parseBasicRoom(d))
+    const basicCursors = data.cursors.map((d: any) => parseBasicCursor(d))
     if (!this.established) {
       this.established = true
       this.onSubscriptionEstablished(basicUser, basicRooms, basicCursors)
@@ -154,15 +155,15 @@ export class UserSubscription {
     }
   }
 
-  private onAddedToRoom({ room: roomData }) {
-    this.roomStore.set(parseBasicRoom(roomData)).then(room => {
+  private onAddedToRoom(data: any) {
+    this.roomStore.set(parseBasicRoom(data)).then(room => {
       if (this.hooks.global.onAddedToRoom) {
         this.hooks.global.onAddedToRoom(room)
       }
     })
   }
 
-  private onRemovedFromRoom({ room_id: roomId }) {
+  private onRemovedFromRoom(roomId: string) {
     this.roomStore.pop(roomId).then(room => {
       if (room && this.hooks.global.onRemovedFromRoom) {
         this.hooks.global.onRemovedFromRoom(room)
@@ -170,8 +171,8 @@ export class UserSubscription {
     })
   }
 
-  private onRoomUpdated({ room: roomData }) {
-    const updates = parseBasicRoom(roomData)
+  private onRoomUpdated(data: any) {
+    const updates = parseBasicRoom(data)
     this.roomStore.update(updates.id, updates).then(room => {
       if (this.hooks.global.onRoomUpdated) {
         this.hooks.global.onRoomUpdated(room)
@@ -179,7 +180,7 @@ export class UserSubscription {
     })
   }
 
-  private onRoomDeleted({ room_id: roomId }) {
+  private onRoomDeleted(roomId: string) {
     this.roomStore.pop(roomId).then(room => {
       if (room && this.hooks.global.onRoomDeleted) {
         this.hooks.global.onRoomDeleted(room)
@@ -187,7 +188,7 @@ export class UserSubscription {
     })
   }
 
-  private onNewCursor(data) {
+  private onNewCursor(data: any) {
     return this.cursorStore.set(parseBasicCursor(data)).then(cursor => {
       if (this.hooks.global.onNewReadCursor && cursor.type === 0) {
         this.hooks.global.onNewReadCursor(cursor)

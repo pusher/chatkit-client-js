@@ -1,21 +1,19 @@
 {
-    "compilerOptions": {
-      "declaration": true,
-      "declarationDir": "declarations",
-      "lib": ["es6", "webworker"],
-      "module": "commonjs",
-      "removeComments": true,
-      "sourceMap": true,
-      "strict": true,
-      "target": "ES5",
-      "resolveJsonModule": true
-    },
-    "files": [
-      "src/declarations/global/global.d.ts"
-    ],
-    "exclude": [
-      "node_modules",
-      "target",
-      "test"
-    ]
-  }
+  "compilerOptions": {
+    "declaration": true,
+    "declarationDir": "declarations",
+    "lib": ["es6", "webworker"],
+    "module": "CommonJS",
+    "removeComments": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "es5",
+    "resolveJsonModule": true,
+    "moduleResolution": "node"
+  },
+  "exclude": [
+    "node_modules",
+    "target",
+    "test"
+  ]
+}

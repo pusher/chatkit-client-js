@@ -1,10 +1,34 @@
 import { TYPING_INDICATOR_TTL, TYPING_INDICATOR_LEEWAY } from "./constants"
+import { Instance, Logger } from "@pusher/platform";
+import { Room } from "./room";
+import { User } from "./user";
 
 export class TypingIndicators {
-  constructor({ hooks, instance, logger }) {
-    this.hooks = hooks
-    this.instance = instance
-    this.logger = logger
+  private logger: Logger;
+  private instance: Instance;
+  private hooks: {
+    rooms: {
+      [roomId: string]: {
+        onUserStartedTyping: (user: User) => void;
+        onUserStoppedTyping: (user: User) => void;
+      }
+    },
+    global: {
+      onUserStartedTyping: (room: Room, user: User) => void;
+      onUserStoppedTyping: (room: Room, user: User) => void;
+    }
+  };
+  private lastSentRequests: { [roomId: string]: number };
+  private timers: { [roomId: string]: { [userId: string]: NodeJS.Timeout } };
+
+  public constructor(options: {
+    hooks: TypingIndicators['hooks'];
+    instance: Instance;
+    logger: Logger;
+  }) {
+    this.hooks = options.hooks
+    this.instance = options.instance
+    this.logger = options.logger
     this.lastSentRequests = {}
     this.timers = {}
 
@@ -14,7 +38,7 @@ export class TypingIndicators {
     this.onStopped = this.onStopped.bind(this)
   }
 
-  sendThrottledRequest(roomId) {
+  private sendThrottledRequest(roomId: string): Promise<void> {
     const now = Date.now()
     const sent = this.lastSentRequests[roomId]
     if (sent && now - sent < TYPING_INDICATOR_TTL - TYPING_INDICATOR_LEEWAY) {
@@ -27,7 +51,7 @@ export class TypingIndicators {
         path: `/rooms/${encodeURIComponent(roomId)}/typing_indicators`,
       })
       .catch(err => {
-        delete this.typingRequestSent[roomId]
+        delete this.lastSentRequests[roomId]
         this.logger.warn(
           `Error sending typing indicator in room ${roomId}`,
           err,
@@ -36,7 +60,7 @@ export class TypingIndicators {
       })
   }
 
-  onIsTyping(room, user) {
+  private onIsTyping(room: Room, user: User) {
     if (!this.timers[room.id]) {
       this.timers[room.id] = {}
     }
@@ -51,7 +75,7 @@ export class TypingIndicators {
     }, TYPING_INDICATOR_TTL)
   }
 
-  onStarted(room, user) {
+  private onStarted(room: Room, user: User) {
     if (this.hooks.global.onUserStartedTyping) {
       this.hooks.global.onUserStartedTyping(room, user)
     }
@@ -63,7 +87,7 @@ export class TypingIndicators {
     }
   }
 
-  onStopped(room, user) {
+  private onStopped(room: Room, user: User) {
     if (this.hooks.global.onUserStoppedTyping) {
       this.hooks.global.onUserStoppedTyping(room, user)
     }

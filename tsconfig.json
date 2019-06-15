@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+      "declaration": true,
+      "declarationDir": "declarations",
+      "lib": ["es6", "webworker"],
+      "module": "commonjs",
+      "removeComments": true,
+      "sourceMap": true,
+      "strict": true,
+      "target": "ES5",
+      "resolveJsonModule": true
+    },
+    "files": [
+      "src/declarations/global/global.d.ts"
+    ],
+    "exclude": [
+      "node_modules",
+      "target",
+      "test"
+    ]
+  }

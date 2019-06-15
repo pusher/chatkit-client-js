@@ -1,8 +1,29 @@
 import { parseBasicCursor } from "./parsers"
 import { handleCursorSubReconnection } from "./reconnection-handlers"
+import { CursorStore } from "./cursor-store";
+import { Instance, Logger, Subscription } from "@pusher/platform";
+import { Cursor, BasicCursor } from "./cursor";
 
 export class CursorSubscription {
-  constructor(options) {
+  private roomId: string;
+  private cursorStore: CursorStore;
+  private instance: Instance;
+  private logger: Logger;
+  private connectionTimeout: number;
+  private timeout: NodeJS.Timeout;
+  public established: boolean;
+  private onNewCursorHook: (cursor: BasicCursor) => void;
+  private sub: Subscription;
+  private onSubscriptionEstablished: (cursor: Cursor[]) => void;
+
+  public constructor(options: {
+    onNewCursorHook: (cursor: Cursor) => void,
+    roomId: string,
+    cursorStore: CursorStore,
+    instance: Instance,
+    logger: Logger,
+    connectionTimeout: number,
+  }) {
     this.onNewCursorHook = options.onNewCursorHook
     this.roomId = options.roomId
     this.cursorStore = options.cursorStore
@@ -17,7 +38,7 @@ export class CursorSubscription {
     this.onNewCursor = this.onNewCursor.bind(this)
   }
 
-  connect() {
+  public connect() {
     return new Promise((resolve, reject) => {
       this.timeout = setTimeout(() => {
         reject(new Error("cursor subscription timed out"))
@@ -39,7 +60,7 @@ export class CursorSubscription {
     })
   }
 
-  cancel() {
+  public cancel() {
     clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
@@ -48,7 +69,7 @@ export class CursorSubscription {
     }
   }
 
-  onEvent({ body }) {
+  private onEvent({ body }) {
     switch (body.event_name) {
       case "initial_state":
         this.onInitialState(body.data)
@@ -59,7 +80,7 @@ export class CursorSubscription {
     }
   }
 
-  onInitialState({ cursors }) {
+  private onInitialState(cursors: any[]) {
     const basicCursors = cursors.map(c => parseBasicCursor(c))
 
     if (!this.established) {
@@ -76,9 +97,9 @@ export class CursorSubscription {
     }
   }
 
-  onNewCursor(data) {
+  private onNewCursor(data: any) {
     return this.cursorStore
       .set(parseBasicCursor(data))
-      .then(cursor => this.onNewCursorHook(cursor))
+      .then((cursor: BasicCursor) => this.onNewCursorHook(cursor))
   }
 }

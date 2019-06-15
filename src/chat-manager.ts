@@ -1,22 +1,36 @@
-import { BaseClient, HOST_BASE, Instance } from "@pusher/platform"
+import { BaseClient, HOST_BASE, Instance, Logger } from "@pusher/platform"
 import { split } from "ramda"
 
 import { CurrentUser } from "./current-user"
-import { typeCheck, typeCheckObj } from "./utils"
+import { TokenProvider } from './token-provider'
 import { DEFAULT_CONNECTION_TIMEOUT } from "./constants"
 
 import { version } from "../package.json"
 
 export class ChatManager {
-  constructor({ instanceLocator, tokenProvider, userId, ...options } = {}) {
-    typeCheck("instanceLocator", "string", instanceLocator)
-    typeCheck("tokenProvider", "object", tokenProvider)
-    typeCheck("tokenProvider.fetchToken", "function", tokenProvider.fetchToken)
-    typeCheck("userId", "string", userId)
-    const cluster = split(":", instanceLocator)[1]
+
+  public userId: string;
+  public connectionTimeout: number;
+  public currentUser: CurrentUser;
+
+  public serverInstanceV2: Instance;
+  public serverInstanceV4: Instance;
+  public filesInstance: Instance;
+  public cursorsInstance: Instance;
+  public presenceInstance: Instance;
+
+  public constructor(options: { 
+    instanceLocator: string,
+    tokenProvider: TokenProvider,
+    userId: string,
+    baseClient?: BaseClient,
+    logger?: Logger,
+    connectionTimeout?: number,
+  }) {
+    const cluster = split(":", options.instanceLocator)[1]
     if (cluster === undefined) {
       throw new TypeError(
-        `expected instanceLocator to be of the format x:y:z, but was ${instanceLocator}`,
+        `expected instanceLocator to be of the format x:y:z, but was ${options.instanceLocator}`,
       )
     }
     const baseClient =
@@ -27,14 +41,14 @@ export class ChatManager {
         sdkProduct: "chatkit",
         sdkVersion: version,
       })
-    if (typeof tokenProvider.setUserId === "function") {
-      tokenProvider.setUserId(userId)
+    if (options.tokenProvider.setUserId) {
+      options.tokenProvider.setUserId(options.userId);
     }
     const instanceOptions = {
       client: baseClient,
-      locator: instanceLocator,
+      locator: options.instanceLocator,
       logger: options.logger,
-      tokenProvider,
+      tokenProvider: options.tokenProvider,
     }
     this.serverInstanceV2 = new Instance({
       serviceName: "chatkit",
@@ -61,7 +75,7 @@ export class ChatManager {
       serviceVersion: "v2",
       ...instanceOptions,
     })
-    this.userId = userId
+    this.userId = options.userId
     this.connectionTimeout =
       options.connectionTimeout || DEFAULT_CONNECTION_TIMEOUT
 
@@ -69,8 +83,7 @@ export class ChatManager {
     this.disconnect = this.disconnect.bind(this)
   }
 
-  connect(hooks = {}) {
-    typeCheckObj("hooks", "function", hooks)
+  public connect(hooks = {}) {
     const currentUser = new CurrentUser({
       hooks,
       id: this.userId,
@@ -90,7 +103,7 @@ export class ChatManager {
     })
   }
 
-  disconnect() {
+  public disconnect() {
     if (this.currentUser) this.currentUser.disconnect()
   }
 }

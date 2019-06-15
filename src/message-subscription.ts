@@ -1,9 +1,40 @@
 import { parseBasicMessage } from "./parsers"
 import { urlEncode } from "./utils"
-import { Message } from "./message"
+import { Message, BasicMessage } from "./message"
+import { UserStore } from "./user-store";
+import { RoomStore } from "./room-store";
+import { Instance, Logger, Subscription } from "@pusher/platform";
+import { TypingIndicators } from "./typing-indicators";
 
 export class MessageSubscription {
-  constructor(options) {
+  private roomId: string;
+  private messageLimit: number;
+  private userId: string;
+  private userStore: UserStore;
+  private roomStore: RoomStore;
+  private typingIndicators: TypingIndicators;
+  private instance: Instance;
+  private logger: Logger;
+  private connectionTimeout: number;
+  private messageBuffer: { message: Message, ready: boolean }[];
+  private onMessageHook: (message: Message) => void;
+
+  private timeout: NodeJS.Timeout;
+  public established: boolean;
+  private sub: Subscription;
+
+  public constructor(options: {
+    roomId: string;
+    messageLimit: number;
+    userId: string;
+    instance: Instance;
+    userStore: UserStore;
+    roomStore: RoomStore;
+    typingIndicators: TypingIndicators;
+    logger: Logger;
+    connectionTimeout: number;
+    onMessageHook: (message: Message) => void;
+  }) {
     this.roomId = options.roomId
     this.messageLimit = options.messageLimit
     this.userId = options.userId
@@ -24,7 +55,7 @@ export class MessageSubscription {
     this.onIsTyping = this.onIsTyping.bind(this)
   }
 
-  connect() {
+  public connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.timeout = setTimeout(() => {
         reject(new Error("message subscription timed out"))
@@ -48,7 +79,7 @@ export class MessageSubscription {
     })
   }
 
-  cancel() {
+  public cancel() {
     clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
@@ -57,7 +88,7 @@ export class MessageSubscription {
     }
   }
 
-  onEvent({ body }) {
+  private onEvent(body) {
     switch (body.event_name) {
       case "new_message":
         this.onMessage(body.data)
@@ -68,7 +99,7 @@ export class MessageSubscription {
     }
   }
 
-  onMessage(data) {
+  private onMessage(data: any) {
     const pending = {
       message: new Message(
         parseBasicMessage(data),
@@ -90,13 +121,13 @@ export class MessageSubscription {
       })
   }
 
-  flushBuffer() {
+  private flushBuffer() {
     while (this.messageBuffer.length > 0 && this.messageBuffer[0].ready) {
       this.onMessageHook(this.messageBuffer.shift().message)
     }
   }
 
-  onIsTyping({ user_id: userId }) {
+  private onIsTyping(userId: string) {
     if (userId !== this.userId) {
       Promise.all([
         this.roomStore.get(this.roomId),

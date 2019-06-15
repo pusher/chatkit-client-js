@@ -1,0 +1,27 @@
+{
+    "defaultSeverity": "error",
+    "extends": [
+      "tslint:recommended"
+    ],
+    "jsRules": {},
+    "linterOptions": {
+      "exclude": [
+        "src/declarations/**/*.d.ts"
+      ]
+    },
+    "rules": {
+      "arrow-parens": false,
+      "interface-name": [true, "never-prefix"],
+      "interface-over-type-literal": false,
+      "max-classes-per-file": [false],
+      "member-access": [true, "no-public"],
+      "member-ordering": [true, {"order": "instance-sandwich"}],
+      "quotemark": [
+        true,
+        "single",
+        "avoid-escape"
+      ],
+      "semicolon": [true, "always", "ignore-bound-class-methods"]
+    },
+    "rulesDirectory": []
+  }

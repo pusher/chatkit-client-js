@@ -1,16 +1,23 @@
-import { sendRawRequest } from "@pusher/platform"
+import { sendRawRequest, TokenProvider as PlatformTokenProvider } from "@pusher/platform"
 
-import { appendQueryParams, typeCheck, unixSeconds, urlEncode } from "./utils"
+import { appendQueryParams, unixSeconds, urlEncode } from "./utils"
 
-export class TokenProvider {
-  constructor({ url, queryParams, headers, withCredentials } = {}) {
-    typeCheck("url", "string", url)
-    queryParams && typeCheck("queryParams", "object", queryParams)
-    headers && typeCheck("headers", "object", headers)
-    this.url = url
-    this.queryParams = queryParams
-    this.headers = headers
-    this.withCredentials = withCredentials
+export class TokenProvider implements PlatformTokenProvider {
+  public userId: string;
+  private url: string;
+  private queryParams: any;
+  private headers: { [header: string]: any };
+  private withCredentials: boolean;
+
+  private cachedToken: string;
+  private cacheExpiresAt: number;
+  private req: Promise<{ token: any; expiresIn: any; }>
+  
+  public constructor(options: { url: string, queryParams: any, headers: { [header: string]: any }, withCredentials: boolean }) {
+    this.url = options.url
+    this.queryParams = options.queryParams
+    this.headers = options.headers
+    this.withCredentials = options.withCredentials
 
     this.fetchToken = this.fetchToken.bind(this)
     this.fetchFreshToken = this.fetchFreshToken.bind(this)
@@ -20,7 +27,12 @@ export class TokenProvider {
     this.setUserId = this.setUserId.bind(this)
   }
 
-  fetchToken() {
+  // Interface implementation, currently unused.
+  public clearToken() {
+
+  }
+
+  public fetchToken() {
     return !this.cacheIsStale()
       ? Promise.resolve(this.cachedToken)
       : (this.req || this.fetchFreshToken()).then(({ token, expiresIn }) => {
@@ -29,7 +41,7 @@ export class TokenProvider {
         })
   }
 
-  fetchFreshToken() {
+  public fetchFreshToken() {
     this.req = sendRawRequest({
       method: "POST",
       url: appendQueryParams(
@@ -55,23 +67,23 @@ export class TokenProvider {
     return this.req
   }
 
-  cacheIsStale() {
+  private cacheIsStale() {
     return !this.cachedToken || unixSeconds() > this.cacheExpiresAt
   }
 
-  cache(token, expiresIn) {
+  private cache(token, expiresIn) {
     this.cachedToken = token
     this.cacheExpiresAt = unixSeconds() + expiresIn
   }
 
-  clearCache() {
+  private clearCache() {
     this.cachedToken = undefined
     this.cacheExpiresAt = undefined
   }
 
   // To allow ChatManager to feed the userId to the TokenProvider. Not set
   // directly so as not to mess with a custom TokenProvider implementation.
-  setUserId(userId) {
+  public setUserId(userId) {
     this.clearCache()
     this.userId = userId
   }

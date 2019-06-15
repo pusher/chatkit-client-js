@@ -1,7 +1,38 @@
 import { contains, filter, values } from "ramda"
+import { UserStore } from "./user-store";
+import { Logger } from "@pusher/platform";
+
+export interface BasicRoom {
+  createdAt: string;
+  createdByUserId: string;
+  id: string;
+  isPrivate: boolean;
+  name: string;
+  updatedAt: string;
+  customData?: any;
+  deletedAt: string;
+  unreadCount: number;
+  lastMessageAt: string;
+}
 
 export class Room {
-  constructor({ basicRoom, userStore, isSubscribedTo, logger }) {
+  public createdAt: string;
+  public createdByUserId: string;
+  public id: string;
+  public isPrivate: boolean;
+  public name: string;
+  public updatedAt: string;
+  public customData?: any;
+  public deletedAt: string;
+  public unreadCount: number;
+  public lastMessageAt: string;
+  public userIds: string[];
+
+  private userStore: UserStore;
+  private isSubscribedTo: (userId: string) => boolean;
+  private logger: Logger;
+
+  public constructor({ basicRoom, userStore, isSubscribedTo, logger }) {
     this.createdAt = basicRoom.createdAt
     this.createdByUserId = basicRoom.createdByUserId
     this.deletedAt = basicRoom.deletedAt
@@ -20,7 +51,7 @@ export class Room {
     this.eq = this.eq.bind(this)
   }
 
-  get users() {
+  public get users() {
     if (!this.isSubscribedTo(this.id)) {
       const err = new Error(
         `Must be subscribed to room ${this.id} to access users property`,
@@ -34,7 +65,7 @@ export class Room {
     )
   }
 
-  eq(other) {
+  public eq(other) {
     return (
       this.createdAt === other.createdAt &&
       this.createdByUserId === other.createdByUserId &&

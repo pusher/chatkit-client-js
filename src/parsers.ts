@@ -1,4 +1,9 @@
-export const parseBasicRoom = data => ({
+import { BasicCursor } from "./cursor";
+import { BasicMessage, MessagePart } from "./message";
+import { BasicRoom } from "./room";
+import { BasicUser, Presence } from "./user";
+
+export const parseBasicRoom = (data: any): BasicRoom => ({
   createdAt: data.created_at,
   createdByUserId: data.created_by_id,
   id: data.id,
@@ -11,7 +16,7 @@ export const parseBasicRoom = data => ({
   lastMessageAt: data.last_message_at,
 })
 
-export const parseBasicUser = data => ({
+export const parseBasicUser = (data: any): BasicUser => ({
   avatarURL: data.avatar_url,
   createdAt: data.created_at,
   customData: data.custom_data,
@@ -20,14 +25,14 @@ export const parseBasicUser = data => ({
   updatedAt: data.updated_at,
 })
 
-export const parsePresence = data => ({
+export const parsePresence = (data: any): { state: Presence } => ({
   state: ["online", "offline"].includes(data.state) ? data.state : "unknown",
 })
 
-export const parseBasicMessage = data => {
+export const parseBasicMessage = (data: any): BasicMessage => {
   const roomId = data.room_id
 
-  const basicMessage = {
+  const basicMessage: BasicMessage = {
     roomId,
     id: data.id,
     senderId: data.user_id,
@@ -49,7 +54,7 @@ export const parseBasicMessage = data => {
   return basicMessage
 }
 
-export const parseBasicCursor = data => ({
+export const parseBasicCursor = (data: any): BasicCursor => ({
   position: data.position,
   updatedAt: data.updated_at,
   userId: data.user_id,
@@ -57,13 +62,13 @@ export const parseBasicCursor = data => ({
   type: data.cursor_type,
 })
 
-const parseMessageAttachment = data => ({
+const parseMessageAttachment = (data: any): {link: string, type: string, name: string} => ({
   link: data.resource_link,
   type: data.type,
   name: data.name,
 })
 
-const parseMessagePart = data => {
+const parseMessagePart = (data: any): MessagePart => {
   if (data.content) {
     return {
       partType: "inline",

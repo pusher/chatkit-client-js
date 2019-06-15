@@ -11,7 +11,7 @@ import {
   values,
 } from "ramda"
 
-import { sendRawRequest } from "@pusher/platform"
+import { sendRawRequest, Instance, Logger } from "@pusher/platform"
 
 import {
   checkOneOf,
@@ -29,10 +29,59 @@ import { UserSubscription } from "./user-subscription"
 import { PresenceSubscription } from "./presence-subscription"
 import { UserPresenceSubscription } from "./user-presence-subscription"
 import { RoomSubscription } from "./room-subscription"
-import { Message } from "./message"
+import { Message, BasicMessage, MessagePart } from "./message"
 import { SET_CURSOR_WAIT } from "./constants"
+import { Room } from "./room";
+import { User, PresenceStore, BasicUser } from "./user";
+import { Cursor } from "./cursor";
+
+type Callbacks = { resolve: (data?: any) => void, reject: (error?: any) => void };
+type MessageFetchDirection = 'older' | 'newer'
 
 export class CurrentUser {
+  public id: string;
+  public encodedId: string;
+  public connectionTimeout: number;
+
+  public avatarURL: string;
+  public createdAt: string;
+  public customData?: any;
+  public name: string;
+  public updatedAt: string;
+
+  public serverInstanceV2: Instance;
+  public serverInstanceV4: Instance;
+  public filesInstance: Instance;
+  public cursorsInstance: Instance;
+  public presenceInstance: Instance;
+  public logger: Logger;
+  public presenceStore: PresenceStore;
+  public userStore: UserStore;
+  public roomStore: RoomStore;
+  public cursorStore: CursorStore;
+  public typingIndicators: TypingIndicators;
+  public roomSubscriptions: { [roomId: string]: RoomSubscription };
+  public readCursorBuffer: { [roomId: string]: { position: number, callbacks: Callbacks[] } };
+  public userPresenceSubscriptions: { [userId: string]: UserPresenceSubscription }
+  public userSubscription: UserSubscription;
+  public presenceSubscription: PresenceSubscription;
+
+  public hooks: {
+    global: {
+      onAddedToRoom?: (room: Room) => void;
+      onRemovedFromRoom?: (room: Room) => void;
+      onRoomUpdated?: (room: Room) => void;
+      onRoomDeleted?: (room: Room) => void;
+      onUserStartedTyping?: (room: Room, user: User) => void;
+      onUserStoppedTyping?: (room: Room, user: User) => void;
+      onUserJoinedRoom?: (room: Room, user: User) => void;
+      onUserLeftRoom?: (room: Room, user: User) => void;
+    },
+    rooms: {
+      
+    }
+  }
+
   constructor({
     serverInstanceV2,
     serverInstanceV4,
@@ -65,7 +114,7 @@ export class CurrentUser {
     this.roomStore = new RoomStore({
       instance: this.serverInstanceV4,
       userStore: this.userStore,
-      isSubscribedTo: userId => this.isSubscribedTo(userId),
+      isSubscribedTo: (userId: string) => this.isSubscribedTo(userId),
       logger: this.logger,
     })
     this.cursorStore = new CursorStore({
@@ -119,19 +168,15 @@ export class CurrentUser {
     this._uploadAttachment = this._uploadAttachment.bind(this)
   }
 
-  /* public */
-
-  get rooms() {
+  public get rooms() {
     return values(this.roomStore.snapshot())
   }
 
-  get users() {
+  public get users() {
     return values(this.userStore.snapshot())
   }
 
-  setReadCursor({ roomId, position } = {}) {
-    typeCheck("roomId", "string", roomId)
-    typeCheck("position", "number", position)
+  public setReadCursor(roomId: string, position: number) {
     return new Promise((resolve, reject) => {
       if (this.readCursorBuffer[roomId] !== undefined) {
         this.readCursorBuffer[roomId].position = max(
@@ -155,9 +200,7 @@ export class CurrentUser {
     })
   }
 
-  readCursor({ roomId, userId = this.id } = {}) {
-    typeCheck("roomId", "string", roomId)
-    typeCheck("userId", "string", userId)
+  public readCursor(roomId: string, userId: string = this.id) {
     if (userId !== this.id && !this.isSubscribedTo(roomId)) {
       const err = new Error(
         `Must be subscribed to room ${roomId} to access member's read cursors`,
@@ -168,15 +211,11 @@ export class CurrentUser {
     return this.cursorStore.getSync(userId, roomId)
   }
 
-  isTypingIn({ roomId } = {}) {
-    typeCheck("roomId", "string", roomId)
+  public isTypingIn(roomId: string) {
     return this.typingIndicators.sendThrottledRequest(roomId)
   }
 
-  createRoom({ name, addUserIds, customData, ...rest } = {}) {
-    name && typeCheck("name", "string", name)
-    addUserIds && typeCheckArr("addUserIds", "string", addUserIds)
-    customData && typeCheck("customData", "object", customData)
+  public createRoom(options: { name: string, addUserIds: string[], customData?: { [key: string]: any }, private?: boolean }) {
     return this.serverInstanceV4
       .request({
         method: "POST",
@@ -184,9 +223,9 @@ export class CurrentUser {
         json: {
           created_by_id: this.id,
           name,
-          private: !!rest.private, // private is a reserved word in strict mode!
-          user_ids: addUserIds,
-          custom_data: customData,
+          private: !!options.private, // private is a reserved word in strict mode!
+          user_ids: options.addUserIds,
+          custom_data: options.customData,
         },
       })
       .then(res => this.roomStore.set(parseBasicRoom(JSON.parse(res))))
@@ -196,7 +235,7 @@ export class CurrentUser {
       })
   }
 
-  getJoinableRooms() {
+  public getJoinableRooms() {
     return this.serverInstanceV4
       .request({
         method: "GET",
@@ -214,7 +253,7 @@ export class CurrentUser {
       })
   }
 
-  joinRoom({ roomId } = {}) {
+  public joinRoom(roomId: string) {
     typeCheck("roomId", "string", roomId)
     if (this.isMemberOf(roomId)) {
       return this.roomStore.get(roomId)
@@ -233,7 +272,7 @@ export class CurrentUser {
       })
   }
 
-  leaveRoom({ roomId } = {}) {
+  public leaveRoom(roomId: string) {
     typeCheck("roomId", "string", roomId)
     return this.roomStore
       .get(roomId)
@@ -253,9 +292,7 @@ export class CurrentUser {
       })
   }
 
-  addUserToRoom({ userId, roomId } = {}) {
-    typeCheck("userId", "string", userId)
-    typeCheck("roomId", "string", roomId)
+  public addUserToRoom(userId: string, roomId: string) {
     return this.serverInstanceV4
       .request({
         method: "PUT",
@@ -271,9 +308,7 @@ export class CurrentUser {
       })
   }
 
-  removeUserFromRoom({ userId, roomId } = {}) {
-    typeCheck("userId", "string", userId)
-    typeCheck("roomId", "string", roomId)
+  public removeUserFromRoom(userId: string, roomId: string) {
     return this.serverInstanceV4
       .request({
         method: "PUT",
@@ -292,15 +327,21 @@ export class CurrentUser {
       })
   }
 
-  sendMessage({ text, roomId, attachment } = {}) {
-    typeCheck("text", "string", text)
-    typeCheck("roomId", "string", roomId)
+  public sendMessage(text: string, roomId: string, attachment?: { 
+    file?: File, 
+    link?: string, 
+    type?: 'image' | 'video' | 'audio' | 'file' ,
+    name?: string
+  }) {
     return new Promise((resolve, reject) => {
-      if (attachment !== undefined && isDataAttachment(attachment)) {
-        resolve(this.uploadDataAttachment(roomId, attachment))
-      } else if (attachment !== undefined && isLinkAttachment(attachment)) {
+      if (isDataAttachment(attachment)) {
+        resolve(this.uploadDataAttachment(roomId, {
+          file: attachment.file!,
+          name: attachment.name!
+        }))
+      } else if (attachment && isLinkAttachment(attachment)) {
         resolve({ resource_link: attachment.link, type: attachment.type })
-      } else if (attachment !== undefined) {
+      } else if (attachment) {
         reject(new TypeError("attachment was malformed"))
       } else {
         resolve()
@@ -325,16 +366,20 @@ export class CurrentUser {
       })
   }
 
-  sendSimpleMessage({ roomId, text } = {}) {
-    return this.sendMultipartMessage({
-      roomId,
-      parts: [{ type: "text/plain", content: text }],
-    })
+  public sendSimpleMessage(roomId: string, text: string) {
+    return this.sendMultipartMessage(
+      roomId, [{ type: "text/plain", content: text }],
+    )
   }
 
-  sendMultipartMessage({ roomId, parts } = {}) {
-    typeCheck("roomId", "string", roomId)
-    typeCheckArr("parts", "object", parts)
+  public sendMultipartMessage(roomId: string, parts: {
+    type: string;
+    content?: string;
+    url?: string;
+    customData?: any;
+    file?: File;
+    name?: string;
+  }[]) {
     if (parts.length === 0) {
       return Promise.reject(
         new TypeError("message must contain at least one part"),
@@ -343,12 +388,12 @@ export class CurrentUser {
     return Promise.all(
       parts.map(part => {
         part.type = part.type || (part.file && part.file.type)
-        typeCheck("part.type", "string", part.type)
-        part.content && typeCheck("part.content", "string", part.content)
-        part.url && typeCheck("part.url", "string", part.url)
-        part.name && typeCheck("part.name", "string", part.name)
-        part.file && typeCheck("part.file.size", "number", part.file.size)
-        return part.file ? this._uploadAttachment({ roomId, part }) : part
+        return part.file ? this._uploadAttachment(roomId, {
+          type: part.type!,
+          name: part.name,
+          customData: part.customData,
+          file: part.file!
+        }) : new Promise(resolve => resolve(part))
       }),
     )
       .then(parts =>
@@ -372,18 +417,20 @@ export class CurrentUser {
       })
   }
 
-  fetchMessages({ roomId, initialId, limit, direction, serverInstance } = {}) {
-    typeCheck("roomId", "string", roomId)
-    initialId && typeCheck("initialId", "number", initialId)
-    limit && typeCheck("limit", "number", limit)
-    direction && checkOneOf("direction", ["older", "newer"], direction)
-    return (serverInstance || this.serverInstanceV2)
+  public fetchMessages(options: { 
+    roomId: string, 
+    initialId?: number, 
+    limit?: number,
+    direction?: MessageFetchDirection,
+    serverInstance?: Instance
+  }) {
+    return (options.serverInstance || this.serverInstanceV2)
       .request({
         method: "GET",
-        path: `/rooms/${encodeURIComponent(roomId)}/messages?${urlEncode({
-          initial_id: initialId,
-          limit,
-          direction,
+        path: `/rooms/${encodeURIComponent(options.roomId)}/messages?${urlEncode({
+          initial_id: options.initialId,
+          limit: options.limit,
+          direction: options.direction,
         })}`,
       })
       .then(res => {
@@ -395,69 +442,88 @@ export class CurrentUser {
           .then(() => sort((x, y) => x.id - y.id, messages))
       })
       .catch(err => {
-        this.logger.warn(`error fetching messages from room ${roomId}:`, err)
+        this.logger.warn(`error fetching messages from room ${options.roomId}:`, err)
         throw err
       })
   }
 
-  fetchMultipartMessages(options = {}) {
-    return this.fetchMessages({
-      ...options,
-      serverInstance: this.serverInstanceV4,
-    })
+  public fetchMultipartMessages(options: {
+    roomId: string,
+    initialId?: number,
+    limit?: number,
+    direction?: MessageFetchDirection
+  }) {
+    return this.fetchMessages({...options, serverInstance: this.serverInstanceV4})
   }
 
-  subscribeToRoom({ roomId, hooks = {}, messageLimit, serverInstance } = {}) {
-    typeCheck("roomId", "string", roomId)
-    typeCheckObj("hooks", "function", hooks)
-    messageLimit && typeCheck("messageLimit", "number", messageLimit)
-    if (this.roomSubscriptions[roomId]) {
-      this.roomSubscriptions[roomId].cancel()
+  public subscribeToRoom(options: {
+    roomId: string,
+    hooks?: {
+      onMessage?: (data: Message) => any,
+      onNewReadCursor?: (cursor: Cursor) => void;
+      onUserJoined?: (user: User) => void;
+      onUserLeft?: (user: User) => void;
+    },
+    messageLimit?: number,
+    serverInstance?: Instance
+  }) {
+    if (this.roomSubscriptions[options.roomId]) {
+      this.roomSubscriptions[options.roomId].cancel()
     }
-    this.hooks.rooms[roomId] = hooks
+    this.hooks.rooms[options.roomId] = options.hooks || {}
     const roomSubscription = new RoomSubscription({
-      serverInstance: serverInstance || this.serverInstanceV2,
+      serverInstance: options.serverInstance || this.serverInstanceV2,
       connectionTimeout: this.connectionTimeout,
       cursorStore: this.cursorStore,
       cursorsInstance: this.cursorsInstance,
       hooks: this.hooks,
       logger: this.logger,
-      messageLimit,
-      roomId,
+      messageLimit: options.messageLimit,
+      roomId: options.roomId,
       roomStore: this.roomStore,
       typingIndicators: this.typingIndicators,
       userId: this.id,
       userStore: this.userStore,
     })
-    this.roomSubscriptions[roomId] = roomSubscription
-    return this.joinRoom({ roomId })
+    this.roomSubscriptions[options.roomId] = roomSubscription
+    return this.joinRoom(options.roomId)
       .then(room => roomSubscription.connect().then(() => room))
       .catch(err => {
-        this.logger.warn(`error subscribing to room ${roomId}:`, err)
+        this.logger.warn(`error subscribing to room ${options.roomId}:`, err)
         throw err
       })
   }
 
-  subscribeToRoomMultipart(options = {}) {
+  public subscribeToRoomMultipart(options: {
+    roomId: string,
+    hooks?: {
+      onMessage?: (data: Message) => any,
+      onNewReadCursor?: (cursor: Cursor) => void;
+      onUserJoined?: (user: User) => void;
+      onUserLeft?: (user: User) => void;
+    },
+    messageLimit?: number,
+  }) {
     return this.subscribeToRoom({
       ...options,
       serverInstance: this.serverInstanceV4,
     })
   }
 
-  updateRoom({ roomId, name, customData, ...rest } = {}) {
-    typeCheck("roomId", "string", roomId)
-    name && typeCheck("name", "string", name)
-    rest.private && typeCheck("private", "boolean", rest.private)
-    customData && typeCheck("customData", "object", customData)
+  public updateRoom(options: {
+    roomId: string,
+    name: string,
+    customData?: any,
+    private: boolean,
+  }) {
     return this.serverInstanceV4
       .request({
         method: "PUT",
-        path: `/rooms/${encodeURIComponent(roomId)}`,
+        path: `/rooms/${encodeURIComponent(options.roomId)}`,
         json: {
           name,
-          private: rest.private, // private is a reserved word in strict mode!
-          custom_data: customData,
+          private: options.private, // private is a reserved word in strict mode!
+          custom_data: options.customData,
         },
       })
       .then(() => {})
@@ -467,8 +533,7 @@ export class CurrentUser {
       })
   }
 
-  deleteRoom({ roomId } = {}) {
-    typeCheck("roomId", "string", roomId)
+  public deleteRoom(roomId: string) {
     return this.serverInstanceV4
       .request({
         method: "DELETE",
@@ -481,28 +546,30 @@ export class CurrentUser {
       })
   }
 
-  /* internal */
-
-  setReadCursorRequest({ roomId, position, callbacks }) {
+  private setReadCursorRequest(options: { 
+    roomId: string,
+    position: number,
+    callbacks: Callbacks[],
+  }) {
     return this.cursorsInstance
       .request({
         method: "PUT",
-        path: `/cursors/0/rooms/${encodeURIComponent(roomId)}/users/${
+        path: `/cursors/0/rooms/${encodeURIComponent(options.roomId)}/users/${
           this.encodedId
         }`,
-        json: { position },
+        json: { position: options.position },
       })
-      .then(() => map(x => x.resolve(), callbacks))
+      .then(() => map(x => x.resolve(), options.callbacks))
       .catch(err => {
         this.logger.warn("error setting cursor:", err)
-        map(x => x.reject(err), callbacks)
+        map(x => x.reject(err), options.callbacks)
       })
   }
 
-  uploadDataAttachment(roomId, { file, name }) {
+  private uploadDataAttachment(roomId: string, data: { file: File, name: string }) {
     // TODO polyfill FormData?
     const body = new FormData() // eslint-disable-line no-undef
-    body.append("file", file, name)
+    body.append("file", data.file, data.name)
     return this.filesInstance
       .request({
         method: "POST",
@@ -514,17 +581,22 @@ export class CurrentUser {
       .then(JSON.parse)
   }
 
-  _uploadAttachment({ roomId, part: { type, name, customData, file } }) {
+  private _uploadAttachment(roomId: string, attachment: { 
+    type: string,
+    name?: string,
+    customData?: any,
+    file: File
+   }) {
     return this.serverInstanceV4
       .request({
         method: "POST",
         path: `/rooms/${encodeURIComponent(roomId)}/attachments`,
         json: {
-          content_type: type,
-          content_length: file.size,
+          content_type: attachment.type,
+          content_length: attachment.file.size,
           origin: window && window.location && window.location.origin,
-          name: name || file.name,
-          custom_data: customData,
+          name: attachment.name || attachment.file.name,
+          custom_data: attachment.customData,
         },
       })
       .then(res => {
@@ -535,23 +607,23 @@ export class CurrentUser {
         return sendRawRequest({
           method: "PUT",
           url: uploadURL,
-          body: file,
+          body: attachment.file,
           headers: {
-            "content-type": type,
+            "content-type": attachment.type,
           },
-        }).then(() => ({ type, attachment: { id: attachmentId } }))
+        }).then(() => ({ type: attachment.type, attachment: { id: attachmentId } }))
       })
   }
 
-  isMemberOf(roomId) {
+  private isMemberOf(roomId: string) {
     return contains(roomId, map(prop("id"), this.rooms))
   }
 
-  isSubscribedTo(roomId) {
+  private isSubscribedTo(roomId: string) {
     return has(roomId, this.roomSubscriptions)
   }
 
-  decorateMessage(basicMessage) {
+  private decorateMessage(basicMessage: BasicMessage) {
     return new Message(
       basicMessage,
       this.userStore,
@@ -560,7 +632,7 @@ export class CurrentUser {
     )
   }
 
-  setPropertiesFromBasicUser(basicUser) {
+  public setPropertiesFromBasicUser(basicUser: BasicUser) {
     this.avatarURL = basicUser.avatarURL
     this.createdAt = basicUser.createdAt
     this.customData = basicUser.customData
@@ -568,7 +640,7 @@ export class CurrentUser {
     this.updatedAt = basicUser.updatedAt
   }
 
-  establishUserSubscription() {
+  public establishUserSubscription() {
     this.userSubscription = new UserSubscription({
       hooks: this.hooks,
       userId: this.id,
@@ -595,7 +667,7 @@ export class CurrentUser {
       })
   }
 
-  establishPresenceSubscription() {
+  public establishPresenceSubscription() {
     this.presenceSubscription = new PresenceSubscription({
       userId: this.id,
       instance: this.presenceInstance,
@@ -613,7 +685,7 @@ export class CurrentUser {
     ])
   }
 
-  subscribeToUserPresence(userId) {
+  private subscribeToUserPresence(userId) {
     if (this.userPresenceSubscriptions[userId]) {
       return Promise.resolve()
     }
@@ -633,7 +705,7 @@ export class CurrentUser {
     return userPresenceSub.connect()
   }
 
-  disconnect() {
+  public disconnect() {
     this.userSubscription.cancel()
     this.presenceSubscription.cancel()
     forEachObjIndexed(sub => sub.cancel(), this.roomSubscriptions)
@@ -641,20 +713,16 @@ export class CurrentUser {
   }
 }
 
-const isDataAttachment = ({ file, name }) => {
-  if (file === undefined || name === undefined) {
+const isDataAttachment = (attachment) => {
+  if (attachment.file === undefined || attachment.name === undefined) {
     return false
   }
-  typeCheck("attachment.file", "object", file)
-  typeCheck("attachment.name", "string", name)
   return true
 }
 
-const isLinkAttachment = ({ link, type }) => {
-  if (link === undefined || type === undefined) {
+const isLinkAttachment = (attachment) => {
+  if (attachment.link === undefined || attachment.type === undefined) {
     return false
   }
-  typeCheck("attachment.link", "string", link)
-  typeCheck("attachment.type", "string", type)
   return true
 }

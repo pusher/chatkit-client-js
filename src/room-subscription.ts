@@ -1,9 +1,51 @@
 import { CursorSubscription } from "./cursor-subscription"
 import { MessageSubscription } from "./message-subscription"
 import { MembershipSubscription } from "./membership-subscription"
+import { Subscription, Instance, Logger } from "@pusher/platform";
+import { Room } from "./room";
+import { User } from "./user";
+import { UserStore } from "./user-store";
+import { RoomStore } from "./room-store";
+import { TypingIndicators } from "./typing-indicators";
+import { Message } from "./message";
+import { CursorStore } from "./cursor-store";
+import { Cursor } from "./cursor";
 
 export class RoomSubscription {
-  constructor(options) {
+  private cancelled: boolean;
+  private connected: boolean;
+  private messageSub: MessageSubscription;
+  private cursorSub: CursorSubscription;
+  private membershipSub: MembershipSubscription;
+  private buffer: (() => void)[];
+
+  public constructor(options: {
+    roomId: string;
+    messageLimit: number;
+    userId: string;
+    serverInstance: Instance;
+    userStore: UserStore;
+    roomStore: RoomStore;
+    typingIndicators: TypingIndicators;
+    logger: Logger;
+    connectionTimeout: number;
+    cursorStore: CursorStore;
+    cursorsInstance: Instance;
+    hooks: {
+      rooms: {
+        [roomId: string]: {
+          onMessage?: (message: Message) => void;
+          onNewReadCursor?: (cursor: Cursor) => void;
+          onUserJoined?: (user: User) => void;
+          onUserLeft?: (user: User) => void;
+        }
+      }
+      global: {
+        onUserJoinedRoom?: (room: Room, user: User) => void;
+        onUserLeftRoom?: (room: Room, user: User) => void;
+      }
+    }
+  }) {
     this.buffer = []
 
     this.messageSub = new MessageSubscription({
@@ -16,7 +58,7 @@ export class RoomSubscription {
       typingIndicators: options.typingIndicators,
       logger: options.logger,
       connectionTimeout: options.connectionTimeout,
-      onMessageHook: this.bufferWhileConnecting(message => {
+      onMessageHook: this.bufferWhileConnecting((message: Message) => {
         if (
           options.hooks.rooms[options.roomId] &&
           options.hooks.rooms[options.roomId].onMessage
@@ -76,7 +118,7 @@ export class RoomSubscription {
     })
   }
 
-  connect() {
+  public connect() {
     if (this.cancelled) {
       return Promise.reject(
         new Error("attempt to connect a cancelled room subscription"),
@@ -89,14 +131,14 @@ export class RoomSubscription {
     ]).then(() => this.flushBuffer())
   }
 
-  cancel() {
+  public cancel() {
     this.cancelled = true
     this.messageSub.cancel()
     this.cursorSub.cancel()
     this.membershipSub.cancel()
   }
 
-  bufferWhileConnecting(f) {
+  private bufferWhileConnecting(f: (...args: any) => void) {
     return (...args) => {
       if (this.connected) {
         f(...args)
@@ -106,7 +148,7 @@ export class RoomSubscription {
     }
   }
 
-  flushBuffer() {
+  private flushBuffer() {
     this.connected = true
     this.buffer.forEach(f => f())
     delete this.buffer

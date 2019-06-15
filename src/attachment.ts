@@ -1,5 +1,20 @@
+import { Instance } from "@pusher/platform";
+
 export class Attachment {
-  constructor(basicAttachment, roomId, instance) {
+
+  public type: string;
+  public name: string;
+  public size: number;
+  public customData?: any;
+
+  private _id: string;
+  private _downloadURL: string;
+  private _expiration: Date;
+  private _roomId: string;
+  private _instance: Instance;
+
+
+  public constructor(basicAttachment, roomId, instance) {
     this.type = basicAttachment.type
     this.name = basicAttachment.name
     this.size = basicAttachment.size
@@ -20,17 +35,17 @@ export class Attachment {
     this._fetchNewDownloadURL = this._fetchNewDownloadURL.bind(this)
   }
 
-  url() {
+  public url() {
     return this.urlExpiry().getTime() - Date.now() < 1000 * 60 * 30
       ? this._fetchNewDownloadURL()
       : Promise.resolve(this._downloadURL)
   }
 
-  urlExpiry() {
+  public urlExpiry() {
     return this._expiration
   }
 
-  _fetchNewDownloadURL() {
+  private _fetchNewDownloadURL() {
     return this._instance
       .request({
         method: "GET",

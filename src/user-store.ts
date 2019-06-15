@@ -2,13 +2,25 @@ import { difference } from "ramda"
 
 import { appendQueryParamsAsArray } from "./utils"
 import { parseBasicUser } from "./parsers"
-import { User } from "./user"
+import { User, PresenceStore, BasicUser } from "./user"
+import { Instance, Logger } from "@pusher/platform";
 
 export class UserStore {
-  constructor({ instance, presenceStore, logger }) {
-    this.instance = instance
-    this.presenceStore = presenceStore
-    this.logger = logger
+  private instance: Instance;
+  private presenceStore: PresenceStore;
+  private logger: Logger;
+  private reqs: { [userId: string]: Promise<void> }
+  private onSetHooks: ((userId: string) => void)[];
+  private users: { [userId: string]: User };
+
+  public constructor(options: {
+    instance: Instance;
+    presenceStore: PresenceStore;
+    logger: Logger;
+  }) {
+    this.instance = options.instance
+    this.presenceStore = options.presenceStore
+    this.logger = options.logger
     this.reqs = {} // ongoing requests by userId
     this.onSetHooks = [] // hooks called when a new user is added to the store
     this.users = {}
@@ -22,17 +34,17 @@ export class UserStore {
     this.decorate = this.decorate.bind(this)
   }
 
-  set(basicUser) {
+  public set(basicUser: BasicUser) {
     this.users[basicUser.id] = this.decorate(basicUser)
     this.onSetHooks.forEach(hook => hook(basicUser.id))
     return Promise.resolve(this.users[basicUser.id])
   }
 
-  get(userId) {
+  public get(userId: string) {
     return this.fetchMissingUsers([userId]).then(() => this.users[userId])
   }
 
-  fetchMissingUsers(userIds) {
+  public fetchMissingUsers(userIds: string[]) {
     const missing = difference(
       userIds,
       Object.values(this.users).map(u => u.id),
@@ -44,7 +56,7 @@ export class UserStore {
     return Promise.all(userIds.map(userId => this.reqs[userId]))
   }
 
-  fetchBasicUsers(userIds) {
+  public fetchBasicUsers(userIds: string[]) {
     const req = this.instance
       .request({
         method: "GET",
@@ -66,15 +78,15 @@ export class UserStore {
     })
   }
 
-  snapshot() {
+  public snapshot() {
     return this.users
   }
 
-  getSync(userId) {
+  public getSync(userId: string) {
     return this.users[userId]
   }
 
-  decorate(basicUser) {
+  private decorate(basicUser: BasicUser): User {
     return basicUser ? new User(basicUser, this.presenceStore) : undefined
   }
 }

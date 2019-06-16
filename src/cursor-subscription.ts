@@ -10,14 +10,14 @@ export class CursorSubscription {
   private instance: Instance;
   private logger: Logger;
   private connectionTimeout: number;
-  private timeout: NodeJS.Timeout;
-  public established: boolean;
+  private timeout?: NodeJS.Timeout;
+  public established: boolean = false;
   private onNewCursorHook: (cursor: BasicCursor) => void;
-  private sub: Subscription;
-  private onSubscriptionEstablished: (cursor: Cursor[]) => void;
+  private sub?: Subscription;
+  private onSubscriptionEstablished?: (cursor: Cursor[]) => void;
 
   public constructor(options: {
-    onNewCursorHook: (cursor: Cursor) => void,
+    onNewCursorHook: (cursor: BasicCursor) => void,
     roomId: string,
     cursorStore: CursorStore,
     instance: Instance,
@@ -44,14 +44,14 @@ export class CursorSubscription {
         reject(new Error("cursor subscription timed out"))
       }, this.connectionTimeout)
       this.onSubscriptionEstablished = initialState => {
-        clearTimeout(this.timeout)
+        this.timeout && clearTimeout(this.timeout)
         resolve(initialState)
       }
       this.sub = this.instance.subscribeNonResuming({
         path: `/cursors/0/rooms/${encodeURIComponent(this.roomId)}`,
         listeners: {
           onError: err => {
-            clearTimeout(this.timeout)
+            this.timeout && clearTimeout(this.timeout)
             reject(err)
           },
           onEvent: this.onEvent,
@@ -61,7 +61,7 @@ export class CursorSubscription {
   }
 
   public cancel() {
-    clearTimeout(this.timeout)
+    this.timeout && clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {
@@ -69,7 +69,7 @@ export class CursorSubscription {
     }
   }
 
-  private onEvent({ body }) {
+  private onEvent(body: any) {
     switch (body.event_name) {
       case "initial_state":
         this.onInitialState(body.data)

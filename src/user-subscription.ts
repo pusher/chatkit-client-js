@@ -79,7 +79,7 @@ export class UserSubscription {
         reject(new Error("user subscription timed out"))
       }, this.connectionTimeout)
       this.onSubscriptionEstablished = (basicUser, basicRooms, basicCursors) => {
-        clearTimeout(this.timeout)
+        this.timeout && clearTimeout(this.timeout)
         resolve({
           user: basicUser,
           rooms: basicRooms,
@@ -90,7 +90,7 @@ export class UserSubscription {
         path: "/users",
         listeners: {
           onError: err => {
-            clearTimeout(this.timeout)
+            this.timeout && clearTimeout(this.timeout)
             reject(err)
           },
           onEvent: this.onEvent,
@@ -100,7 +100,7 @@ export class UserSubscription {
   }
 
   public cancel() {
-    clearTimeout(this.timeout)
+    this.timeout && clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {
@@ -141,7 +141,7 @@ export class UserSubscription {
     const basicCursors = data.cursors.map((d: any) => parseBasicCursor(d))
     if (!this.established) {
       this.established = true
-      this.onSubscriptionEstablished(basicUser, basicRooms, basicCursors)
+      this.onSubscriptionEstablished && this.onSubscriptionEstablished(basicUser, basicRooms, basicCursors)
     } else {
       handleUserSubReconnection({
         basicUser,

@@ -14,10 +14,10 @@ export class MembershipSubscription {
   private connectionTimeout: number;
   private onUserJoinedRoomHook: (room: Room, user: User) => void;
   private onUserLeftRoomHook: (room: Room, user: User) => void;
-  private timeout: NodeJS.Timeout;
-  public established: boolean;
-  private sub: Subscription;
-  private onSubscriptionEstablished: () => void;
+  private timeout?: NodeJS.Timeout;
+  public established?: boolean;
+  private sub?: Subscription;
+  private onSubscriptionEstablished?: () => void;
 
   public constructor(options: {
     roomId: string;
@@ -52,14 +52,14 @@ export class MembershipSubscription {
         reject(new Error("membership subscription timed out"))
       }, this.connectionTimeout)
       this.onSubscriptionEstablished = () => {
-        clearTimeout(this.timeout)
+        this.timeout && clearTimeout(this.timeout)
         resolve()
       }
       this.sub = this.instance.subscribeNonResuming({
         path: `/rooms/${encodeURIComponent(this.roomId)}/memberships`,
         listeners: {
           onError: err => {
-            clearTimeout(this.timeout)
+            this.timeout && clearTimeout(this.timeout)
             reject(err)
           },
           onEvent: this.onEvent,
@@ -69,7 +69,7 @@ export class MembershipSubscription {
   }
 
   public cancel() {
-    clearTimeout(this.timeout)
+    this.timeout && clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {
@@ -95,7 +95,7 @@ export class MembershipSubscription {
     if (!this.established) {
       this.established = true
       this.roomStore.update(this.roomId, { userIds }).then(() => {
-        this.onSubscriptionEstablished()
+        this.onSubscriptionEstablished && this.onSubscriptionEstablished()
       })
     } else {
       handleMembershipSubReconnection({

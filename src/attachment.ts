@@ -14,7 +14,7 @@ export class Attachment {
   private _instance: Instance;
 
 
-  public constructor(basicAttachment, roomId, instance) {
+  public constructor(basicAttachment: Attachment, roomId: string, instance: Instance) {
     this.type = basicAttachment.type
     this.name = basicAttachment.name
     this.size = basicAttachment.size

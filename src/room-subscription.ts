@@ -12,8 +12,8 @@ import { CursorStore } from "./cursor-store";
 import { Cursor } from "./cursor";
 
 export class RoomSubscription {
-  private cancelled: boolean;
-  private connected: boolean;
+  private cancelled: boolean = false;
+  private connected: boolean = false;
   private messageSub: MessageSubscription;
   private cursorSub: CursorSubscription;
   private membershipSub: MembershipSubscription;
@@ -63,7 +63,7 @@ export class RoomSubscription {
           options.hooks.rooms[options.roomId] &&
           options.hooks.rooms[options.roomId].onMessage
         ) {
-          options.hooks.rooms[options.roomId].onMessage(message)
+          options.hooks.rooms[options.roomId].onMessage!(message)
         }
       }),
     })
@@ -81,7 +81,7 @@ export class RoomSubscription {
           cursor.type === 0 &&
           cursor.userId !== options.userId
         ) {
-          options.hooks.rooms[options.roomId].onNewReadCursor(cursor)
+          options.hooks.rooms[options.roomId].onNewReadCursor!(cursor)
         }
       }),
     })
@@ -101,7 +101,7 @@ export class RoomSubscription {
           options.hooks.rooms[room.id] &&
           options.hooks.rooms[room.id].onUserJoined
         ) {
-          options.hooks.rooms[room.id].onUserJoined(user)
+          options.hooks.rooms[room.id].onUserJoined!(user)
         }
       }),
       onUserLeftRoomHook: this.bufferWhileConnecting((room, user) => {
@@ -112,7 +112,7 @@ export class RoomSubscription {
           options.hooks.rooms[room.id] &&
           options.hooks.rooms[room.id].onUserLeft
         ) {
-          options.hooks.rooms[room.id].onUserLeft(user)
+          options.hooks.rooms[room.id].onUserLeft!(user)
         }
       }),
     })
@@ -139,7 +139,7 @@ export class RoomSubscription {
   }
 
   private bufferWhileConnecting(f: (...args: any) => void) {
-    return (...args) => {
+    return (...args: any[]) => {
       if (this.connected) {
         f(...args)
       } else {

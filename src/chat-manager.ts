@@ -11,7 +11,7 @@ export class ChatManager {
 
   public userId: string;
   public connectionTimeout: number;
-  public currentUser: CurrentUser;
+  public currentUser?: CurrentUser;
 
   public serverInstanceV2: Instance;
   public serverInstanceV4: Instance;

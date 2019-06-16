@@ -3,15 +3,15 @@ import { sendRawRequest, TokenProvider as PlatformTokenProvider } from "@pusher/
 import { appendQueryParams, unixSeconds, urlEncode } from "./utils"
 
 export class TokenProvider implements PlatformTokenProvider {
-  public userId: string;
+  public userId?: string;
   private url: string;
   private queryParams: any;
   private headers: { [header: string]: any };
   private withCredentials: boolean;
 
-  private cachedToken: string;
-  private cacheExpiresAt: number;
-  private req: Promise<{ token: any; expiresIn: any; }>
+  private cachedToken?: string;
+  private cacheExpiresAt: number = 0;
+  private req?: Promise<{ token: any; expiresIn: any; }>
   
   public constructor(options: { url: string, queryParams: any, headers: { [header: string]: any }, withCredentials: boolean }) {
     this.url = options.url
@@ -71,19 +71,19 @@ export class TokenProvider implements PlatformTokenProvider {
     return !this.cachedToken || unixSeconds() > this.cacheExpiresAt
   }
 
-  private cache(token, expiresIn) {
+  private cache(token: string, expiresIn: number) {
     this.cachedToken = token
     this.cacheExpiresAt = unixSeconds() + expiresIn
   }
 
   private clearCache() {
     this.cachedToken = undefined
-    this.cacheExpiresAt = undefined
+    this.cacheExpiresAt = 0
   }
 
   // To allow ChatManager to feed the userId to the TokenProvider. Not set
   // directly so as not to mess with a custom TokenProvider implementation.
-  public setUserId(userId) {
+  public setUserId(userId: string) {
     this.clearCache()
     this.userId = userId
   }

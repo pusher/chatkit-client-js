@@ -37,11 +37,11 @@ export class CurrentUser {
   public encodedId: string;
   public connectionTimeout: number;
 
-  public avatarURL: string;
-  public createdAt: string;
+  public avatarURL?: string;
+  public createdAt?: string;
   public customData?: any;
-  public name: string;
-  public updatedAt: string;
+  public name?: string;
+  public updatedAt?: string;
 
   public serverInstanceV2: Instance;
   public serverInstanceV4: Instance;
@@ -57,8 +57,8 @@ export class CurrentUser {
   public roomSubscriptions: { [roomId: string]: RoomSubscription };
   public readCursorBuffer: { [roomId: string]: { position: number, callbacks: Callbacks[] } };
   public userPresenceSubscriptions: { [userId: string]: UserPresenceSubscription }
-  public userSubscription: UserSubscription;
-  public presenceSubscription: PresenceSubscription;
+  public userSubscription?: UserSubscription;
+  public presenceSubscription?: PresenceSubscription;
 
   public hooks: {
     global: {
@@ -73,7 +73,10 @@ export class CurrentUser {
       onPresenceChanged?: (state: { current: Presence, previous: Presence }, user: User) => void;
     },
     rooms: {
-      
+      onMessage?: (data: Message) => any,
+      onNewReadCursor?: (cursor: Cursor) => void;
+      onUserJoined?: (user: User) => void;
+      onUserLeft?: (user: User) => void;
     }
   }
 
@@ -86,6 +89,15 @@ export class CurrentUser {
     hooks,
     id,
     presenceInstance,
+  }: {
+    serverInstanceV2: Instance;
+    serverInstanceV4: Instance;
+    connectionTimeout: number;
+    cursorsInstance: Instance;
+    filesInstance: Instance;
+    hooks: CurrentUser['hooks']['global'];
+    id: string;
+    presenceInstance: Instance;
   }) {
     this.hooks = {
       global: hooks,
@@ -217,7 +229,7 @@ export class CurrentUser {
         path: "/rooms",
         json: {
           created_by_id: this.id,
-          name,
+          name: options.name,
           private: !!options.private, // private is a reserved word in strict mode!
           user_ids: options.addUserIds,
           custom_data: options.customData,
@@ -327,7 +339,7 @@ export class CurrentUser {
     name?: string
   }) {
     return new Promise((resolve, reject) => {
-      if (isDataAttachment(attachment)) {
+      if (attachment && isDataAttachment(attachment)) {
         resolve(this.uploadDataAttachment(roomId, {
           file: attachment.file!,
           name: attachment.name!
@@ -380,7 +392,7 @@ export class CurrentUser {
     }
     return Promise.all(
       parts.map(part => {
-        part.type = part.type || (part.file && part.file.type)
+        part.type = part.type || (part.file && part.file.type) || ''
         return part.file ? this._uploadAttachment(roomId, {
           type: part.type!,
           name: part.name,
@@ -427,7 +439,7 @@ export class CurrentUser {
         })}`,
       })
       .then(res => {
-        const messages = JSON.parse(res).map(m =>
+        const messages = JSON.parse(res).map((m: any) =>
           this.decorateMessage(parseBasicMessage(m)),
         )
         return this.userStore

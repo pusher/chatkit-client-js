@@ -60,7 +60,7 @@ export class TypingIndicators {
       })
   }
 
-  private onIsTyping(room: Room, user: User) {
+  public onIsTyping(room: Room, user: User) {
     if (!this.timers[room.id]) {
       this.timers[room.id] = {}
     }
@@ -83,7 +83,7 @@ export class TypingIndicators {
       this.hooks.rooms[room.id] &&
       this.hooks.rooms[room.id].onUserStartedTyping
     ) {
-      this.hooks.rooms[room.id].onUserStartedTyping(user)
+      this.hooks.rooms[room.id].onUserStartedTyping!(user)
     }
   }
 
@@ -95,7 +95,7 @@ export class TypingIndicators {
       this.hooks.rooms[room.id] &&
       this.hooks.rooms[room.id].onUserStoppedTyping
     ) {
-      this.hooks.rooms[room.id].onUserStoppedTyping(user)
+      this.hooks.rooms[room.id].onUserStoppedTyping!(user)
     }
   }
 }

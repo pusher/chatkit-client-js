@@ -6,17 +6,17 @@ import { RoomStore } from "./room-store";
 
 export class CursorStore {
 
-  public instance?: Instance;
-  public userStore?: UserStore;
-  public roomStore?: RoomStore;
-  public logger?: Logger;
+  public instance: Instance;
+  public userStore: UserStore;
+  public roomStore: RoomStore;
+  public logger: Logger;
   public cursors: { [key: string]: Cursor };
 
   public constructor(options: { 
-    instance?: Instance,
-    userStore?: UserStore,
-    roomStore?: RoomStore, 
-    logger?: Logger,
+    instance: Instance,
+    userStore: UserStore,
+    roomStore: RoomStore, 
+    logger: Logger,
   }) {
     this.instance = options.instance
     this.userStore = options.userStore
@@ -34,7 +34,7 @@ export class CursorStore {
   public set(basicCursor: BasicCursor) {
     const k = key(basicCursor.userId, basicCursor.roomId)
     this.cursors[k] = this.decorate(basicCursor)
-    return this.userStore
+    return this.userStore!
       .fetchMissingUsers([basicCursor.userId])
       .then(() => this.cursors[k])
   }
@@ -81,5 +81,5 @@ export class CursorStore {
   }
 }
 
-const key = (userId, roomId) =>
+const key = (userId: string, roomId: string) =>
   `${encodeURIComponent(userId)}/${encodeURIComponent(roomId)}`

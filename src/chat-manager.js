@@ -120,7 +120,7 @@ export class ChatManager {
         })
         .catch(err => {
           this.logger.warn(
-            `Chatkit error when disabling push notifications`,
+            "Chatkit error when disabling push notifications",
             err,
           )
           return Promise.reject(
@@ -128,7 +128,7 @@ export class ChatManager {
           )
         })
     } catch (err) {
-      this.logger.warn(`Chatkit error when disabling push notifications`, err)
+      this.logger.warn("Chatkit error when disabling push notifications", err)
       return Promise.reject(
         `Chatkit error when disabling push notifications: ${err.message}`,
       )

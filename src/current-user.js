@@ -641,10 +641,7 @@ export class CurrentUser {
       return this.beamsInstanceInitFn({
         serviceWorkerURL: config.serviceWorkerURL || DEFAULT_SERVICE_WORKER_URL,
       })
-        .then(beamsClient => {
-          beamsClient.start()
-          return beamsClient
-        })
+        .then(beamsClient => beamsClient.start())
         .then(beamsClient => {
           const fetchBeamsToken = userId =>
             this.beamsTokenProviderInstance

@@ -327,7 +327,7 @@ test("web push notifications succeeds to register with Beams", t => {
   let mockBeamsClientSDK = {
     start: () => {
       startHasBeenCalled = true
-      return Promise.resolve()
+      return Promise.resolve(mockBeamsClientSDK)
     },
     setUserId: async (userId, tokenProvider) => {
       setUserIdHasBeenCalled = true
@@ -391,7 +391,7 @@ test("web push notifications fails to register with Beams and CK rejects the pro
 
 test("web push notifications fails to register with Beams and CK rejects the promise on `enablePushNotifications` 2", t => {
   let mockBeamsClientSDK = {
-    start: () => Promise.resolve(),
+    start: () => Promise.resolve(mockBeamsClientSDK),
     setUserId: () => {
       throw new Error("failed to set setUserId")
     },
@@ -425,7 +425,7 @@ test("web push notifications fails to register with Beams and CK rejects the pro
 
 test("web push notifications fails to register with Beams and CK rejects the promise on `enablePushNotifications` 3", t => {
   let mockBeamsClientSDK = {
-    start: () => Promise.resolve(),
+    start: () => Promise.resolve(mockBeamsClientSDK),
     setUserId: () => Promise.reject("failed to set setUserId"),
   }
 

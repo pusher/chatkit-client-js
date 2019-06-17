@@ -67,6 +67,8 @@ export class ChatManager {
       serviceVersion: "v1",
       ...instanceOptions,
     })
+    // capturing the `instanceId` in a closure here as the `CurrentUser` model
+    // doesn't need to be concerned about such details
     this.beamsInstanceInitFn =
       options.beamsInstanceInitFn ||
       (args => {

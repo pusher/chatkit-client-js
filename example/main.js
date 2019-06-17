@@ -51,7 +51,7 @@ chatManager
         console.log("Push notifications enabled")
       })
       .catch(err => {
-        console.log("Push notifications not enabled", err)
+        console.error("Push notifications not enabled", err)
       })
     currentUser = cUser
     window.currentUser = cUser

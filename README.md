@@ -34,16 +34,10 @@ Head over to [our documentation](https://docs.pusher.com/chatkit/reference/javas
 
 ### Testing
 
-Lint, build, and run the tests in electron with
+Lint, build, and run the tests with
 
 ```sh
 yarn lint:build:test
-```
-
-or, to run the tests in chrome
-
-```sh
-yarn lint:build:test:chrome
 ```
 
 Formatting should largely be delegated to prettier, which can be invoked manually with

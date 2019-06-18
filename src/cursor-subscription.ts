@@ -38,7 +38,7 @@ export class CursorSubscription {
     this.onNewCursor = this.onNewCursor.bind(this)
   }
 
-  public connect() {
+  public connect(): Promise<Cursor[]> {
     return new Promise((resolve, reject) => {
       this.timeout = setTimeout(() => {
         reject(new Error("cursor subscription timed out"))

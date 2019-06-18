@@ -29,7 +29,7 @@ import { Room, BasicRoom } from "./room";
 import { User, PresenceStore, BasicUser, Presence } from "./user";
 import { Cursor, BasicCursor } from "./cursor";
 
-type Callbacks = { resolve: (data?: any) => void, reject: (error?: any) => void };
+type Callbacks = { resolve: (data?: void) => void, reject: (error?: any) => void };
 type MessageFetchDirection = 'older' | 'newer'
 
 export class CurrentUser {
@@ -189,7 +189,7 @@ export class CurrentUser {
     return values(this.userStore.snapshot())
   }
 
-  public setReadCursor({roomId, position}: {roomId: string, position: number}) {
+  public setReadCursor({roomId, position}: {roomId: string, position: number}): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.readCursorBuffer[roomId] !== undefined) {
         this.readCursorBuffer[roomId].position = max(
@@ -344,7 +344,7 @@ export class CurrentUser {
       link?: string, 
       type?: 'image' | 'video' | 'audio' | 'file' ,
       name?: string
-  }}) {
+  }}): Promise<any> {
     return new Promise((resolve, reject) => {
       if (attachment && isDataAttachment(attachment)) {
         resolve(this.uploadDataAttachment(roomId, {

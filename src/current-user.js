@@ -650,14 +650,10 @@ export class CurrentUser {
                 path: `/beams-tokens?user_id=${encodeURIComponent(userId)}`,
               })
               .then(JSON.parse)
-              .catch(err => {
-                this.logger.warn(
-                  `Chatkit internal error when enabling push notifications`,
-                  err,
-                )
+              .catch(req => {
                 return Promise.reject(
-                  `Chatkit internal error when enabling push notifications: ${
-                    err.message
+                  `Internal error: ${req.statusCode} status code, info: ${
+                    req.info.error_description
                   }`,
                 )
               })
@@ -668,17 +664,17 @@ export class CurrentUser {
         })
         .catch(err => {
           this.logger.warn(
-            `Chatkit error when enabling push notifications`,
+            `Chatkit error when enabling push notifications:`,
             err,
           )
           return Promise.reject(
-            `Chatkit error when enabling push notifications: ${err.message}`,
+            `Chatkit error when enabling push notifications: ${err}`,
           )
         })
     } catch (err) {
-      this.logger.warn(`Chatkit error when enabling push notifications`, err)
+      this.logger.warn(`Chatkit error when enabling push notifications:`, err)
       return Promise.reject(
-        `Chatkit error when enabling push notifications: ${err.message}`,
+        `Chatkit error when enabling push notifications: ${err}`,
       )
     }
   }

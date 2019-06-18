@@ -69,7 +69,7 @@ export class CursorSubscription {
     }
   }
 
-  private onEvent(body: any) {
+  private onEvent({body}: {body: any}) {
     switch (body.event_name) {
       case "initial_state":
         this.onInitialState(body.data)
@@ -80,7 +80,7 @@ export class CursorSubscription {
     }
   }
 
-  private onInitialState(cursors: any[]) {
+  private onInitialState({cursors}: {cursors: BasicCursor[]}) {
     const basicCursors = cursors.map(c => parseBasicCursor(c))
 
     if (!this.established) {

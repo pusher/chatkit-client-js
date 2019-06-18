@@ -183,7 +183,7 @@ export class CurrentUser {
     return values(this.userStore.snapshot())
   }
 
-  public setReadCursor(roomId: string, position: number) {
+  public setReadCursor({roomId, position}: {roomId: string, position: number}) {
     return new Promise((resolve, reject) => {
       if (this.readCursorBuffer[roomId] !== undefined) {
         this.readCursorBuffer[roomId].position = max(
@@ -207,7 +207,7 @@ export class CurrentUser {
     })
   }
 
-  public readCursor(roomId: string, userId: string = this.id) {
+  public readCursor({roomId, userId = this.id} : {roomId: string, userId: string }) {
     if (userId !== this.id && !this.isSubscribedTo(roomId)) {
       const err = new Error(
         `Must be subscribed to room ${roomId} to access member's read cursors`,
@@ -218,21 +218,21 @@ export class CurrentUser {
     return this.cursorStore.getSync(userId, roomId)
   }
 
-  public isTypingIn(roomId: string) {
+  public isTypingIn({roomId}: {roomId: string}) {
     return this.typingIndicators.sendThrottledRequest(roomId)
   }
 
-  public createRoom(options: { name: string, addUserIds: string[], customData?: { [key: string]: any }, private?: boolean }) {
+  public createRoom({name, addUserIds, customData, isPrivate}: { name: string, addUserIds: string[], customData?: any, isPrivate?: boolean }) {
     return this.serverInstanceV4
       .request({
         method: "POST",
         path: "/rooms",
         json: {
           created_by_id: this.id,
-          name: options.name,
-          private: !!options.private, // private is a reserved word in strict mode!
-          user_ids: options.addUserIds,
-          custom_data: options.customData,
+          name: name,
+          private: !!isPrivate, // private is a reserved word in strict mode!
+          user_ids: addUserIds,
+          custom_data: customData,
         },
       })
       .then(res => this.roomStore.set(parseBasicRoom(JSON.parse(res))))
@@ -260,7 +260,7 @@ export class CurrentUser {
       })
   }
 
-  public joinRoom(roomId: string) {
+  public joinRoom({roomId}: {roomId: string}) {
     if (this.isMemberOf(roomId)) {
       return this.roomStore.get(roomId)
     }
@@ -278,7 +278,7 @@ export class CurrentUser {
       })
   }
 
-  public leaveRoom(roomId: string) {
+  public leaveRoom({roomId}: {roomId: string}) {
     return this.roomStore
       .get(roomId)
       .then(room =>
@@ -297,7 +297,7 @@ export class CurrentUser {
       })
   }
 
-  public addUserToRoom(userId: string, roomId: string) {
+  public addUserToRoom({userId, roomId}: {userId: string, roomId: string}) {
     return this.serverInstanceV4
       .request({
         method: "PUT",
@@ -313,7 +313,7 @@ export class CurrentUser {
       })
   }
 
-  public removeUserFromRoom(userId: string, roomId: string) {
+  public removeUserFromRoom({userId, roomId}: {userId: string, roomId: string}) {
     return this.serverInstanceV4
       .request({
         method: "PUT",
@@ -332,12 +332,13 @@ export class CurrentUser {
       })
   }
 
-  public sendMessage(text: string, roomId: string, attachment?: { 
-    file?: File, 
-    link?: string, 
-    type?: 'image' | 'video' | 'audio' | 'file' ,
-    name?: string
-  }) {
+  public sendMessage({text, roomId, attachment}: { text: string, roomId: string, 
+    attachment?: { 
+      file?: File, 
+      link?: string, 
+      type?: 'image' | 'video' | 'audio' | 'file' ,
+      name?: string
+  }}) {
     return new Promise((resolve, reject) => {
       if (attachment && isDataAttachment(attachment)) {
         resolve(this.uploadDataAttachment(roomId, {
@@ -371,20 +372,21 @@ export class CurrentUser {
       })
   }
 
-  public sendSimpleMessage(roomId: string, text: string) {
-    return this.sendMultipartMessage(
-      roomId, [{ type: "text/plain", content: text }],
-    )
+  public sendSimpleMessage({roomId, text}: {roomId: string, text: string}) {
+    return this.sendMultipartMessage({
+      roomId,
+      parts: [{ type: "text/plain", content: text }],
+    })
   }
 
-  public sendMultipartMessage(roomId: string, parts: {
+  public sendMultipartMessage({roomId, parts}: {roomId: string, parts: {
     type: string;
     content?: string;
     url?: string;
     customData?: any;
     file?: File;
     name?: string;
-  }[]) {
+  }[]}) {
     if (parts.length === 0) {
       return Promise.reject(
         new TypeError("message must contain at least one part"),
@@ -406,8 +408,8 @@ export class CurrentUser {
           method: "POST",
           path: `/rooms/${encodeURIComponent(roomId)}/messages`,
           json: {
-            parts: parts.map(({ type, content, url, attachment }) => ({
-              type,
+            parts: parts.map(part => ({
+              type: part.type,
               content,
               url,
               attachment,
@@ -422,20 +424,20 @@ export class CurrentUser {
       })
   }
 
-  public fetchMessages(options: { 
+  public fetchMessages({roomId, initialId, limit, direction, serverInstance}: { 
     roomId: string, 
     initialId?: number, 
     limit?: number,
     direction?: MessageFetchDirection,
     serverInstance?: Instance
   }) {
-    return (options.serverInstance || this.serverInstanceV2)
+    return (serverInstance || this.serverInstanceV2)
       .request({
         method: "GET",
-        path: `/rooms/${encodeURIComponent(options.roomId)}/messages?${urlEncode({
-          initial_id: options.initialId,
-          limit: options.limit,
-          direction: options.direction,
+        path: `/rooms/${encodeURIComponent(roomId)}/messages?${urlEncode({
+          initial_id: initialId,
+          limit: limit,
+          direction: direction,
         })}`,
       })
       .then(res => {
@@ -447,7 +449,7 @@ export class CurrentUser {
           .then(() => sort((x: any, y: any) => x.id - y.id, messages))
       })
       .catch(err => {
-        this.logger.warn(`error fetching messages from room ${options.roomId}:`, err)
+        this.logger.warn(`error fetching messages from room ${roomId}:`, err)
         throw err
       })
   }
@@ -461,7 +463,7 @@ export class CurrentUser {
     return this.fetchMessages({...options, serverInstance: this.serverInstanceV4})
   }
 
-  public subscribeToRoom(options: {
+  public subscribeToRoom({roomId, hooks = {}, messageLimit, serverInstance}: {
     roomId: string,
     hooks?: {
       onMessage?: (data: Message) => any,
@@ -472,29 +474,29 @@ export class CurrentUser {
     messageLimit?: number,
     serverInstance?: Instance
   }) {
-    if (this.roomSubscriptions[options.roomId]) {
-      this.roomSubscriptions[options.roomId].cancel()
+    if (this.roomSubscriptions[roomId]) {
+      this.roomSubscriptions[roomId].cancel()
     }
-    this.hooks.rooms[options.roomId] = options.hooks || {}
+    this.hooks.rooms[roomId] = hooks || {}
     const roomSubscription = new RoomSubscription({
-      serverInstance: options.serverInstance || this.serverInstanceV2,
+      serverInstance: serverInstance || this.serverInstanceV2,
       connectionTimeout: this.connectionTimeout,
       cursorStore: this.cursorStore,
       cursorsInstance: this.cursorsInstance,
       hooks: this.hooks,
       logger: this.logger,
-      messageLimit: options.messageLimit,
-      roomId: options.roomId,
+      messageLimit: messageLimit,
+      roomId: roomId,
       roomStore: this.roomStore,
       typingIndicators: this.typingIndicators,
       userId: this.id,
       userStore: this.userStore,
     })
-    this.roomSubscriptions[options.roomId] = roomSubscription
-    return this.joinRoom(options.roomId)
+    this.roomSubscriptions[roomId] = roomSubscription
+    return this.joinRoom(roomId)
       .then(room => roomSubscription.connect().then(() => room))
       .catch(err => {
-        this.logger.warn(`error subscribing to room ${options.roomId}:`, err)
+        this.logger.warn(`error subscribing to room ${roomId}:`, err)
         throw err
       })
   }
@@ -515,20 +517,20 @@ export class CurrentUser {
     })
   }
 
-  public updateRoom(options: {
+  public updateRoom({roomId, name, customData, isPrivate}: {
     roomId: string,
     name: string,
     customData?: any,
-    private: boolean,
+    isPrivate: boolean,
   }) {
     return this.serverInstanceV4
       .request({
         method: "PUT",
-        path: `/rooms/${encodeURIComponent(options.roomId)}`,
+        path: `/rooms/${encodeURIComponent(roomId)}`,
         json: {
           name,
-          private: options.private, // private is a reserved word in strict mode!
-          custom_data: options.customData,
+          private: isPrivate,
+          custom_data: customData,
         },
       })
       .then(() => {})
@@ -538,7 +540,7 @@ export class CurrentUser {
       })
   }
 
-  public deleteRoom(roomId: string) {
+  public deleteRoom({roomId}: {roomId: string}) {
     return this.serverInstanceV4
       .request({
         method: "DELETE",
@@ -551,7 +553,7 @@ export class CurrentUser {
       })
   }
 
-  private setReadCursorRequest(options: { 
+  private setReadCursorRequest({roomId, position, callbacks}: { 
     roomId: string,
     position: number,
     callbacks: Callbacks[],
@@ -559,22 +561,22 @@ export class CurrentUser {
     return this.cursorsInstance
       .request({
         method: "PUT",
-        path: `/cursors/0/rooms/${encodeURIComponent(options.roomId)}/users/${
+        path: `/cursors/0/rooms/${encodeURIComponent(roomId)}/users/${
           this.encodedId
         }`,
-        json: { position: options.position },
+        json: { position: position },
       })
-      .then(() => map(x => x.resolve(), options.callbacks))
+      .then(() => map(x => x.resolve(), callbacks))
       .catch(err => {
         this.logger.warn("error setting cursor:", err)
-        map(x => x.reject(err), options.callbacks)
+        map(x => x.reject(err), callbacks)
       })
   }
 
-  private uploadDataAttachment(roomId: string, data: { file: File, name: string }) {
+  private uploadDataAttachment(roomId: string, {file, name}: { file: File, name: string }) {
     // TODO polyfill FormData?
     const body = new FormData() // eslint-disable-line no-undef
-    body.append("file", data.file, data.name)
+    body.append("file", file, name)
     return this.filesInstance
       .request({
         method: "POST",
@@ -586,22 +588,22 @@ export class CurrentUser {
       .then(JSON.parse)
   }
 
-  private _uploadAttachment(roomId: string, attachment: { 
+  private _uploadAttachment({roomId, part}: {roomId: string; part: {
     type: string,
     name?: string,
     customData?: any,
     file: File
-   }) {
+  }}) {
     return this.serverInstanceV4
       .request({
         method: "POST",
         path: `/rooms/${encodeURIComponent(roomId)}/attachments`,
         json: {
-          content_type: attachment.type,
-          content_length: attachment.file.size,
+          content_type: part.type,
+          content_length: part.file.size,
           origin: window && window.location && window.location.origin,
-          name: attachment.name || attachment.file.name,
-          custom_data: attachment.customData,
+          name: part.name || part.file.name,
+          custom_data: part.customData,
         },
       })
       .then(res => {
@@ -612,11 +614,11 @@ export class CurrentUser {
         return sendRawRequest({
           method: "PUT",
           url: uploadURL,
-          body: attachment.file,
+          body: part.file,
           headers: {
-            "content-type": attachment.type,
+            "content-type": part.type,
           },
-        }).then(() => ({ type: attachment.type, attachment: { id: attachmentId } }))
+        }).then(() => ({ type: part.type, attachment: { id: attachmentId } }))
       })
   }
 
@@ -657,13 +659,13 @@ export class CurrentUser {
       connectionTimeout: this.connectionTimeout,
       currentUser: this,
     })
-    return this.userSubscription
+    return this.userSubscription 
       .connect()
-      .then((data) => {
-        this.setPropertiesFromBasicUser(data.user)
-        return Promise.all([
-          data.rooms.map(room => this.roomStore.set(room)),
-          data.cursors.map(cursor => this.cursorStore.set(cursor)),
+      .then(({basicUser, basicRooms, basicCursors}) => {
+        this.setPropertiesFromBasicUser(basicUser)
+        return Promise.all<(Room | Cursor)>([
+          ...basicRooms.map(basicRoom => this.roomStore.set(basicRoom)),
+          ...basicCursors.map(basicCursor => this.cursorStore.set(basicCursor)),
         ])
       })
       .catch(err => {
@@ -690,7 +692,7 @@ export class CurrentUser {
     ])
   }
 
-  private subscribeToUserPresence(userId) {
+  private subscribeToUserPresence(userId: string) {
     if (this.userPresenceSubscriptions[userId]) {
       return Promise.resolve()
     }
@@ -711,22 +713,22 @@ export class CurrentUser {
   }
 
   public disconnect() {
-    this.userSubscription.cancel()
-    this.presenceSubscription.cancel()
+    this.userSubscription && this.userSubscription.cancel()
+    this.presenceSubscription && this.presenceSubscription.cancel()
     forEachObjIndexed(sub => sub.cancel(), this.roomSubscriptions)
     forEachObjIndexed(sub => sub.cancel(), this.userPresenceSubscriptions)
   }
 }
 
-const isDataAttachment = (attachment) => {
-  if (attachment.file === undefined || attachment.name === undefined) {
+const isDataAttachment = ({file, name}: {file?: string, name?: string}) => {
+  if (file === undefined || name === undefined) {
     return false
   }
   return true
 }
 
-const isLinkAttachment = (attachment) => {
-  if (attachment.link === undefined || attachment.type === undefined) {
+const isLinkAttachment = ({link, type}: {link?: string, type?: string}) => {
+  if (link === undefined || type === undefined) {
     return false
   }
   return true

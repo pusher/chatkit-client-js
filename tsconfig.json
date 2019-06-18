@@ -2,7 +2,7 @@
   "compilerOptions": {
     "declaration": true,
     "declarationDir": "declarations",
-    "lib": ["es6", "webworker"],
+    "lib": ["es6", "webworker", "dom"],
     "module": "CommonJS",
     "removeComments": true,
     "sourceMap": true,

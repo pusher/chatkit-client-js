@@ -6,7 +6,7 @@ import { RoomStore } from "./room-store";
 import { CursorStore } from "./cursor-store";
 import { UserStore } from "./user-store";
 
-export function handleUserSubReconnection(data: {
+export function handleUserSubReconnection({basicUser, basicRooms, basicCursors, currentUser, roomStore, cursorStore, hooks}: {
   basicUser: BasicUser,
   basicRooms: BasicRoom[],
   basicCursors: BasicCursor[],
@@ -23,43 +23,43 @@ export function handleUserSubReconnection(data: {
     }
   },
 }) {
-  data.currentUser.setPropertiesFromBasicUser(data.basicUser)
+  currentUser.setPropertiesFromBasicUser(basicUser)
 
-  for (const basicRoom of data.basicRooms) {
-    const existingRoom = data.roomStore.getSync(basicRoom.id)
+  for (const basicRoom of basicRooms) {
+    const existingRoom = roomStore.getSync(basicRoom.id)
 
     if (!existingRoom) {
-      const room = data.roomStore.setSync(basicRoom)
-      if (data.hooks.global.onAddedToRoom) {
-        data.hooks.global.onAddedToRoom(room)
+      const room = roomStore.setSync(basicRoom)
+      if (hooks.global.onAddedToRoom) {
+        hooks.global.onAddedToRoom(room)
       }
     }
 
     if (existingRoom && !existingRoom.eq(basicRoom)) {
-      data.roomStore.updateSync(basicRoom.id, basicRoom)
-      if (data.hooks.global.onRoomUpdated) {
-        data.hooks.global.onRoomUpdated(existingRoom)
+      roomStore.updateSync(basicRoom.id, basicRoom)
+      if (hooks.global.onRoomUpdated) {
+        hooks.global.onRoomUpdated(existingRoom)
       }
     }
   }
 
-  for (const roomId in data.roomStore.snapshot()) {
-    if (!data.basicRooms.some(r => r.id === roomId)) {
-      const room = data.roomStore.popSync(roomId)
-      if (data.hooks.global.onRemovedFromRoom) {
-        data.hooks.global.onRemovedFromRoom(room)
+  for (const roomId in roomStore.snapshot()) {
+    if (!basicRooms.some(r => r.id === roomId)) {
+      const room = roomStore.popSync(roomId)
+      if (hooks.global.onRemovedFromRoom) {
+        hooks.global.onRemovedFromRoom(room)
       }
     }
   }
 
   return handleCursorSubReconnection({
-    basicCursors: data.basicCursors,
-    cursorStore: data.cursorStore,
-    onNewCursorHook: data.hooks.global.onNewReadCursor,
+    basicCursors: basicCursors,
+    cursorStore: cursorStore,
+    onNewCursorHook: hooks.global.onNewReadCursor,
   })
 }
 
-export function handleMembershipSubReconnection(data: {
+export function handleMembershipSubReconnection({userIds, roomId, roomStore, userStore, onUserJoinedRoomHook, onUserLeftRoomHook}: {
   userIds: string[],
   roomId: string,
   roomStore: RoomStore,
@@ -67,41 +67,41 @@ export function handleMembershipSubReconnection(data: {
   onUserJoinedRoomHook: (room: Room, user: User) => void,
   onUserLeftRoomHook: (room: Room, user: User) => void,
 }) {
-  return data.userStore.fetchMissingUsers(data.userIds).then(() => {
-    const room = data.roomStore.getSync(data.roomId)
+  return userStore.fetchMissingUsers(userIds).then(() => {
+    const room = roomStore.getSync(roomId)
 
-    data.userIds
+    userIds
       .filter(userId => !room.userIds.includes(userId))
       .forEach(userId =>
-        data.userStore.get(userId).then(user => data.onUserJoinedRoomHook(room, user)),
+        userStore.get(userId).then(user => onUserJoinedRoomHook(room, user)),
       )
 
     room.userIds
-      .filter(userId => !data.userIds.includes(userId))
+      .filter(userId => !userIds.includes(userId))
       .forEach(userId =>
-        data.userStore.get(userId).then(user => data.onUserLeftRoomHook(room, user)),
+        userStore.get(userId).then(user => onUserLeftRoomHook(room, user)),
       )
 
-    return data.roomStore.update(data.roomId, { userIds: data.userIds })
+    return roomStore.update(roomId, { userIds })
   })
 }
 
-export function handleCursorSubReconnection(data: {
+export function handleCursorSubReconnection({basicCursors, cursorStore, onNewCursorHook}: {
   basicCursors: BasicCursor[],
   cursorStore: CursorStore,
   onNewCursorHook?: (cursor: Cursor) => void,
 }) {
   return Promise.all(
-    data.basicCursors.map(basicCursor => {
-      const existingCursor = data.cursorStore.getSync(
+    basicCursors.map(basicCursor => {
+      const existingCursor = cursorStore.getSync(
         basicCursor.userId,
         basicCursor.roomId,
       )
 
       if (!existingCursor || existingCursor.position !== basicCursor.position) {
-        return data.cursorStore.set(basicCursor).then(cursor => {
-          if (data.onNewCursorHook) {
-            data.onNewCursorHook(cursor)
+        return cursorStore.set(basicCursor).then(cursor => {
+          if (onNewCursorHook) {
+            onNewCursorHook(cursor)
           }
         })
       }

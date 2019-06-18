@@ -1,6 +1,7 @@
 import { Attachment } from "./attachment"
 import { UserStore } from "./user-store";
 import { RoomStore } from "./room-store";
+import { Instance } from "@pusher/platform";
 
 export interface MessagePart {
   partType: 'inline' | 'url' | 'attachment',
@@ -56,7 +57,7 @@ export class Message implements BasicMessage {
   public attachment?: { link: string, type: string, name: string };
   
 
-  public constructor(basicMessage, userStore, roomStore, instance) {
+  public constructor(basicMessage: BasicMessage, userStore: UserStore, roomStore: RoomStore, instance: Instance) {
     this.id = basicMessage.id
     this.senderId = basicMessage.senderId
     this.roomId = basicMessage.roomId

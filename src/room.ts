@@ -32,13 +32,12 @@ export class Room {
   private isSubscribedTo: (userId: string) => boolean;
   private logger: Logger;
 
-  public constructor({ basicRoom, userStore, isSubscribedTo, logger }: 
-    {
+  public constructor({ basicRoom, userStore, isSubscribedTo, logger }: {
       basicRoom: BasicRoom;
       userStore: UserStore;
       isSubscribedTo: (userId: string) => boolean;
       logger: Logger;
-    }) {
+  }) {
     this.createdAt = basicRoom.createdAt
     this.createdByUserId = basicRoom.createdByUserId
     this.deletedAt = basicRoom.deletedAt

@@ -13,11 +13,16 @@ export class TokenProvider implements PlatformTokenProvider {
   private cacheExpiresAt: number = 0;
   private req?: Promise<{ token: any; expiresIn: any; }>
   
-  public constructor(options: { url: string, queryParams: any, headers: { [header: string]: any }, withCredentials: boolean }) {
-    this.url = options.url
-    this.queryParams = options.queryParams
-    this.headers = options.headers
-    this.withCredentials = options.withCredentials
+  public constructor({url, queryParams, headers, withCredentials}: {
+    url: string,
+    queryParams: any,
+    headers: { [header: string]: string },
+    withCredentials: boolean }) 
+  {
+    this.url = url
+    this.queryParams = queryParams
+    this.headers = headers
+    this.withCredentials = withCredentials
 
     this.fetchToken = this.fetchToken.bind(this)
     this.fetchFreshToken = this.fetchFreshToken.bind(this)

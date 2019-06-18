@@ -21,14 +21,14 @@ export class TypingIndicators {
   private lastSentRequests: { [roomId: string]: number };
   private timers: { [roomId: string]: { [userId: string]: NodeJS.Timeout } };
 
-  public constructor(options: {
+  public constructor({hooks, instance, logger}: {
     hooks: TypingIndicators['hooks'];
     instance: Instance;
     logger: Logger;
   }) {
-    this.hooks = options.hooks
-    this.instance = options.instance
-    this.logger = options.logger
+    this.hooks = hooks
+    this.instance = instance
+    this.logger = logger
     this.lastSentRequests = {}
     this.timers = {}
 

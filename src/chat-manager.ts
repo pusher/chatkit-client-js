@@ -19,7 +19,7 @@ export class ChatManager {
   public cursorsInstance: Instance;
   public presenceInstance: Instance;
 
-  public constructor(options: { 
+  public constructor({instanceLocator, tokenProvider, userId, baseClient, logger, connectionTimeout}: { 
     instanceLocator: string,
     tokenProvider: TokenProvider,
     userId: string,
@@ -27,28 +27,28 @@ export class ChatManager {
     logger?: Logger,
     connectionTimeout?: number,
   }) {
-    const cluster = split(":", options.instanceLocator)[1]
+    const cluster = split(":", instanceLocator)[1]
     if (cluster === undefined) {
       throw new TypeError(
-        `expected instanceLocator to be of the format x:y:z, but was ${options.instanceLocator}`,
+        `expected instanceLocator to be of the format x:y:z, but was ${instanceLocator}`,
       )
     }
-    const baseClient =
-      options.baseClient ||
+    baseClient =
+      baseClient ||
       new BaseClient({
         host: `${cluster}.${HOST_BASE}`,
-        logger: options.logger,
+        logger: logger,
         sdkProduct: "chatkit",
         sdkVersion: version,
       })
-    if (options.tokenProvider.setUserId) {
-      options.tokenProvider.setUserId(options.userId);
+    if (tokenProvider.setUserId) {
+      tokenProvider.setUserId(userId);
     }
     const instanceOptions = {
       client: baseClient,
-      locator: options.instanceLocator,
-      logger: options.logger,
-      tokenProvider: options.tokenProvider,
+      locator: instanceLocator,
+      logger: logger,
+      tokenProvider: tokenProvider,
     }
     this.serverInstanceV2 = new Instance({
       serviceName: "chatkit",
@@ -75,9 +75,9 @@ export class ChatManager {
       serviceVersion: "v2",
       ...instanceOptions,
     })
-    this.userId = options.userId
+    this.userId = userId
     this.connectionTimeout =
-      options.connectionTimeout || DEFAULT_CONNECTION_TIMEOUT
+      connectionTimeout || DEFAULT_CONNECTION_TIMEOUT
 
     this.connect = this.connect.bind(this)
     this.disconnect = this.disconnect.bind(this)

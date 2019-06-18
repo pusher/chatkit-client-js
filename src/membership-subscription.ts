@@ -77,7 +77,7 @@ export class MembershipSubscription {
     }
   }
 
-  private onEvent(body: any) {
+  private onEvent({body}: {body: any}) {
     switch (body.event_name) {
       case "initial_state":
         this.onInitialState(body.data)
@@ -91,7 +91,7 @@ export class MembershipSubscription {
     }
   }
 
-  private onInitialState(userIds: string[]) {
+  private onInitialState({userIds}: {userIds: string[]}) {
     if (!this.established) {
       this.established = true
       this.roomStore.update(this.roomId, { userIds }).then(() => {
@@ -109,7 +109,7 @@ export class MembershipSubscription {
     }
   }
 
-  private onUserJoined(userId: string) {
+  private onUserJoined({user_id: userId}: {user_id: string}) {
     this.roomStore
       .addUserToRoom(this.roomId, userId)
       .then(room =>
@@ -119,7 +119,7 @@ export class MembershipSubscription {
       )
   }
 
-  private onUserLeft(userId: string) {
+  private onUserLeft({user_id: userId}: {user_id: string}) {
     this.roomStore
       .removeUserFromRoom(this.roomId, userId)
       .then(room =>

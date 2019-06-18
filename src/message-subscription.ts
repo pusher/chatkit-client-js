@@ -19,9 +19,9 @@ export class MessageSubscription {
   private messageBuffer: { message: Message, ready: boolean }[];
   private onMessageHook: (message: Message) => void;
 
-  private timeout: NodeJS.Timeout;
-  public established: boolean;
-  private sub: Subscription;
+  private timeout?: NodeJS.Timeout;
+  public established?: boolean;
+  private sub?: Subscription;
 
   public constructor(options: {
     roomId: string;
@@ -66,11 +66,11 @@ export class MessageSubscription {
         })}`,
         listeners: {
           onOpen: () => {
-            clearTimeout(this.timeout)
+            this.timeout && clearTimeout(this.timeout)
             resolve()
           },
           onError: err => {
-            clearTimeout(this.timeout)
+            this.timeout && clearTimeout(this.timeout)
             reject(err)
           },
           onEvent: this.onEvent,
@@ -80,7 +80,7 @@ export class MessageSubscription {
   }
 
   public cancel() {
-    clearTimeout(this.timeout)
+    this.timeout && clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {
@@ -88,7 +88,7 @@ export class MessageSubscription {
     }
   }
 
-  private onEvent(body) {
+  private onEvent({body}: {body: any}) {
     switch (body.event_name) {
       case "new_message":
         this.onMessage(body.data)
@@ -123,11 +123,12 @@ export class MessageSubscription {
 
   private flushBuffer() {
     while (this.messageBuffer.length > 0 && this.messageBuffer[0].ready) {
-      this.onMessageHook(this.messageBuffer.shift().message)
+      const first = this.messageBuffer.shift();
+      first && this.onMessageHook(first.message)
     }
   }
 
-  private onIsTyping(userId: string) {
+  private onIsTyping({user_id: userId}: {user_id: string}) {
     if (userId !== this.userId) {
       Promise.all([
         this.roomStore.get(this.roomId),

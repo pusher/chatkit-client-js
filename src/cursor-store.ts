@@ -12,16 +12,16 @@ export class CursorStore {
   public logger: Logger;
   public cursors: { [key: string]: Cursor };
 
-  public constructor(options: { 
+  public constructor({instance, userStore, roomStore, logger}: { 
     instance: Instance,
     userStore: UserStore,
     roomStore: RoomStore, 
     logger: Logger,
   }) {
-    this.instance = options.instance
-    this.userStore = options.userStore
-    this.roomStore = options.roomStore
-    this.logger = options.logger
+    this.instance = instance
+    this.userStore = userStore
+    this.roomStore = roomStore
+    this.logger = logger
     this.cursors = {}
 
     this.set = this.set.bind(this)

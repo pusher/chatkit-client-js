@@ -3,7 +3,6 @@ import { handleUserSubReconnection } from "./reconnection-handlers"
 import { Instance, Logger, Subscription } from "@pusher/platform";
 import { RoomStore } from "./room-store";
 import { CursorStore } from "./cursor-store";
-import { RoomSubscription } from "./room-subscription";
 import { CurrentUser } from "./current-user";
 import { Room, BasicRoom } from "./room";
 import { Cursor, BasicCursor } from "./cursor";
@@ -30,11 +29,11 @@ export class UserSubscription {
   private readonly currentUser: CurrentUser;
 
   private timeout?: NodeJS.Timeout;
-  private onSubscriptionEstablished?: (
+  private onSubscriptionEstablished?: ({basicUser, basicRooms, basicCursors}: {
     basicUser: BasicUser,
     basicRooms: BasicRoom[],
     basicCursors: BasicCursor[]
-    ) => void;
+    }) => void;
   private established: boolean = false;
   private sub?: Subscription;
 
@@ -70,21 +69,17 @@ export class UserSubscription {
   }
 
   public connect(): Promise<{
-    user: BasicUser,
-    rooms: BasicRoom[],
-    cursors: BasicCursor[]
+    basicUser: BasicUser,
+    basicRooms: BasicRoom[],
+    basicCursors: BasicCursor[]
   }> {
     return new Promise((resolve, reject) => {
       this.timeout = setTimeout(() => {
         reject(new Error("user subscription timed out"))
       }, this.connectionTimeout)
-      this.onSubscriptionEstablished = (basicUser, basicRooms, basicCursors) => {
+      this.onSubscriptionEstablished = (initialState: {basicUser: BasicUser, basicRooms : BasicRoom[], basicCursors: BasicCursor[]}) => {
         this.timeout && clearTimeout(this.timeout)
-        resolve({
-          user: basicUser,
-          rooms: basicRooms,
-          cursors: basicCursors
-        })
+        resolve(initialState)
       }
       this.sub = this.instance.subscribeNonResuming({
         path: "/users",
@@ -141,7 +136,7 @@ export class UserSubscription {
     const basicCursors = data.cursors.map((d: any) => parseBasicCursor(d))
     if (!this.established) {
       this.established = true
-      this.onSubscriptionEstablished && this.onSubscriptionEstablished(basicUser, basicRooms, basicCursors)
+      this.onSubscriptionEstablished && this.onSubscriptionEstablished({basicUser, basicRooms, basicCursors})
     } else {
       handleUserSubReconnection({
         basicUser,
@@ -155,15 +150,15 @@ export class UserSubscription {
     }
   }
 
-  private onAddedToRoom(data: any) {
-    this.roomStore.set(parseBasicRoom(data)).then(room => {
+  private onAddedToRoom({ room: roomData }: {room: any}) {
+    this.roomStore.set(parseBasicRoom(roomData)).then(room => {
       if (this.hooks.global.onAddedToRoom) {
         this.hooks.global.onAddedToRoom(room)
       }
     })
   }
 
-  private onRemovedFromRoom(roomId: string) {
+  private onRemovedFromRoom({room_id: roomId}: {room_id: string}) {
     this.roomStore.pop(roomId).then(room => {
       if (room && this.hooks.global.onRemovedFromRoom) {
         this.hooks.global.onRemovedFromRoom(room)
@@ -171,8 +166,8 @@ export class UserSubscription {
     })
   }
 
-  private onRoomUpdated(data: any) {
-    const updates = parseBasicRoom(data)
+  private onRoomUpdated({ room: roomData }: {room: any}) {
+    const updates = parseBasicRoom(roomData)
     this.roomStore.update(updates.id, updates).then(room => {
       if (this.hooks.global.onRoomUpdated) {
         this.hooks.global.onRoomUpdated(room)
@@ -180,7 +175,7 @@ export class UserSubscription {
     })
   }
 
-  private onRoomDeleted(roomId: string) {
+  private onRoomDeleted({room_id: roomId}: {room_id: string}) {
     this.roomStore.pop(roomId).then(room => {
       if (room && this.hooks.global.onRoomDeleted) {
         this.hooks.global.onRoomDeleted(room)

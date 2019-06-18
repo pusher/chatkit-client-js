@@ -43,7 +43,8 @@ export class RoomStore {
 
   public setSync(basicRoom: BasicRoom) {
     if (!this.rooms[basicRoom.id]) {
-      this.rooms[basicRoom.id] = this.decorate(basicRoom)
+      const room = this.decorate(basicRoom);
+      room && (this.rooms[basicRoom.id] = room)
     }
     return this.rooms[basicRoom.id]
   }

@@ -21,7 +21,7 @@ export class RoomSubscription {
 
   public constructor(options: {
     roomId: string;
-    messageLimit: number;
+    messageLimit?: number;
     userId: string;
     serverInstance: Instance;
     userStore: UserStore;

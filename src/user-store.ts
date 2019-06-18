@@ -13,14 +13,14 @@ export class UserStore {
   public onSetHooks: ((userId: string) => void)[];
   private users: { [userId: string]: User };
 
-  public constructor(options: {
+  public constructor({instance, presenceStore, logger}: {
     instance: Instance;
     presenceStore: PresenceStore;
     logger: Logger;
   }) {
-    this.instance = options.instance
-    this.presenceStore = options.presenceStore
-    this.logger = options.logger
+    this.instance = instance
+    this.presenceStore = presenceStore
+    this.logger = logger
     this.reqs = {} // ongoing requests by userId
     this.onSetHooks = [] // hooks called when a new user is added to the store
     this.users = {}
@@ -35,7 +35,8 @@ export class UserStore {
   }
 
   public set(basicUser: BasicUser) {
-    this.users[basicUser.id] = this.decorate(basicUser)
+    const user = this.decorate(basicUser)
+    user && (this.users[basicUser.id] = user)
     this.onSetHooks.forEach(hook => hook(basicUser.id))
     return Promise.resolve(this.users[basicUser.id])
   }
@@ -63,8 +64,8 @@ export class UserStore {
         path: appendQueryParamsAsArray("id", userIds, "/users_by_ids"),
       })
       .then(res => {
-        const basicUsers = JSON.parse(res).map(u => parseBasicUser(u))
-        basicUsers.forEach(user => this.set(user))
+        const basicUsers = JSON.parse(res).map((u: any) => parseBasicUser(u))
+        basicUsers.forEach((user: BasicUser | undefined) => user && this.set(user))
         userIds.forEach(userId => {
           delete this.reqs[userId]
         })
@@ -86,7 +87,7 @@ export class UserStore {
     return this.users[userId]
   }
 
-  private decorate(basicUser: BasicUser): User {
+  private decorate(basicUser: BasicUser): User | undefined {
     return basicUser ? new User(basicUser, this.presenceStore) : undefined
   }
 }

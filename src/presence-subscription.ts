@@ -6,8 +6,8 @@ export class PresenceSubscription {
   private logger: Logger;
   private connectionTimeout: number;
 
-  private timeout: NodeJS.Timeout;
-  private sub: Subscription;
+  private timeout?: NodeJS.Timeout;
+  private sub?: Subscription;
 
   public constructor(options: {
     userId: string;
@@ -30,11 +30,11 @@ export class PresenceSubscription {
         path: `/users/${encodeURIComponent(this.userId)}/register`,
         listeners: {
           onOpen: () => {
-            clearTimeout(this.timeout)
+            this.timeout && clearTimeout(this.timeout)
             resolve()
           },
           onError: err => {
-            clearTimeout(this.timeout)
+            this.timeout && clearTimeout(this.timeout)
             reject(err)
           },
         },
@@ -43,7 +43,7 @@ export class PresenceSubscription {
   }
 
   public cancel() {
-    clearTimeout(this.timeout)
+    this.timeout && clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {

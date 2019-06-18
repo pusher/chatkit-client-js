@@ -13,11 +13,11 @@ export class UserSubscription {
   private userId: string;
   private hooks: {
     global: {
-      onAddedToRoom?: (room: Room) => void;
-      onRemovedFromRoom?: (room: Room) => void;
-      onRoomUpdated?: (room: Room) => void;
-      onRoomDeleted?: (room: Room) => void;
-      onNewReadCursor?: (cursor: Cursor) => void;
+      onAddedToRoom?: (room: BasicRoom) => void;
+      onRemovedFromRoom?: (room: BasicRoom) => void;
+      onRoomUpdated?: (room: BasicRoom) => void;
+      onRoomDeleted?: (room: BasicRoom) => void;
+      onNewReadCursor?: (cursor: BasicCursor) => void;
     }
   };
   private readonly instance: Instance;

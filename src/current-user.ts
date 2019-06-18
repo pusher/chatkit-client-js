@@ -25,9 +25,9 @@ import { UserPresenceSubscription } from "./user-presence-subscription"
 import { RoomSubscription } from "./room-subscription"
 import { Message, BasicMessage, MessagePart } from "./message"
 import { SET_CURSOR_WAIT } from "./constants"
-import { Room } from "./room";
+import { Room, BasicRoom } from "./room";
 import { User, PresenceStore, BasicUser, Presence } from "./user";
-import { Cursor } from "./cursor";
+import { Cursor, BasicCursor } from "./cursor";
 
 type Callbacks = { resolve: (data?: any) => void, reject: (error?: any) => void };
 type MessageFetchDirection = 'older' | 'newer'
@@ -62,10 +62,11 @@ export class CurrentUser {
 
   public hooks: {
     global: {
-      onAddedToRoom?: (room: Room) => void;
-      onRemovedFromRoom?: (room: Room) => void;
-      onRoomUpdated?: (room: Room) => void;
-      onRoomDeleted?: (room: Room) => void;
+      onAddedToRoom?: (room: BasicRoom) => void;
+      onRemovedFromRoom?: (room: BasicRoom) => void;
+      onRoomUpdated?: (room: BasicRoom) => void;
+      onRoomDeleted?: (room: BasicRoom) => void;
+      onNewReadCursor?: (cursor: BasicCursor) => void;
       onUserStartedTyping?: (room: Room, user: User) => void;
       onUserStoppedTyping?: (room: Room, user: User) => void;
       onUserJoinedRoom?: (room: Room, user: User) => void;
@@ -73,10 +74,15 @@ export class CurrentUser {
       onPresenceChanged?: (state: { current: Presence, previous: Presence }, user: User) => void;
     },
     rooms: {
-      onMessage?: (data: Message) => any,
-      onNewReadCursor?: (cursor: Cursor) => void;
-      onUserJoined?: (user: User) => void;
-      onUserLeft?: (user: User) => void;
+      [roomId: string]: {
+        onMessage?: (data: Message) => any,
+        onNewReadCursor?: (cursor: Cursor) => void;
+        onUserJoined?: (user: User) => void;
+        onUserLeft?: (user: User) => void;
+        onPresenceChanged?: (state: { current: Presence, previous: Presence }, user: User) => void;
+        onUserStartedTyping?: (user: User) => void;
+        onUserStoppedTyping?: (user: User) => void;
+      }
     }
   }
 
@@ -395,12 +401,12 @@ export class CurrentUser {
     return Promise.all(
       parts.map(part => {
         part.type = part.type || (part.file && part.file.type) || ''
-        return part.file ? this._uploadAttachment(roomId, {
+        return part.file ? this._uploadAttachment({roomId, part: {
           type: part.type!,
           name: part.name,
           customData: part.customData,
           file: part.file!
-        }) : new Promise(resolve => resolve(part))
+        }}) : new Promise(resolve => resolve(part))
       }),
     )
       .then(parts =>
@@ -408,8 +414,8 @@ export class CurrentUser {
           method: "POST",
           path: `/rooms/${encodeURIComponent(roomId)}/messages`,
           json: {
-            parts: parts.map(part => ({
-              type: part.type,
+            parts: parts.map(({ type, content, url, attachment }: any) => ({
+              type,
               content,
               url,
               attachment,
@@ -493,9 +499,9 @@ export class CurrentUser {
       userStore: this.userStore,
     })
     this.roomSubscriptions[roomId] = roomSubscription
-    return this.joinRoom(roomId)
+    return this.joinRoom({roomId})
       .then(room => roomSubscription.connect().then(() => room))
-      .catch(err => {
+      .catch((err: any) => {
         this.logger.warn(`error subscribing to room ${roomId}:`, err)
         throw err
       })
@@ -659,7 +665,7 @@ export class CurrentUser {
       connectionTimeout: this.connectionTimeout,
       currentUser: this,
     })
-    return this.userSubscription 
+    return this.userSubscription!
       .connect()
       .then(({basicUser, basicRooms, basicCursors}) => {
         this.setPropertiesFromBasicUser(basicUser)
@@ -720,7 +726,7 @@ export class CurrentUser {
   }
 }
 
-const isDataAttachment = ({file, name}: {file?: string, name?: string}) => {
+const isDataAttachment = ({file, name}: {file?: File, name?: string}) => {
   if (file === undefined || name === undefined) {
     return false
   }

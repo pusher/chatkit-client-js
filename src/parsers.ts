@@ -1,5 +1,5 @@
 import { BasicCursor } from "./cursor";
-import { BasicMessage, MessagePart } from "./message";
+import { BasicMessage, MessagePart, BasicMessagePart } from "./message";
 import { BasicRoom } from "./room";
 import { BasicUser, Presence } from "./user";
 
@@ -42,7 +42,7 @@ export const parseBasicMessage = (data: any): BasicMessage => {
 
   if (data.parts) {
     // v3 message
-    basicMessage.parts = data.parts.map(p => parseMessagePart(p))
+    basicMessage.parts = data.parts.map((p: any) => parseMessagePart(p))
   } else {
     // v2 message
     basicMessage.text = data.text
@@ -68,7 +68,7 @@ const parseMessageAttachment = (data: any): {link: string, type: string, name: s
   name: data.name,
 })
 
-const parseMessagePart = (data: any): MessagePart => {
+const parseMessagePart = (data: any): BasicMessagePart => {
   if (data.content) {
     return {
       partType: "inline",

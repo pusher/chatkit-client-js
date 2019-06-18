@@ -1,4 +1,13 @@
 import { Instance } from "@pusher/platform";
+import { BasicMessagePartPayload } from "./message";
+
+export interface AttachmentMessagePartPayload extends BasicMessagePartPayload {
+  name: string;
+  size: number;
+  _id: string;
+  _downloadURL: string;
+  _expiration: Date;
+}
 
 export class Attachment {
 
@@ -13,8 +22,7 @@ export class Attachment {
   private _roomId: string;
   private _instance: Instance;
 
-
-  public constructor(basicAttachment: Attachment, roomId: string, instance: Instance) {
+  public constructor(basicAttachment: AttachmentMessagePartPayload, roomId: string, instance: Instance) {
     this.type = basicAttachment.type
     this.name = basicAttachment.name
     this.size = basicAttachment.size

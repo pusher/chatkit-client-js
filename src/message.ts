@@ -1,22 +1,29 @@
-import { Attachment } from "./attachment"
+import { Attachment, AttachmentMessagePartPayload } from "./attachment"
 import { UserStore } from "./user-store";
 import { RoomStore } from "./room-store";
 import { Instance } from "@pusher/platform";
 
+export interface BasicMessagePartPayload {
+  type: string, 
+  content?: string, 
+  url?: string, 
+  customData?: any,
+  file?: File,
+  name?: string,
+  size?: number,
+  _id?: string,
+  _downloadURL?: string,
+  _expiration?: Date
+}
+
+export interface BasicMessagePart {
+  partType: 'inline' | 'url' | 'attachment',
+  payload: AttachmentMessagePartPayload | BasicMessagePartPayload
+}
+
 export interface MessagePart {
   partType: 'inline' | 'url' | 'attachment',
-  payload: {
-    type: string, 
-    content?: string, 
-    url?: string, 
-    customData?: any,
-    file?: File,
-    name?: string,
-    size?: number,
-    _id?: string,
-    _downloadURL?: string,
-    _expiration?: Date
-  }
+  payload: Attachment | BasicMessagePartPayload
 }
 
 export interface BasicMessage {
@@ -25,7 +32,7 @@ export interface BasicMessage {
   roomId: string;
   createdAt: string;
   updatedAt: string;
-  parts?: MessagePart[];
+  parts?: BasicMessagePart[];
 
   /**
    * @deprecated Old (v2) field. Use message.parts instead.
@@ -37,7 +44,7 @@ export interface BasicMessage {
   attachment?: { link: string, type: string, name: string };
 }
 
-export class Message implements BasicMessage {
+export class Message {
   public id: string;
   public senderId: string;
   public roomId: string;
@@ -71,7 +78,7 @@ export class Message implements BasicMessage {
           partType === "attachment"
             ? {
                 partType,
-                payload: new Attachment(payload, this.roomId, instance),
+                payload: new Attachment(payload as AttachmentMessagePartPayload, this.roomId, instance),
               }
             : { partType, payload },
       )

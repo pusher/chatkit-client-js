@@ -25,9 +25,9 @@ export class UserPresenceSubscription {
   private presenceStore: PresenceStore;
   private logger: Logger;
   private connectionTimeout: number;
-  private timeout: NodeJS.Timeout;
-  private onSubscriptionEstablished: () => void;
-  private sub: Subscription;
+  private timeout?: NodeJS.Timeout;
+  private onSubscriptionEstablished?: () => void;
+  private sub?: Subscription;
 
   public constructor(options: {
     userId: string;
@@ -60,14 +60,14 @@ export class UserPresenceSubscription {
         reject(new Error("user presence subscription timed out"))
       }, this.connectionTimeout)
       this.onSubscriptionEstablished = () => {
-        clearTimeout(this.timeout)
+        this.timeout && clearTimeout(this.timeout)
         resolve()
       }
       this.sub = this.instance.subscribeNonResuming({
         path: `/users/${encodeURIComponent(this.userId)}`,
         listeners: {
           onError: err => {
-            clearTimeout(this.timeout)
+            this.timeout && clearTimeout(this.timeout)
             reject(err)
           },
           onEvent: this.onEvent,
@@ -77,7 +77,7 @@ export class UserPresenceSubscription {
   }
 
   public cancel() {
-    clearTimeout(this.timeout)
+    this.timeout && clearTimeout(this.timeout)
     try {
       this.sub && this.sub.unsubscribe()
     } catch (err) {
@@ -85,7 +85,7 @@ export class UserPresenceSubscription {
     }
   }
 
-  private onEvent(body: any) {
+  private onEvent({body}: {body: any}) {
     switch (body.event_name) {
       case "presence_state":
         this.onPresenceState(body.data)
@@ -93,8 +93,10 @@ export class UserPresenceSubscription {
     }
   }
 
-  private onPresenceState(data: any) {
-    this.onSubscriptionEstablished()
+
+
+  private onPresenceState({data}: {data: any}) {
+    this.onSubscriptionEstablished && this.onSubscriptionEstablished()
     const previous = this.presenceStore[this.userId] || "unknown"
     const current = parsePresence(data).state
     if (current === previous) {
@@ -105,17 +107,19 @@ export class UserPresenceSubscription {
       if (this.hooks.global.onPresenceChanged) {
         this.hooks.global.onPresenceChanged({ current, previous }, user)
       }
-      compose(
-        forEach(([roomId, hooks]) =>
+      compose<UserPresenceSubscription['hooks']['rooms'], PresencePair[], PresencePair[], void>(
+        forEach(([roomId, hooks]: PresencePair) =>
           this.roomStore.get(roomId).then((room: Room) => {
             if (contains(user.id, room.userIds)) {
-              hooks.onPresenceChanged({ current, previous }, user)
+              hooks.onPresenceChanged && hooks.onPresenceChanged({ current, previous }, user)
             }
           }),
         ),
-        filter<any>(pair => pair[1].onPresenceChanged !== undefined),
+        filter((pair: PresencePair) => pair[1].onPresenceChanged !== undefined),
         toPairs,
       )(this.hooks.rooms)
     })
   }
 }
+
+type PresencePair = [string, UserPresenceSubscription['hooks']['rooms']['']];

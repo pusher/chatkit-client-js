@@ -70,7 +70,7 @@ export class Room {
     )
   }
 
-  public eq(other: Room) {
+  public eq(other: BasicRoom) {
     return (
       this.createdAt === other.createdAt &&
       this.createdByUserId === other.createdByUserId &&

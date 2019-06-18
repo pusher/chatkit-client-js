@@ -8,7 +8,7 @@ import { TypingIndicators } from "./typing-indicators";
 
 export class MessageSubscription {
   private roomId: string;
-  private messageLimit: number;
+  private messageLimit?: number;
   private userId: string;
   private userStore: UserStore;
   private roomStore: RoomStore;
@@ -25,7 +25,7 @@ export class MessageSubscription {
 
   public constructor(options: {
     roomId: string;
-    messageLimit: number;
+    messageLimit?: number;
     userId: string;
     instance: Instance;
     userStore: UserStore;

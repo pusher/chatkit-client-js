@@ -33,7 +33,8 @@ export class CursorStore {
 
   public set(basicCursor: BasicCursor) {
     const k = key(basicCursor.userId, basicCursor.roomId)
-    this.cursors[k] = this.decorate(basicCursor)
+    const cursor = this.decorate(basicCursor);
+    cursor && (this.cursors[k] = cursor)
     return this.userStore!
       .fetchMissingUsers([basicCursor.userId])
       .then(() => this.cursors[k])
@@ -44,9 +45,9 @@ export class CursorStore {
     if (this.cursors[k]) {
       return Promise.resolve(this.cursors[k])
     }
-    return this.fetchBasicCursor(userId, roomId).then(basicCursor =>
-      this.set(basicCursor),
-    )
+    return this.fetchBasicCursor(userId, roomId).then(basicCursor => {
+      basicCursor && this.set(basicCursor)
+    })
   }
 
   public getSync(userId: string, roomId: string) {

@@ -92,8 +92,8 @@ export class RoomStore {
 
   public updateSync(roomId: string, updates: RoomUpdateData) {
     const room = this.getSync(roomId)
-    for (const k in updates) {
-      room[k] = updates[k]
+    for (const k of Object.keys(updates)) {
+      room[k as keyof RoomUpdateData] = updates[k as keyof RoomUpdateData]
     }
     return room
   }
@@ -112,12 +112,12 @@ export class RoomStore {
         path: `/rooms/${encodeURIComponent(roomId)}`,
       })
       .then(
-        pipe(
+        pipe<any, any, any>(
           JSON.parse,
           parseBasicRoom,
         ),
       )
-      .catch(err => {
+      .catch((err: any) => {
         this.logger.warn(`error fetching details for room ${roomId}:`, err)
       })
   }

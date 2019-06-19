@@ -83,7 +83,7 @@ export class ChatManager {
     this.disconnect = this.disconnect.bind(this)
   }
 
-  public connect(hooks = {}) {
+  public connect(hooks: CurrentUser['hooks']['global'] = {}) {
     const currentUser = new CurrentUser({
       hooks,
       id: this.userId,

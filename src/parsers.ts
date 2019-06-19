@@ -26,7 +26,7 @@ export const parseBasicUser = (data: any): BasicUser => ({
 })
 
 export const parsePresence = (data: any): { state: Presence } => ({
-  state: ["online", "offline"].includes(data.state) ? data.state : "unknown",
+  state: ["online", "offline"].indexOf(data.state) ? data.state : "unknown",
 })
 
 export const parseBasicMessage = (data: any): BasicMessage => {

@@ -61,7 +61,7 @@ export class Attachment {
           this._id
         }`,
       })
-      .then(res => {
+      .then((res: any) => {
         const { download_url, expiration } = JSON.parse(res)
         this._downloadURL = download_url
         this._expiration = new Date(expiration)

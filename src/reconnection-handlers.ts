@@ -71,13 +71,13 @@ export function handleMembershipSubReconnection({userIds, roomId, roomStore, use
     const room = roomStore.getSync(roomId)
 
     userIds
-      .filter(userId => !room.userIds.includes(userId))
+      .filter(userId => room.userIds.indexOf(userId) >= 0)
       .forEach(userId =>
         userStore.get(userId).then(user => onUserJoinedRoomHook(room, user)),
       )
 
     room.userIds
-      .filter(userId => !userIds.includes(userId))
+      .filter(userId => userIds.indexOf(userId) >= 0)
       .forEach(userId =>
         userStore.get(userId).then(user => onUserLeftRoomHook(room, user)),
       )

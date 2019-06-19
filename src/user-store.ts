@@ -48,7 +48,7 @@ export class UserStore {
   public fetchMissingUsers(userIds: string[]) {
     const missing = difference(
       userIds,
-      Object.values(this.users).map(u => u.id),
+      Object.keys(this.users).map(k => this.users[k].id),
     )
     const missingNotInProgress = difference(missing, Object.keys(this.reqs))
     if (missingNotInProgress.length > 0) {

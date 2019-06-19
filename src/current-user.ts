@@ -241,8 +241,8 @@ export class CurrentUser {
           custom_data: customData,
         },
       })
-      .then(res => this.roomStore.set(parseBasicRoom(JSON.parse(res))))
-      .catch(err => {
+      .then((res: any) => this.roomStore.set(parseBasicRoom(JSON.parse(res))))
+      .catch((err: any) => {
         this.logger.warn("error creating room:", err)
         throw err
       })
@@ -260,13 +260,13 @@ export class CurrentUser {
           map(parseBasicRoom),
         ),
       )
-      .catch(err => {
+      .catch((err: any) => {
         this.logger.warn("error getting joinable rooms:", err)
         throw err
       })
   }
 
-  public joinRoom({roomId}: {roomId: string}) {
+  public joinRoom({roomId}: {roomId: string}): Promise<Room> {
     if (this.isMemberOf(roomId)) {
       return this.roomStore.get(roomId)
     }
@@ -277,8 +277,8 @@ export class CurrentUser {
           roomId,
         )}/join`,
       })
-      .then(res => this.roomStore.set(parseBasicRoom(JSON.parse(res))))
-      .catch(err => {
+      .then((res: any) => this.roomStore.set(parseBasicRoom(JSON.parse(res))))
+      .catch((err: any) => {
         this.logger.warn(`error joining room ${roomId}:`, err)
         throw err
       })
@@ -313,7 +313,7 @@ export class CurrentUser {
         },
       })
       .then(() => this.roomStore.addUserToRoom(roomId, userId))
-      .catch(err => {
+      .catch((err: any) => {
         this.logger.warn(`error adding user ${userId} to room ${roomId}:`, err)
         throw err
       })
@@ -329,7 +329,7 @@ export class CurrentUser {
         },
       })
       .then(() => this.roomStore.removeUserFromRoom(roomId, userId))
-      .catch(err => {
+      .catch((err: any) => {
         this.logger.warn(
           `error removing user ${userId} from room ${roomId}:`,
           err,
@@ -446,7 +446,7 @@ export class CurrentUser {
           direction: direction,
         })}`,
       })
-      .then(res => {
+      .then((res: any) => {
         const messages = JSON.parse(res).map((m: any) =>
           this.decorateMessage(parseBasicMessage(m)),
         )
@@ -454,7 +454,7 @@ export class CurrentUser {
           .fetchMissingUsers(uniq(map(prop("senderId"), messages)))
           .then(() => sort((x: any, y: any) => x.id - y.id, messages))
       })
-      .catch(err => {
+      .catch((err: any) => {
         this.logger.warn(`error fetching messages from room ${roomId}:`, err)
         throw err
       })
@@ -629,7 +629,7 @@ export class CurrentUser {
   }
 
   private isMemberOf(roomId: string) {
-    return contains(roomId, map(prop("id"), this.rooms))
+    return contains(roomId, map<any, string>(prop<string>("id"), this.rooms))
   }
 
   private isSubscribedTo(roomId: string) {

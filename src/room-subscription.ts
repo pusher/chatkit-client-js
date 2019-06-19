@@ -138,7 +138,7 @@ export class RoomSubscription {
     this.membershipSub.cancel()
   }
 
-  private bufferWhileConnecting(f: (...args: any) => void) {
+  private bufferWhileConnecting(f: (...args: any[]) => void) {
     return (...args: any[]) => {
       if (this.connected) {
         f(...args)

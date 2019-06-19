@@ -7,10 +7,10 @@ import {
   toPairs,
 } from "ramda"
 
-export const urlEncode = pipe(
+export const urlEncode = pipe<any, any, any, any, any>(
   filter(x => x !== undefined),
   toPairs,
-  map(([k, v]) => `${k}=${encodeURIComponent(v as string | number | boolean)}`),
+  map(([k, v]) => `${k}=${encodeURIComponent(v)}`),
   join("&"),
 )
 

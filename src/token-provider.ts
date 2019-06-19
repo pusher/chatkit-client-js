@@ -6,7 +6,7 @@ export class TokenProvider implements PlatformTokenProvider {
   public userId?: string;
   private url: string;
   private queryParams: any;
-  private headers: { [header: string]: any };
+  private headers?: { [header: string]: any };
   private withCredentials: boolean;
 
   private cachedToken?: string;
@@ -15,14 +15,14 @@ export class TokenProvider implements PlatformTokenProvider {
   
   public constructor({url, queryParams, headers, withCredentials}: {
     url: string,
-    queryParams: any,
-    headers: { [header: string]: string },
-    withCredentials: boolean }) 
+    queryParams?: any,
+    headers?: { [header: string]: string },
+    withCredentials?: boolean }) 
   {
     this.url = url
     this.queryParams = queryParams
     this.headers = headers
-    this.withCredentials = withCredentials
+    this.withCredentials = withCredentials || false
 
     this.fetchToken = this.fetchToken.bind(this)
     this.fetchFreshToken = this.fetchFreshToken.bind(this)
@@ -40,7 +40,7 @@ export class TokenProvider implements PlatformTokenProvider {
   public fetchToken() {
     return !this.cacheIsStale()
       ? Promise.resolve(this.cachedToken)
-      : (this.req || this.fetchFreshToken()).then(({ token, expiresIn }) => {
+      : (this.req || this.fetchFreshToken())!.then(({ token, expiresIn }) => {
           this.cache(token, expiresIn)
           return token
         })
@@ -60,12 +60,12 @@ export class TokenProvider implements PlatformTokenProvider {
       },
       withCredentials: this.withCredentials,
     })
-      .then(res => {
+      .then((res: any) => {
         const { access_token: token, expires_in: expiresIn } = JSON.parse(res)
         delete this.req
         return { token, expiresIn }
       })
-      .catch(err => {
+      .catch((err: any) => {
         delete this.req
         throw err
       })

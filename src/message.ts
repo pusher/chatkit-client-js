@@ -27,7 +27,7 @@ export interface MessagePart {
 }
 
 export interface BasicMessage {
-  id: string;
+  id: number;
   senderId: string;
   roomId: string;
   createdAt: string;
@@ -45,7 +45,7 @@ export interface BasicMessage {
 }
 
 export class Message {
-  public id: string;
+  public id: number;
   public senderId: string;
   public roomId: string;
   public createdAt: string;
@@ -58,7 +58,7 @@ export class Message {
    * @deprecated Old (v2) field. Use message.parts instead.
    */
   public text?: string;
-      /**
+  /**
    * @deprecated Old (v2) field. Use message.parts instead.
    */
   public attachment?: { link: string, type: string, name: string };

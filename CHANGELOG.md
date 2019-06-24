@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.5.0...HEAD)
 
+## [1.6.0](https://github.com/pusher/chatkit-client-js/compare/1.5.0...1.6.0)
+
+### Additions
+
+- Support the `onMessageDeleted` hook
+
 ## [1.5.0](https://github.com/pusher/chatkit-client-js/compare/1.4.1...1.5.0)
 
 ### Additions
@@ -284,8 +290,8 @@ chatManager
 currentUser.subscribeToRoom({
   roomId,
   hooks: {
-    onNewMessage: m => {}
-  }
+    onNewMessage: m => {},
+  },
 })
 ```
 
@@ -335,7 +341,7 @@ currentUser.subscribeToRoom({ roomId: myRoom.id, hooks })
 - Presence data is now accessable on any user object under `user.presence`. e.g.
 
 ```javascript
-const isOnline = user.presence.state === 'online'
+const isOnline = user.presence.state === "online"
 ```
 
 - All users that share a common room membership are accesable under
@@ -373,7 +379,6 @@ const isOnline = user.presence.state === 'online'
 
 - Fixed `fetchMessageFromRoom` which wasn't passing along the values provided in the `FetchRoomMessagesOptions` parameter as query params. Thanks [@apalmer0](https://github.com/apalmer0)!
 
-
 ## [0.5.0](https://github.com/pusher/chatkit-client-js/compare/0.4.0...0.5.0) - 2018-01-09
 
 ### Changes
@@ -394,13 +399,11 @@ const isOnline = user.presence.state === 'online'
   before room subscriptions succeed, so e.g. `currentUser.cursors[roomId]` can
   be used upon receiving messages to determine if they have been read already.
 
-
 ## [0.4.0](https://github.com/pusher/chatkit-client-js/compare/0.3.2...0.4.0) - 2018-01-04
 
 ### Additions
 
 - Add initial support for receiving cursors.
-
 
 ## [0.3.2](https://github.com/pusher/chatkit-client-js/compare/0.3.1...0.3.2) - 2017-12-19
 
@@ -414,12 +417,12 @@ What previously would have been this:
 currentUser.addMessage(
   "Hi there! 👋",
   myRoom,
-  (messageId) => {
-    console.log("Success!", messageId);
+  messageId => {
+    console.log("Success!", messageId)
   },
-  (error) => {
-    console.log("Error", error);
-  }
+  error => {
+    console.log("Error", error)
+  },
 )
 ```
 
@@ -431,19 +434,18 @@ currentUser.sendMessage(
     text: "Hey there!",
     roomId: myRoom.id,
   },
-  (messageId) => {
-    console.log("Success!", messageId);
+  messageId => {
+    console.log("Success!", messageId)
   },
-  (error) => {
-    console.log("Error", error);
-  }
+  error => {
+    console.log("Error", error)
+  },
 )
 ```
 
 ### Additions
 
 - `sendMessage` supports adding an attachment to a message. See [the docs](https://docs.pusher.com/chatkit/client/javascript#messages) for more information.
-
 
 ---
 

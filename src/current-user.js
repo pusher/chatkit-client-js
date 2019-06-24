@@ -30,7 +30,7 @@ import { PresenceSubscription } from "./presence-subscription"
 import { UserPresenceSubscription } from "./user-presence-subscription"
 import { RoomSubscription } from "./room-subscription"
 import { Message } from "./message"
-import { DEFAULT_SERVICE_WORKER_URL, SET_CURSOR_WAIT } from "./constants"
+import { SET_CURSOR_WAIT } from "./constants"
 
 export class CurrentUser {
   constructor({

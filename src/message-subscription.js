@@ -15,11 +15,13 @@ export class MessageSubscription {
     this.logger = options.logger
     this.connectionTimeout = options.connectionTimeout
     this.onMessageHook = options.onMessageHook
+    this.onMessageDeletedHook = options.onMessageDeletedHook
 
     this.connect = this.connect.bind(this)
     this.cancel = this.cancel.bind(this)
     this.onEvent = this.onEvent.bind(this)
     this.onMessage = this.onMessage.bind(this)
+    this.onMessageDeleted = this.onMessageDeleted.bind(this)
     this.flushBuffer = this.flushBuffer.bind(this)
     this.onIsTyping = this.onIsTyping.bind(this)
   }
@@ -62,6 +64,9 @@ export class MessageSubscription {
       case "new_message":
         this.onMessage(body.data)
         break
+      case "message_deleted":
+        this.onMessageDeleted(body.data)
+        break
       case "is_typing":
         this.onIsTyping(body.data)
         break
@@ -88,6 +93,10 @@ export class MessageSubscription {
         pending.ready = true
         this.flushBuffer()
       })
+  }
+
+  onMessageDeleted(data) {
+    this.onMessageDeletedHook(data.message_id)
   }
 
   flushBuffer() {

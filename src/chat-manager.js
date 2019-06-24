@@ -78,7 +78,7 @@ export class ChatManager {
         })
       })
 
-    this.logger = this.serverInstanceV4.logger
+    this.logger = this.serverInstanceV5.logger
     this.userId = userId
     this.connectionTimeout =
       options.connectionTimeout || DEFAULT_CONNECTION_TIMEOUT

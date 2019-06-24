@@ -639,7 +639,7 @@ export class CurrentUser {
   enablePushNotifications(config = {}) {
     try {
       return this.beamsInstanceInitFn({
-        serviceWorkerURL: config.serviceWorkerURL || DEFAULT_SERVICE_WORKER_URL,
+        serviceWorkerRegistration: config.serviceWorkerRegistration,
       })
         .then(beamsClient => beamsClient.start())
         .then(beamsClient => {

@@ -1,6 +1,7 @@
-const INSTANCE_LOCATOR = "YOUR_INSTANCE_LOCATOR"
-const TOKEN_PROVIDER_URL = "YOUR_TOKEN_PROVIDER_URL"
-const USER_ID = "YOUR_USER_ID"
+const INSTANCE_LOCATOR = "v1:us1:7b86e31f-4d7d-44a1-952d-628a682b48ec"
+const TOKEN_PROVIDER_URL =
+  "https://us1.pusherplatform.io/services/chatkit_token_provider/v1/7b86e31f-4d7d-44a1-952d-628a682b48ec/token"
+const USER_ID = "alice"
 
 let currentUser
 let room
@@ -43,16 +44,21 @@ chatManager
     },
   })
   .then(cUser => {
-    cUser
-      .enablePushNotifications({
-        serviceWorkerURL: "/example/service-worker.js",
-      })
-      .then(() => {
-        console.log("Push notifications enabled")
-      })
-      .catch(err => {
-        console.error("Push notifications not enabled", err)
-      })
+    window.navigator.serviceWorker
+      .register("/example/service-worker.js")
+      .then(registration =>
+        cUser
+          .enablePushNotifications({
+            serviceWorkerRegistration: registration,
+          })
+          .then(() => {
+            console.log("Push notifications enabled")
+          })
+          .catch(err => {
+            console.error("Push notifications not enabled", err)
+          }),
+      )
+
     currentUser = cUser
     window.currentUser = cUser
     const roomToSubscribeTo = currentUser.rooms[0]

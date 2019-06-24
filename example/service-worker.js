@@ -1,3 +1,1 @@
-importScripts(
-  "https://cdn.jsdelivr.net/gh/pusher/push-notifications-web@master/src/service-worker.js",
-)
+importScripts("https://js.pusher.com/chatkit/service-worker.js");

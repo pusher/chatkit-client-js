@@ -7,6 +7,7 @@ export class Message {
     this.roomId = basicMessage.roomId
     this.createdAt = basicMessage.createdAt
     this.updatedAt = basicMessage.updatedAt
+    this.deletedAt = basicMessage.deletedAt
 
     if (basicMessage.parts) {
       // v3 message

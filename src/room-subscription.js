@@ -24,6 +24,14 @@ export class RoomSubscription {
           options.hooks.rooms[options.roomId].onMessage(message)
         }
       }),
+      onMessageDeletedHook: this.bufferWhileConnecting(messageId => {
+        if (
+          options.hooks.rooms[options.roomId] &&
+          options.hooks.rooms[options.roomId].onMessageDeleted
+        ) {
+          options.hooks.rooms[options.roomId].onMessageDeleted(messageId)
+        }
+      }),
     })
 
     this.cursorSub = new CursorSubscription({

@@ -4,7 +4,14 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.5.0...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.6.0...HEAD)
+
+## [1.6.1](https://github.com/pusher/chatkit-client-js/compare/1.6.0...1.6.1)
+
+### Fixes
+
+- Check for non-null content (rather than falsy) in message parsing so that
+  empty content doesn't throw an error
 
 ## [1.6.0](https://github.com/pusher/chatkit-client-js/compare/1.5.0...1.6.0)
 

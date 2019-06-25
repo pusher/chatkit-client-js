@@ -65,7 +65,7 @@ const parseMessageAttachment = data => ({
 })
 
 const parseMessagePart = data => {
-  if (data.content) {
+  if (data.content != null) {
     return {
       partType: "inline",
       payload: {
@@ -73,7 +73,7 @@ const parseMessagePart = data => {
         content: data.content,
       },
     }
-  } else if (data.url) {
+  } else if (data.url != null) {
     return {
       partType: "url",
       payload: {
@@ -81,7 +81,7 @@ const parseMessagePart = data => {
         url: data.url,
       },
     }
-  } else if (data.attachment) {
+  } else if (data.attachment != null) {
     return {
       partType: "attachment",
       payload: {

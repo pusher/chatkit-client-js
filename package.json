@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@pusher/platform": "^0.16.1",
-    "@pusher/push-notifications-web": "https://github.com/pusher/push-notifications-web#28438903afc41cd38e2e850e9c0efc259c8a7bbd",
+    "@pusher/push-notifications-web": "https://github.com/pusher/push-notifications-web#cb79c4ef484b33c293af3b5dbffafaa90a847ace",
     "ramda": "^0.25.0"
   },
   "devDependencies": {

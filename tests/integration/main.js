@@ -378,6 +378,223 @@ test("connection resolves with current user object", t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+// Web Push Notifications
+
+test("web push notifications succeeds in registering with Beams", t => {
+  let startHasBeenCalled = false
+  let setUserIdHasBeenCalled = false
+  let setUserIdHasBeenCalledWithUserId = null
+  let setUserIdTokenProviderFetchedToken = false
+  let mockBeamsClientSDK = {
+    start: () => {
+      startHasBeenCalled = true
+      return Promise.resolve(mockBeamsClientSDK)
+    },
+    setUserId: async (userId, tokenProvider) => {
+      setUserIdHasBeenCalled = true
+      setUserIdHasBeenCalledWithUserId = userId
+      setUserIdTokenProviderFetchedToken = await tokenProvider.fetchToken(
+        userId,
+      )
+    },
+  }
+
+  const chatManager = new ChatManager({
+    instanceLocator: INSTANCE_LOCATOR,
+    userId: "alice",
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
+    beamsInstanceInitFn: () => {
+      return Promise.resolve(mockBeamsClientSDK)
+    },
+  })
+
+  chatManager
+    .connect()
+    .then(currentUser => {
+      return currentUser.enablePushNotifications()
+    })
+    .then(() => {
+      t.true(startHasBeenCalled)
+      t.true(setUserIdHasBeenCalled)
+      t.equal(setUserIdHasBeenCalledWithUserId, "alice")
+      t.notEqual(setUserIdTokenProviderFetchedToken.token, undefined)
+      t.end()
+    })
+    .catch(endWithErr(t))
+})
+
+test("web push notifications fails to register with Beams and CK rejects the promise on `enablePushNotifications`", t => {
+  const chatManager = new ChatManager({
+    instanceLocator: INSTANCE_LOCATOR,
+    userId: "alice",
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
+    beamsInstanceInitFn: () => {
+      throw Error("omg, bad beams instance")
+    },
+  })
+
+  chatManager
+    .connect()
+    .then(currentUser => {
+      return currentUser.enablePushNotifications()
+    })
+    .then(() => {
+      t.fail("promise was a success, unfortunately")
+    })
+    .catch(err => {
+      t.true(
+        toString(err).match(/Chatkit error when enabling push notifications/),
+        "error",
+      )
+      t.end()
+    })
+})
+
+test("web push notifications fails to register with Beams and CK rejects the promise on `enablePushNotifications` 2", t => {
+  let mockBeamsClientSDK = {
+    start: () => Promise.resolve(mockBeamsClientSDK),
+    setUserId: () => {
+      throw new Error("failed to set setUserId")
+    },
+  }
+
+  const chatManager = new ChatManager({
+    instanceLocator: INSTANCE_LOCATOR,
+    userId: "alice",
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
+    beamsInstanceInitFn: () => {
+      return Promise.resolve(mockBeamsClientSDK)
+    },
+  })
+
+  chatManager
+    .connect()
+    .then(currentUser => {
+      return currentUser.enablePushNotifications()
+    })
+    .then(() => {
+      t.fail("promise was a success, unfortunately")
+    })
+    .catch(err => {
+      t.true(
+        toString(err).match(/Chatkit error when enabling push notifications/),
+        "error",
+      )
+      t.end()
+    })
+})
+
+test("web push notifications fails to register with Beams and CK rejects the promise on `enablePushNotifications` 3", t => {
+  let mockBeamsClientSDK = {
+    start: () => Promise.resolve(mockBeamsClientSDK),
+    setUserId: () => Promise.reject("failed to set setUserId"),
+  }
+
+  const chatManager = new ChatManager({
+    instanceLocator: INSTANCE_LOCATOR,
+    userId: "alice",
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
+    beamsInstanceInitFn: () => {
+      return Promise.resolve(mockBeamsClientSDK)
+    },
+  })
+
+  chatManager
+    .connect()
+    .then(currentUser => {
+      return currentUser.enablePushNotifications()
+    })
+    .then(() => {
+      t.fail("promise was a success, unfortunately")
+    })
+    .catch(err => {
+      t.true(
+        toString(err).match(/Chatkit error when enabling push notifications/),
+        "error",
+      )
+      t.end()
+    })
+})
+
+test("chat manager succeeds to disable all web push notifications", t => {
+  let stopHasBeenCalled = false
+  let mockBeamsClientSDK = {
+    stop: () => {
+      stopHasBeenCalled = true
+      return Promise.resolve()
+    },
+  }
+
+  const chatManager = new ChatManager({
+    instanceLocator: INSTANCE_LOCATOR,
+    userId: "alice",
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
+    beamsInstanceInitFn: () => {
+      return Promise.resolve(mockBeamsClientSDK)
+    },
+  })
+
+  chatManager
+    .disablePushNotifications()
+    .then(() => {
+      t.true(stopHasBeenCalled)
+      t.end()
+    })
+    .catch(endWithErr(t))
+})
+
+test("chat manager fails to disable web push notifications and CK rejects the promise on `disablePushNotifications`", t => {
+  const chatManager = new ChatManager({
+    instanceLocator: INSTANCE_LOCATOR,
+    userId: "alice",
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
+    beamsInstanceInitFn: () => {
+      throw Error("omg, bad beams instance")
+    },
+  })
+
+  chatManager
+    .disablePushNotifications()
+    .then(() => {
+      t.fail("promise was a success, unfortunately")
+    })
+    .catch(err => {
+      t.true(
+        toString(err).match(/Chatkit error when disabling push notifications/),
+        "error",
+      )
+      t.end()
+    })
+})
+
+test("chat manager fails to disable web push notifications and CK rejects the promise on `disablePushNotifications` 2", t => {
+  let mockBeamsClientSDK = {
+    stop: () => Promise.reject("failed to stop"),
+  }
+
+  const chatManager = new ChatManager({
+    instanceLocator: INSTANCE_LOCATOR,
+    userId: "alice",
+    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
+    beamsInstanceInitFn: () => {
+      return Promise.resolve(mockBeamsClientSDK)
+    },
+  })
+
+  chatManager
+    .disablePushNotifications()
+    .then(() => {
+      t.fail("promise was a success, unfortunately")
+    })
+    .catch(err => {
+      t.true(
+        toString(err).match(/Chatkit error when disabling push notifications/),
+        "error",
+      )
+      t.end()
+    })
+})
+
 // User subscription
 
 test("own read cursor undefined if not set", t => {

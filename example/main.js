@@ -43,6 +43,21 @@ chatManager
     },
   })
   .then(cUser => {
+    window.navigator.serviceWorker
+      .register("/example/service-worker.js")
+      .then(registration =>
+        cUser
+          .enablePushNotifications({
+            serviceWorkerRegistration: registration,
+          })
+          .then(() => {
+            console.log("Push notifications enabled")
+          })
+          .catch(err => {
+            console.error("Push notifications not enabled", err)
+          }),
+      )
+
     currentUser = cUser
     window.currentUser = cUser
     const roomToSubscribeTo = currentUser.rooms[0]

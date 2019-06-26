@@ -5,7 +5,8 @@ import { CurrentUser } from "./current-user"
 import { typeCheck, typeCheckObj } from "./utils"
 import { DEFAULT_CONNECTION_TIMEOUT } from "./constants"
 
-import { version } from "../package.json"
+import { version as sdkVersion } from "../package.json"
+import * as PusherPushNotifications from "@pusher/push-notifications-web"
 
 export class ChatManager {
   constructor({ instanceLocator, tokenProvider, userId, ...options } = {}) {
@@ -13,8 +14,8 @@ export class ChatManager {
     typeCheck("tokenProvider", "object", tokenProvider)
     typeCheck("tokenProvider.fetchToken", "function", tokenProvider.fetchToken)
     typeCheck("userId", "string", userId)
-    const cluster = split(":", instanceLocator)[1]
-    if (cluster === undefined) {
+    const [version, cluster, instanceId] = split(":", instanceLocator)
+    if (!version || !cluster || !instanceId) {
       throw new TypeError(
         `expected instanceLocator to be of the format x:y:z, but was ${instanceLocator}`,
       )
@@ -25,7 +26,7 @@ export class ChatManager {
         host: `${cluster}.${HOST_BASE}`,
         logger: options.logger,
         sdkProduct: "chatkit",
-        sdkVersion: version,
+        sdkVersion,
       })
     if (typeof tokenProvider.setUserId === "function") {
       tokenProvider.setUserId(userId)
@@ -61,6 +62,23 @@ export class ChatManager {
       serviceVersion: "v2",
       ...instanceOptions,
     })
+    this.beamsTokenProviderInstance = new Instance({
+      serviceName: "chatkit_beams_token_provider",
+      serviceVersion: "v1",
+      ...instanceOptions,
+    })
+    // capturing the `instanceId` in a closure here as the `CurrentUser` model
+    // doesn't need to be concerned about such details
+    this.beamsInstanceInitFn =
+      options.beamsInstanceInitFn ||
+      (args => {
+        return PusherPushNotifications.init({
+          instanceId,
+          ...args,
+        })
+      })
+
+    this.logger = this.serverInstanceV5.logger
     this.userId = userId
     this.connectionTimeout =
       options.connectionTimeout || DEFAULT_CONNECTION_TIMEOUT
@@ -79,6 +97,8 @@ export class ChatManager {
       filesInstance: this.filesInstance,
       cursorsInstance: this.cursorsInstance,
       presenceInstance: this.presenceInstance,
+      beamsTokenProviderInstance: this.beamsTokenProviderInstance,
+      beamsInstanceInitFn: this.beamsInstanceInitFn,
       connectionTimeout: this.connectionTimeout,
     })
     return Promise.all([
@@ -92,5 +112,28 @@ export class ChatManager {
 
   disconnect() {
     if (this.currentUser) this.currentUser.disconnect()
+  }
+
+  disablePushNotifications() {
+    try {
+      return this.beamsInstanceInitFn()
+        .then(beamsClient => {
+          return beamsClient.stop()
+        })
+        .catch(err => {
+          this.logger.warn(
+            "Chatkit error when disabling push notifications",
+            err,
+          )
+          return Promise.reject(
+            `Chatkit error when disabling push notifications: ${err.message}`,
+          )
+        })
+    } catch (err) {
+      this.logger.warn("Chatkit error when disabling push notifications", err)
+      return Promise.reject(
+        `Chatkit error when disabling push notifications: ${err.message}`,
+      )
+    }
   }
 }

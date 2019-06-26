@@ -380,7 +380,7 @@ test("connection resolves with current user object", t => {
 
 // Web Push Notifications
 
-test("web push notifications succeeds to register with Beams", t => {
+test("web push notifications succeeds in registering with Beams", t => {
   let startHasBeenCalled = false
   let setUserIdHasBeenCalled = false
   let setUserIdHasBeenCalledWithUserId = null

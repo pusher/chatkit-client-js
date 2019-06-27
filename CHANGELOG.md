@@ -4,7 +4,13 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.7.0...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.7.1...HEAD)
+
+## [1.7.1](https://github.com/pusher/chatkit-client-js/compare/1.7.0...1.7.1)
+
+### Fixes
+
+- Bad pinned version of push notifications dependency
 
 ## [1.7.0](https://github.com/pusher/chatkit-client-js/compare/1.6.1...1.7.0)
 

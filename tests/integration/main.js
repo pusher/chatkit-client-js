@@ -881,6 +881,7 @@ test(`create room [creates Alice's new room]`, t => {
     .then(a => {
       alice = a
       const result = alice.createRoom({
+        id: "alices-new-room",
         name: `Alice's new room`,
         customData: { foo: 42 },
       })
@@ -888,6 +889,7 @@ test(`create room [creates Alice's new room]`, t => {
     })
     .then(room => {
       alicesRoom = room
+      t.equal(room.id, "alices-new-room")
       t.equal(room.name, `Alice's new room`)
       t.false(room.isPrivate, `room shouldn't be private`)
       t.equal(room.createdByUserId, "alice")

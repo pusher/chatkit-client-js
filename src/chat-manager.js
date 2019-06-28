@@ -42,9 +42,9 @@ export class ChatManager {
       serviceVersion: "v2",
       ...instanceOptions,
     })
-    this.serverInstanceV5 = new Instance({
+    this.serverInstanceV6 = new Instance({
       serviceName: "chatkit",
-      serviceVersion: "v5",
+      serviceVersion: "v6",
       ...instanceOptions,
     })
     this.filesInstance = new Instance({
@@ -78,7 +78,7 @@ export class ChatManager {
         })
       })
 
-    this.logger = this.serverInstanceV5.logger
+    this.logger = this.serverInstanceV6.logger
     this.userId = userId
     this.connectionTimeout =
       options.connectionTimeout || DEFAULT_CONNECTION_TIMEOUT
@@ -93,7 +93,7 @@ export class ChatManager {
       hooks,
       id: this.userId,
       serverInstanceV2: this.serverInstanceV2,
-      serverInstanceV5: this.serverInstanceV5,
+      serverInstanceV6: this.serverInstanceV6,
       filesInstance: this.filesInstance,
       cursorsInstance: this.cursorsInstance,
       presenceInstance: this.presenceInstance,

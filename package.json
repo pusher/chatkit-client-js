@@ -16,7 +16,7 @@
   "devDependencies": {
     "@pusher/chatkit-server": "1.1.0",
     "@pusher/platform": "^0.16.1",
-    "@pusher/push-notifications-web": "https://github.com/pusher/push-notifications-web#c200bb9e2beec63e5366deb2323696cae46ae727",
+    "@pusher/push-notifications-web": "https://github.com/pusher/push-notifications-web#0515c2cca247c9ee3218afe211b01b5fb8a2b5dc",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
     "babel-plugin-external-helpers": "^6.22.0",

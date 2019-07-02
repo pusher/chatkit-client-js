@@ -4,7 +4,16 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.7.1...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.8.0...HEAD)
+
+## [1.8.0](https://github.com/pusher/chatkit-client-js/compare/1.7.1...1.8.0)
+
+### Additions
+
+- Better error messages for web push integrations:
+  - Log a warning when using an unsupported browser
+  - Raise an exception with a more helpful error message when it is detected
+    that the service worker is missing.
 
 ## [1.7.1](https://github.com/pusher/chatkit-client-js/compare/1.7.0...1.7.1)
 

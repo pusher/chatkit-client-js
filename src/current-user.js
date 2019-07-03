@@ -35,7 +35,7 @@ import { SET_CURSOR_WAIT } from "./constants"
 export class CurrentUser {
   constructor({
     serverInstanceV2,
-    serverInstanceV5,
+    serverInstanceV6,
     connectionTimeout,
     cursorsInstance,
     filesInstance,
@@ -52,22 +52,22 @@ export class CurrentUser {
     this.id = id
     this.encodedId = encodeURIComponent(this.id)
     this.serverInstanceV2 = serverInstanceV2
-    this.serverInstanceV5 = serverInstanceV5
+    this.serverInstanceV6 = serverInstanceV6
     this.filesInstance = filesInstance
     this.cursorsInstance = cursorsInstance
     this.connectionTimeout = connectionTimeout
     this.presenceInstance = presenceInstance
     this.beamsTokenProviderInstance = beamsTokenProviderInstance
     this.beamsInstanceInitFn = beamsInstanceInitFn
-    this.logger = serverInstanceV5.logger
+    this.logger = serverInstanceV6.logger
     this.presenceStore = {}
     this.userStore = new UserStore({
-      instance: this.serverInstanceV5,
+      instance: this.serverInstanceV6,
       presenceStore: this.presenceStore,
       logger: this.logger,
     })
     this.roomStore = new RoomStore({
-      instance: this.serverInstanceV5,
+      instance: this.serverInstanceV6,
       userStore: this.userStore,
       isSubscribedTo: userId => this.isSubscribedTo(userId),
       logger: this.logger,
@@ -80,7 +80,7 @@ export class CurrentUser {
     })
     this.typingIndicators = new TypingIndicators({
       hooks: this.hooks,
-      instance: this.serverInstanceV5,
+      instance: this.serverInstanceV6,
       logger: this.logger,
     })
     this.userStore.onSetHooks.push(userId =>
@@ -177,15 +177,17 @@ export class CurrentUser {
     return this.typingIndicators.sendThrottledRequest(roomId)
   }
 
-  createRoom({ name, addUserIds, customData, ...rest } = {}) {
+  createRoom({ id, name, addUserIds, customData, ...rest } = {}) {
+    id && typeCheck("id", "string", id)
     name && typeCheck("name", "string", name)
     addUserIds && typeCheckArr("addUserIds", "string", addUserIds)
     customData && typeCheck("customData", "object", customData)
-    return this.serverInstanceV5
+    return this.serverInstanceV6
       .request({
         method: "POST",
         path: "/rooms",
         json: {
+          id,
           created_by_id: this.id,
           name,
           private: !!rest.private, // private is a reserved word in strict mode!
@@ -201,7 +203,7 @@ export class CurrentUser {
   }
 
   getJoinableRooms() {
-    return this.serverInstanceV5
+    return this.serverInstanceV6
       .request({
         method: "GET",
         path: `/users/${this.encodedId}/rooms?joinable=true`,
@@ -223,7 +225,7 @@ export class CurrentUser {
     if (this.isMemberOf(roomId)) {
       return this.roomStore.get(roomId)
     }
-    return this.serverInstanceV5
+    return this.serverInstanceV6
       .request({
         method: "POST",
         path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
@@ -242,7 +244,7 @@ export class CurrentUser {
     return this.roomStore
       .get(roomId)
       .then(room =>
-        this.serverInstanceV5
+        this.serverInstanceV6
           .request({
             method: "POST",
             path: `/users/${this.encodedId}/rooms/${encodeURIComponent(
@@ -260,7 +262,7 @@ export class CurrentUser {
   addUserToRoom({ userId, roomId } = {}) {
     typeCheck("userId", "string", userId)
     typeCheck("roomId", "string", roomId)
-    return this.serverInstanceV5
+    return this.serverInstanceV6
       .request({
         method: "PUT",
         path: `/rooms/${encodeURIComponent(roomId)}/users/add`,
@@ -278,7 +280,7 @@ export class CurrentUser {
   removeUserFromRoom({ userId, roomId } = {}) {
     typeCheck("userId", "string", userId)
     typeCheck("roomId", "string", roomId)
-    return this.serverInstanceV5
+    return this.serverInstanceV6
       .request({
         method: "PUT",
         path: `/rooms/${encodeURIComponent(roomId)}/users/remove`,
@@ -356,7 +358,7 @@ export class CurrentUser {
       }),
     )
       .then(parts =>
-        this.serverInstanceV5.request({
+        this.serverInstanceV6.request({
           method: "POST",
           path: `/rooms/${encodeURIComponent(roomId)}/messages`,
           json: {
@@ -407,7 +409,7 @@ export class CurrentUser {
   fetchMultipartMessages(options = {}) {
     return this.fetchMessages({
       ...options,
-      serverInstance: this.serverInstanceV5,
+      serverInstance: this.serverInstanceV6,
     })
   }
 
@@ -445,7 +447,7 @@ export class CurrentUser {
   subscribeToRoomMultipart(options = {}) {
     return this.subscribeToRoom({
       ...options,
-      serverInstance: this.serverInstanceV5,
+      serverInstance: this.serverInstanceV6,
     })
   }
 
@@ -454,7 +456,7 @@ export class CurrentUser {
     name && typeCheck("name", "string", name)
     rest.private && typeCheck("private", "boolean", rest.private)
     customData && typeCheck("customData", "object", customData)
-    return this.serverInstanceV5
+    return this.serverInstanceV6
       .request({
         method: "PUT",
         path: `/rooms/${encodeURIComponent(roomId)}`,
@@ -519,7 +521,7 @@ export class CurrentUser {
   }
 
   _uploadAttachment({ roomId, part: { type, name, customData, file } }) {
-    return this.serverInstanceV5
+    return this.serverInstanceV6
       .request({
         method: "POST",
         path: `/rooms/${encodeURIComponent(roomId)}/attachments`,
@@ -559,7 +561,7 @@ export class CurrentUser {
       basicMessage,
       this.userStore,
       this.roomStore,
-      this.serverInstanceV5,
+      this.serverInstanceV6,
     )
   }
 
@@ -575,7 +577,7 @@ export class CurrentUser {
     this.userSubscription = new UserSubscription({
       hooks: this.hooks,
       userId: this.id,
-      instance: this.serverInstanceV5,
+      instance: this.serverInstanceV6,
       roomStore: this.roomStore,
       cursorStore: this.cursorStore,
       typingIndicators: this.typingIndicators,

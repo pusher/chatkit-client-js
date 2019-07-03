@@ -15,6 +15,11 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
   - Raise an exception with a more helpful error message when it is detected
     that the service worker is missing.
 
+### Additions
+
+- Support for user specified room IDs. Provide an `id` parameter to the
+  `createRoom` method.
+
 ## [1.7.1](https://github.com/pusher/chatkit-client-js/compare/1.7.0...1.7.1)
 
 ### Fixes

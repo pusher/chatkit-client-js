@@ -213,7 +213,7 @@ export class CurrentUser {
     })
   }
 
-  public readCursor({roomId, userId = this.id} : {roomId: string, userId: string }) {
+  public readCursor({roomId, userId = this.id} : {roomId: string, userId?: string }) {
     if (userId !== this.id && !this.isSubscribedTo(roomId)) {
       const err = new Error(
         `Must be subscribed to room ${roomId} to access member's read cursors`,

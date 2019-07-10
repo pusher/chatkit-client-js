@@ -436,7 +436,7 @@ export class CurrentUser {
     limit?: number,
     direction?: MessageFetchDirection,
     serverInstance?: Instance
-  }) {
+  }): Promise<Message[]> {
     return (serverInstance || this.serverInstanceV2)
       .request({
         method: "GET",

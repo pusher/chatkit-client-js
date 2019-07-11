@@ -41,9 +41,10 @@
   resolved "https://registry.yarnpkg.com/@pusher/platform/-/platform-0.16.2.tgz#d6493b171903dd42a9fcd650a90d352af5e344c2"
   integrity sha512-i8FHrurPFs2nmTDFHP1OMcFvtmZFGLUtOj46Ick/KOopTWnVv1FJkruMIV+wahP4mKl9e8XNzqe62HEXDh/n+A==
 
-"@pusher/push-notifications-web@https://github.com/pusher/push-notifications-web#c200bb9e2beec63e5366deb2323696cae46ae727":
+"@pusher/push-notifications-web@0.9.0":
   version "0.9.0"
-  resolved "https://github.com/pusher/push-notifications-web#c200bb9e2beec63e5366deb2323696cae46ae727"
+  resolved "https://registry.yarnpkg.com/@pusher/push-notifications-web/-/push-notifications-web-0.9.0.tgz#acecdaa0375981c2dc8fff00f36c0827d5d53336"
+  integrity sha512-ULmw+XKffL7QW4/Qxkpc8gFtjLMWSHeTf8eXxSW68La87eO7NeOOwvdr+PqgOuwc3GyQ1Abh07zXBlJ5yfTR4w==
 
 "@sindresorhus/is@^0.14.0":
   version "0.14.0"

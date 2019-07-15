@@ -865,9 +865,8 @@ test(`room deleted hook [destroys Alice's room]`, t => {
   })
     .then(a => {
       alice = a
-      server.apiRequest({
-        method: "DELETE",
-        path: `/rooms/${alicesRoom.id}`,
+      server.asyncDeleteRoom({
+        roomId: alicesRoom.id,
         jwt: server.generateAccessToken({ userId: "admin", su: true }).token,
       })
     })

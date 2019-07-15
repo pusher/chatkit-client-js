@@ -14,7 +14,7 @@
     "url": "git+https://github.com/pusher/chatkit-client-js.git"
   },
   "devDependencies": {
-    "@pusher/chatkit-server": "1.1.0",
+    "@pusher/chatkit-server": "^2.0.1",
     "@pusher/platform": "^0.16.1",
     "@pusher/push-notifications-web": "0.9.0",
     "babel-cli": "^6.26.0",
@@ -29,10 +29,12 @@
     "eslint": "^5.8.0",
     "eslint-config-prettier": "^3.1.0",
     "eslint-plugin-prettier": "^3.0.0",
+    "jest": "^24.8.0",
+    "jest-puppeteer": "^4.2.0",
     "jsonwebtoken": "^8.5.1",
     "prettier": "1.14.3",
     "publish-please": "^5.2.0",
-    "puppeteer": "^1.17.0",
+    "puppeteer": "^1.18.1",
     "ramda": "^0.25.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
@@ -45,10 +47,11 @@
     "rollup-plugin-uglify": "^3.0.0",
     "snazzy": "^7.0.0",
     "tap-colorize": "^1.2.0",
-    "tape": "^4.8.0"
+    "tape": "^4.8.0",
+    "got": "^9.6.0"
   },
   "scripts": {
-    "lint": "eslint src tests rollup",
+    "lint": "eslint src tests/integration tests/unit rollup",
     "format": "prettier --write src/**/*.js tests/**/*.js rollup/**/*.js example/**/*.js",
     "build": "yarn build:web && yarn build:react-native",
     "build:web": "rollup -c rollup/web.js",
@@ -85,5 +88,9 @@
       "browser": true,
       "es6": true
     }
+  },
+  "jest": {
+    "preset": "jest-puppeteer",
+    "testRegex": "/tests/jest/[^/]*js$"
   }
 }

@@ -66,6 +66,9 @@
     "semi": false,
     "trailingComma": "all"
   },
+  "resolutions": {
+    "**/**/lodash": "^4.17.13"
+  },
   "eslintConfig": {
     "extends": [
       "prettier",

@@ -1,4 +1,4 @@
-export function showNotification({ notification, data }) {
+export function showNotification({ notification, data, onClick }) {
   if (document.visibilityState !== "hidden") {
     return
   }
@@ -14,6 +14,9 @@ export function showNotification({ notification, data }) {
   n.onclick = e => {
     e.preventDefault()
     window.focus()
+    if (onClick) {
+      onClick(e.target.data.chatkit)
+    }
     e.target.close()
   }
 }

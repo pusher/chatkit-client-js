@@ -644,7 +644,8 @@ export class CurrentUser {
 
   enablePushNotifications(config = {}) {
     const notificationSubscription = new NotificationSubscription({
-      onNotificationHook: showNotification,
+      onNotificationHook: ({ notification, data }) =>
+        showNotification({ notification, data, onClick: config.onClick }),
       userId: this.id,
       instance: this.pushNotificationsInstance,
       logger: this.logger,

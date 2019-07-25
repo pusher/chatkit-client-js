@@ -4,7 +4,16 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.9.2...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.10.0...HEAD)
+
+## [1.10.0](https://github.com/pusher/chatkit-client-js/compare/1.9.2...1.10.0)
+
+### Additions
+
+- Enabling push notifications now also enables notifications when the
+  application tab is open but hidden.
+- `enablePushNotifications` takes an `onClick` callback which is fired when one
+  of these notifications is clicked, and passed the relevant room ID.
 
 ## [1.9.2](https://github.com/pusher/chatkit-client-js/compare/1.9.1...1.9.2)
 

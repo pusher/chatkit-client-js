@@ -1,5 +1,8 @@
 export function showNotification({ notification, data }) {
-  // TODO only if the tab isn't visible!
+  if (document.visibilityState !== "hidden") {
+    return
+  }
+
   const n = new Notification(notification.title || "", {
     body: notification.body || "",
     icon: notification.icon,

@@ -29,6 +29,8 @@ import { UserSubscription } from "./user-subscription"
 import { PresenceSubscription } from "./presence-subscription"
 import { UserPresenceSubscription } from "./user-presence-subscription"
 import { RoomSubscription } from "./room-subscription"
+import { NotificationSubscription } from "./notification-subscription"
+import { showNotification } from "./notification"
 import { Message } from "./message"
 import { SET_CURSOR_WAIT } from "./constants"
 
@@ -43,6 +45,7 @@ export class CurrentUser {
     id,
     presenceInstance,
     beamsTokenProviderInstance,
+    pushNotificationsInstance,
     beamsInstanceInitFn,
   }) {
     this.hooks = {
@@ -58,6 +61,7 @@ export class CurrentUser {
     this.connectionTimeout = connectionTimeout
     this.presenceInstance = presenceInstance
     this.beamsTokenProviderInstance = beamsTokenProviderInstance
+    this.pushNotificationsInstance = pushNotificationsInstance
     this.beamsInstanceInitFn = beamsInstanceInitFn
     this.logger = serverInstanceV6.logger
     this.presenceStore = {}
@@ -639,40 +643,53 @@ export class CurrentUser {
   }
 
   enablePushNotifications(config = {}) {
-    try {
-      return this.beamsInstanceInitFn({
-        serviceWorkerRegistration: config.serviceWorkerRegistration,
-      })
-        .then(beamsClient => beamsClient.start())
-        .then(beamsClient => {
-          const fetchBeamsToken = userId =>
-            this.beamsTokenProviderInstance
-              .request({
-                method: "GET",
-                path: `/beams-tokens?user_id=${encodeURIComponent(userId)}`,
-              })
-              .then(JSON.parse)
-              .catch(req => {
-                return Promise.reject(
-                  `Internal error: ${req.statusCode} status code, info: ${
-                    req.info.error_description
-                  }`,
-                )
-              })
+    const notificationSubscription = new NotificationSubscription({
+      onNotificationHook: ({ notification, data }) =>
+        showNotification({ notification, data, onClick: config.onClick }),
+      userId: this.id,
+      instance: this.pushNotificationsInstance,
+      logger: this.logger,
+      connectionTimeout: this.connectionTimeout,
+    })
+    this.notificationSubscription = notificationSubscription
 
-          return beamsClient.setUserId(this.id, {
-            fetchToken: fetchBeamsToken,
+    try {
+      return Promise.all([
+        this.beamsInstanceInitFn({
+          serviceWorkerRegistration: config.serviceWorkerRegistration,
+        })
+          .then(beamsClient => beamsClient.start())
+          .then(beamsClient => {
+            const fetchBeamsToken = userId =>
+              this.beamsTokenProviderInstance
+                .request({
+                  method: "GET",
+                  path: `/beams-tokens?user_id=${encodeURIComponent(userId)}`,
+                })
+                .then(JSON.parse)
+                .catch(req => {
+                  return Promise.reject(
+                    `Internal error: ${req.statusCode} status code, info: ${
+                      req.info.error_description
+                    }`,
+                  )
+                })
+
+            return beamsClient.setUserId(this.id, {
+              fetchToken: fetchBeamsToken,
+            })
           })
-        })
-        .catch(err => {
-          this.logger.warn(
-            `Chatkit error when enabling push notifications:`,
-            err,
-          )
-          return Promise.reject(
-            `Chatkit error when enabling push notifications: ${err}`,
-          )
-        })
+          .catch(err => {
+            this.logger.warn(
+              `Chatkit error when enabling push notifications:`,
+              err,
+            )
+            return Promise.reject(
+              `Chatkit error when enabling push notifications: ${err}`,
+            )
+          }),
+        notificationSubscription.connect(),
+      ])
     } catch (err) {
       this.logger.warn(`Chatkit error when enabling push notifications:`, err)
       return Promise.reject(
@@ -684,6 +701,9 @@ export class CurrentUser {
   disconnect() {
     this.userSubscription.cancel()
     this.presenceSubscription.cancel()
+    if (this.notificationSubscription) {
+      this.notificationSubscription.cancel()
+    }
     forEachObjIndexed(sub => sub.cancel(), this.roomSubscriptions)
     forEachObjIndexed(sub => sub.cancel(), this.userPresenceSubscriptions)
   }

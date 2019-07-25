@@ -67,6 +67,11 @@ export class ChatManager {
       serviceVersion: "v1",
       ...instanceOptions,
     })
+    this.pushNotificationsInstance = new Instance({
+      serviceName: "chatkit_push_notifications",
+      serviceVersion: "v1",
+      ...instanceOptions,
+    })
     // capturing the `instanceId` in a closure here as the `CurrentUser` model
     // doesn't need to be concerned about such details
     this.beamsInstanceInitFn =
@@ -98,6 +103,7 @@ export class ChatManager {
       cursorsInstance: this.cursorsInstance,
       presenceInstance: this.presenceInstance,
       beamsTokenProviderInstance: this.beamsTokenProviderInstance,
+      pushNotificationsInstance: this.pushNotificationsInstance,
       beamsInstanceInitFn: this.beamsInstanceInitFn,
       connectionTimeout: this.connectionTimeout,
     })

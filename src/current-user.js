@@ -204,7 +204,7 @@ export class CurrentUser {
           id,
           created_by_id: this.id,
           name,
-          pushNotificationTitleOverride,
+          push_notification_title_override: pushNotificationTitleOverride,
           private: !!rest.private, // private is a reserved word in strict mode!
           user_ids: addUserIds,
           custom_data: customData,
@@ -489,7 +489,7 @@ export class CurrentUser {
         path: `/rooms/${encodeURIComponent(roomId)}`,
         json: {
           name,
-          pushNotificationTitleOverride,
+          push_notification_title_override: pushNotificationTitleOverride,
           private: rest.private, // private is a reserved word in strict mode!
           custom_data: customData,
         },

@@ -6,6 +6,10 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.9.2...HEAD)
 
+### Additions
+
+- Support for pushNotificationTitleOverride in createRoom & updateRoom
+
 ## [1.9.2](https://github.com/pusher/chatkit-client-js/compare/1.9.1...1.9.2)
 
 ### Changes

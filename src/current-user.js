@@ -181,9 +181,22 @@ export class CurrentUser {
     return this.typingIndicators.sendThrottledRequest(roomId)
   }
 
-  createRoom({ id, name, addUserIds, customData, ...rest } = {}) {
+  createRoom({
+    id,
+    name,
+    pushNotificationTitleOverride,
+    addUserIds,
+    customData,
+    ...rest
+  } = {}) {
     id && typeCheck("id", "string", id)
     name && typeCheck("name", "string", name)
+    pushNotificationTitleOverride &&
+      typeCheck(
+        "pushNotificationTitleOverride",
+        "string",
+        pushNotificationTitleOverride,
+      )
     addUserIds && typeCheckArr("addUserIds", "string", addUserIds)
     customData && typeCheck("customData", "object", customData)
     return this.serverInstanceV6
@@ -194,6 +207,7 @@ export class CurrentUser {
           id,
           created_by_id: this.id,
           name,
+          push_notification_title_override: pushNotificationTitleOverride,
           private: !!rest.private, // private is a reserved word in strict mode!
           user_ids: addUserIds,
           custom_data: customData,
@@ -455,9 +469,21 @@ export class CurrentUser {
     })
   }
 
-  updateRoom({ roomId, name, customData, ...rest } = {}) {
+  updateRoom({
+    roomId,
+    name,
+    pushNotificationTitleOverride,
+    customData,
+    ...rest
+  } = {}) {
     typeCheck("roomId", "string", roomId)
     name && typeCheck("name", "string", name)
+    pushNotificationTitleOverride &&
+      typeCheck(
+        "pushNotificationTitleOverride",
+        "string",
+        pushNotificationTitleOverride,
+      )
     rest.private && typeCheck("private", "boolean", rest.private)
     customData && typeCheck("customData", "object", customData)
     return this.serverInstanceV6
@@ -466,6 +492,7 @@ export class CurrentUser {
         path: `/rooms/${encodeURIComponent(roomId)}`,
         json: {
           name,
+          push_notification_title_override: pushNotificationTitleOverride,
           private: rest.private, // private is a reserved word in strict mode!
           custom_data: customData,
         },

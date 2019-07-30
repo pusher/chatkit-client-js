@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 - `enablePushNotifications` takes an `onClick` callback which is fired when one
   of these notifications is clicked, and passed the relevant room ID.
 
+### Additions
+
+- Support for pushNotificationTitleOverride in createRoom & updateRoom
+
 ## [1.9.2](https://github.com/pusher/chatkit-client-js/compare/1.9.1...1.9.2)
 
 ### Changes

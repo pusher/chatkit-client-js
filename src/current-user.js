@@ -17,7 +17,6 @@ import {
   checkOneOf,
   typeCheck,
   typeCheckArr,
-  typeCheckNullable,
   typeCheckObj,
   urlEncode,
 } from "./utils"
@@ -476,7 +475,7 @@ export class CurrentUser {
     typeCheck("roomId", "string", roomId)
     name && typeCheck("name", "string", name)
     pushNotificationTitleOverride &&
-      typeCheckNullable(
+      typeCheck(
         "pushNotificationTitleOverride",
         "string",
         pushNotificationTitleOverride,

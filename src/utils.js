@@ -38,15 +38,6 @@ export const typeCheck = (name, expectedType, value) => {
   }
 }
 
-export const typeCheckNullable = (name, expectedType, value) => {
-  const type = typeof value
-  if (type !== expectedType && value !== null) {
-    throw new TypeError(
-      `expected ${name} to be of type ${expectedType} or null but was of type ${type}`,
-    )
-  }
-}
-
 // checks that all of an arrays elements are of the given type
 export const typeCheckArr = (name, expectedType, arr) => {
   if (!Array.isArray(arr)) {

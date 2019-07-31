@@ -6,6 +6,10 @@ addons:
   chrome:
     stable
 
+env:
+  - SUITE=jest
+  - SUITE=test
+
 before_script:
   - yarn
   - cp tests/integration/config/example.js tests/integration/config/production.js
@@ -18,5 +22,6 @@ before_script:
   - sed -i -e "s|https://token.provider.url|$CHATKIT_TOKEN_PROVIDER_URL|g" tests/jest/helpers/config/production.js
 
 script:
-  - yarn lint:build:test
-  - yarn jest
+  - yarn lint
+  - yarn build
+  - yarn $SUITE

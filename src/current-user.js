@@ -672,7 +672,12 @@ export class CurrentUser {
   enablePushNotifications(config = {}) {
     const notificationSubscription = new NotificationSubscription({
       onNotificationHook: ({ notification, data }) =>
-        showNotification({ notification, data, onClick: config.onClick }),
+        showNotification({
+          notification,
+          data,
+          onClick: config.onClick,
+          Notification: config._Notification,
+        }),
       userId: this.id,
       instance: this.pushNotificationsInstance,
       logger: this.logger,
@@ -682,39 +687,45 @@ export class CurrentUser {
 
     try {
       return Promise.all([
-        this.beamsInstanceInitFn({
-          serviceWorkerRegistration: config.serviceWorkerRegistration,
-        })
-          .then(beamsClient => beamsClient.start())
-          .then(beamsClient => {
-            const fetchBeamsToken = userId =>
-              this.beamsTokenProviderInstance
-                .request({
-                  method: "GET",
-                  path: `/beams-tokens?user_id=${encodeURIComponent(userId)}`,
-                })
-                .then(JSON.parse)
-                .catch(req => {
-                  return Promise.reject(
-                    `Internal error: ${req.statusCode} status code, info: ${
-                      req.info.error_description
-                    }`,
-                  )
-                })
-
-            return beamsClient.setUserId(this.id, {
-              fetchToken: fetchBeamsToken,
+        // We may expose this as a public option eventually, for now it's
+        // useful for testing online notifications in isolation.
+        config._onlineOnly
+          ? Promise.resolve()
+          : this.beamsInstanceInitFn({
+              serviceWorkerRegistration: config.serviceWorkerRegistration,
             })
-          })
-          .catch(err => {
-            this.logger.warn(
-              `Chatkit error when enabling push notifications:`,
-              err,
-            )
-            return Promise.reject(
-              `Chatkit error when enabling push notifications: ${err}`,
-            )
-          }),
+              .then(beamsClient => beamsClient.start())
+              .then(beamsClient => {
+                const fetchBeamsToken = userId =>
+                  this.beamsTokenProviderInstance
+                    .request({
+                      method: "GET",
+                      path: `/beams-tokens?user_id=${encodeURIComponent(
+                        userId,
+                      )}`,
+                    })
+                    .then(JSON.parse)
+                    .catch(req => {
+                      return Promise.reject(
+                        `Internal error: ${req.statusCode} status code, info: ${
+                          req.info.error_description
+                        }`,
+                      )
+                    })
+
+                return beamsClient.setUserId(this.id, {
+                  fetchToken: fetchBeamsToken,
+                })
+              })
+              .catch(err => {
+                this.logger.warn(
+                  `Chatkit error when enabling push notifications:`,
+                  err,
+                )
+                return Promise.reject(
+                  `Chatkit error when enabling push notifications: ${err}`,
+                )
+              }),
         notificationSubscription.connect(),
       ])
     } catch (err) {

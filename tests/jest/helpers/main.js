@@ -4,12 +4,17 @@ const uuid = require("uuid/v4")
 const config = require("./config/production")
 
 async function defaultBeforeAll(roleName) {
-  page.on("console", msg => {
-    if (msg.type() === "error") {
-      console.error(msg.text())
-    } else {
-      console.log(msg.text())
-    }
+  page.on("console", async msg => {
+    const argsWithRichErrors = await Promise.all(
+      msg
+        .args()
+        .map(arg =>
+          arg
+            .executionContext()
+            .evaluate(arg => (arg instanceof Error ? arg.message : arg), arg),
+        ),
+    )
+    console.log(...argsWithRichErrors)
   })
 
   page.on("pageerror", err => console.error("pageerror:", err))

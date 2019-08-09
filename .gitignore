@@ -7,3 +7,4 @@ yarn-error.log
 tests/integration/config/production.js
 tests/integration/config/staging.js
 tests/integration/config/development.js
+tests/jest/helpers/config/production.js

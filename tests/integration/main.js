@@ -13,20 +13,17 @@ import {
   reduce,
   toString,
 } from "ramda"
+import request from "request-promise"
+import jwt from "jsonwebtoken"
 
 import ChatkitServer from "@pusher/chatkit-server"
-/* eslint-disable import/no-duplicates */
-import { TokenProvider, ChatManager } from "../../dist/web/chatkit.js"
-import Chatkit from "../../dist/web/chatkit.js"
-/* eslint-enable import/no-duplicates */
+import Chatkit, { TokenProvider, ChatManager } from "../../dist/web/chatkit.js"
+
 import {
   INSTANCE_LOCATOR,
   INSTANCE_KEY,
   TOKEN_PROVIDER_URL,
 } from "./config/production"
-
-import request from "request-promise"
-import jwt from "jsonwebtoken"
 
 let alicesRoom, bobsRoom, carolsRoom, alicesPrivateRoom
 let bob, carol
@@ -380,50 +377,7 @@ test("connection resolves with current user object", t => {
 
 // Web Push Notifications
 
-test("web push notifications succeeds in registering with Beams", t => {
-  let startHasBeenCalled = false
-  let setUserIdHasBeenCalled = false
-  let setUserIdHasBeenCalledWithUserId = null
-  let setUserIdTokenProviderFetchedToken = false
-  let mockBeamsClientSDK = {
-    start: () => {
-      startHasBeenCalled = true
-      return Promise.resolve(mockBeamsClientSDK)
-    },
-    setUserId: async (userId, tokenProvider) => {
-      setUserIdHasBeenCalled = true
-      setUserIdHasBeenCalledWithUserId = userId
-      setUserIdTokenProviderFetchedToken = await tokenProvider.fetchToken(
-        userId,
-      )
-    },
-  }
-
-  const chatManager = new ChatManager({
-    instanceLocator: INSTANCE_LOCATOR,
-    userId: "alice",
-    tokenProvider: new TokenProvider({ url: TOKEN_PROVIDER_URL }),
-    beamsInstanceInitFn: () => {
-      return Promise.resolve(mockBeamsClientSDK)
-    },
-  })
-
-  chatManager
-    .connect()
-    .then(currentUser => {
-      return currentUser.enablePushNotifications()
-    })
-    .then(() => {
-      t.true(startHasBeenCalled)
-      t.true(setUserIdHasBeenCalled)
-      t.equal(setUserIdHasBeenCalledWithUserId, "alice")
-      t.notEqual(setUserIdTokenProviderFetchedToken.token, undefined)
-      t.end()
-    })
-    .catch(endWithErr(t))
-})
-
-test("web push notifications fails to register with Beams and CK rejects the promise on `enablePushNotifications`", t => {
+test("web push notifications fails to register with Beams and CK rejects the promise on `enablePushNotifications` if Beams doesn't initialise", t => {
   const chatManager = new ChatManager({
     instanceLocator: INSTANCE_LOCATOR,
     userId: "alice",
@@ -450,7 +404,7 @@ test("web push notifications fails to register with Beams and CK rejects the pro
     })
 })
 
-test("web push notifications fails to register with Beams and CK rejects the promise on `enablePushNotifications` 2", t => {
+test("web push notifications fails to register with Beams and CK rejects the promise on `enablePushNotifications` if initialised Beams throws an error", t => {
   let mockBeamsClientSDK = {
     start: () => Promise.resolve(mockBeamsClientSDK),
     setUserId: () => {
@@ -484,7 +438,7 @@ test("web push notifications fails to register with Beams and CK rejects the pro
     })
 })
 
-test("web push notifications fails to register with Beams and CK rejects the promise on `enablePushNotifications` 3", t => {
+test("web push notifications fails to register with Beams and CK rejects the promise on `enablePushNotifications` if initialised Beams rejects", t => {
   let mockBeamsClientSDK = {
     start: () => Promise.resolve(mockBeamsClientSDK),
     setUserId: () => Promise.reject("failed to set setUserId"),

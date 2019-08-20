@@ -1,7 +1,7 @@
 const helpers = require("./helpers/main")
 
 describe("Web push notifications", () => {
-  test("succeeds in registering with Beams with default ChatManager notification options", async () =>  {
+  test("succeeds in registering with Beams with default ChatManager notification options", async () => {
     const user = await helpers.makeUser("default")
     const mockBeamsCalls = await page.evaluate(
       user =>
@@ -11,7 +11,7 @@ describe("Web push notifications", () => {
             return user.enablePushNotifications()
           })
           .then(() => {
-            return mockBeamsCalls;
+            return mockBeamsCalls
           }),
       user,
     )
@@ -22,17 +22,19 @@ describe("Web push notifications", () => {
     expect(mockBeamsCalls.setUserIdTokenProviderFetchedToken.token).toBeTruthy()
   })
 
-  test("registers with Beams if `showNotificationsTabClosed` is set explicitly to true", async () =>  {
+  test("registers with Beams if `showNotificationsTabClosed` is set explicitly to true", async () => {
     const user = await helpers.makeUser("default")
     const mockBeamsCalls = await page.evaluate(
       user =>
         makeChatManager(user)
           .connect()
           .then(user => {
-            return user.enablePushNotifications({ showNotificationsTabClosed: true })
+            return user.enablePushNotifications({
+              showNotificationsTabClosed: true,
+            })
           })
           .then(() => {
-            return mockBeamsCalls;
+            return mockBeamsCalls
           }),
       user,
     )
@@ -43,17 +45,19 @@ describe("Web push notifications", () => {
     expect(mockBeamsCalls.setUserIdTokenProviderFetchedToken.token).toBeTruthy()
   })
 
-  test("does NOT register with Beams if `showNotificationsTabClosed` is set to false", async () =>  {
+  test("does NOT register with Beams if `showNotificationsTabClosed` is set to false", async () => {
     const user = await helpers.makeUser("default")
     const mockBeamsCalls = await page.evaluate(
       user =>
         makeChatManager(user)
           .connect()
           .then(user => {
-            return user.enablePushNotifications({ showNotificationsTabClosed: false })
+            return user.enablePushNotifications({
+              showNotificationsTabClosed: false,
+            })
           })
           .then(() => {
-            return mockBeamsCalls;
+            return mockBeamsCalls
           }),
       user,
     )
@@ -64,6 +68,28 @@ describe("Web push notifications", () => {
     expect(mockBeamsCalls.setUserIdTokenProviderFetchedToken).toEqual(false)
   })
 
+  test("chat manager succeeds to disable Beams notifications", async () => {
+    const user = await helpers.makeUser("default")
+    const mockBeamsCalls = await page.evaluate(
+      user =>
+        makeChatManager(user)
+          .connect()
+          .then(user => {
+            user.enablePushNotifications({ showNotificationsTabClosed: false })
+            return user
+          })
+          .then(user => {
+            return user.disablePushNotifications()
+          })
+          .then(() => {
+            return mockBeamsCalls
+          }),
+      user,
+    )
+
+    expect(mockBeamsCalls.stopHasBeenCalled).toBeTruthy()
+  })
+
   beforeEach(async () => {
     await helpers.defaultBeforeAll()
   })
@@ -72,4 +98,3 @@ describe("Web push notifications", () => {
     await helpers.defaultAfterAll()
   })
 })
-  

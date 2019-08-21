@@ -574,6 +574,7 @@ export class CurrentUser {
           body: file,
           headers: {
             "content-type": type,
+            "content-length": file.size,
           },
         }).then(() => ({ type, attachment: { id: attachmentId } }))
       })

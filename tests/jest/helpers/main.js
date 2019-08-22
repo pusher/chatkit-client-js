@@ -47,7 +47,7 @@ async function defaultBeforeAll(roleName) {
       },
       stop: () => {
         mockBeamsCalls.stopHasBeenCalled = true
-      }
+      },
     }
 
     window.makeChatManager = user =>
@@ -66,7 +66,7 @@ async function defaultBeforeAll(roleName) {
         }),
         beamsInstanceInitFn: () => {
           return Promise.resolve(mockBeamsClientSDK)
-        }
+        },
       })
   }, config)
 

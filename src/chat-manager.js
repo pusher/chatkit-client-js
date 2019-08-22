@@ -122,7 +122,11 @@ export class ChatManager {
 
   disablePushNotifications() {
     if (this.currentUser) {
-      return this.currentUser.disablePushNotifications()
+      return this.currentUser.disablePushNotifications().catch(err => {
+        return Promise.reject(
+          `Chatkit error when disabling push notifications: ${err.message}`,
+        )
+      })
     } else {
       return Promise.reject(
         "Cannot disable notifications until .connect is called",

@@ -1,7 +1,18 @@
 const helpers = require("./helpers/main")
+/// beams ok with default options
+/// beams ok with explicit shownotificiationstabclosed
+/// no beams if shownotificationstabclosed is false
+/// disable notif works
+
+/// failing beams is caught by chatmanager on enable
+/// throwing beams is caught by chatmanager on enable
+/// rejecting beams is caught by chatmanager on enable
+/// failing chatmanager is caught (x2)
+
+// to mock out tabopennotifications
 
 describe("Web push notifications", () => {
-  test("succeeds in registering with Beams with default ChatManager notification options", async () => {
+  test.only("succeeds in registering with Beams with default ChatManager notification options", async () => {
     const user = await helpers.makeUser("default")
     const mockBeamsCalls = await page.evaluate(
       user =>
@@ -68,7 +79,7 @@ describe("Web push notifications", () => {
     expect(mockBeamsCalls.setUserIdTokenProviderFetchedToken).toEqual(false)
   })
 
-  test("chat manager succeeds to disable Beams notifications", async () => {
+  test("chat manager successfully disables Beams notifications", async () => {
     const user = await helpers.makeUser("default")
     const mockBeamsCalls = await page.evaluate(
       user =>

@@ -669,16 +669,14 @@ export class CurrentUser {
     return userPresenceSub.connect()
   }
 
-  enablePushNotifications(config = {}) {
+  enablePushNotifications({
+    onClick,
+    serviceWorkerRegistration,
+    showNotificationsTabOpen = true,
+    showNotificationsTabClosed = true,
+  } = {}) {
     try {
-      const {
-        onClick: onClickCallback,
-        serviceWorkerRegistration,
-        showNotificationsTabOpen = true,
-        showNotificationsTabClosed = true,
-      } = config
-
-      onClickCallback && typeCheck("onClick", "function", onClickCallback)
+      onClick && typeCheck("onClick", "function", onClick)
       typeCheck("showNotificationsTabOpen", "boolean", showNotificationsTabOpen)
       typeCheck(
         "showNotificationsTabClosed",
@@ -718,21 +716,21 @@ export class CurrentUser {
   }
 
   disablePushNotifications() {
-    return this._disableTabClosedNotifications().then(() =>
-      this._disableTabOpenNotifications(),
-    )
+    return this._disableTabClosedNotifications().then(() => {
+      return this._disableTabOpenNotifications()
+    })
   }
 
   _hasPermissionToSendNotifications() {
     return Notification.requestPermission().then(
-      () => Notification.permission === "granted",
+      permission => permission === "granted",
     )
   }
 
-  _enableTabOpenNotifications(onClickCallback) {
+  _enableTabOpenNotifications(onClick) {
     const notificationSubscription = new NotificationSubscription({
       onNotificationHook: ({ notification, data }) =>
-        showNotification({ notification, data, onClick: onClickCallback }),
+        showNotification({ notification, data, onClick: onClick }),
       userId: this.id,
       instance: this.pushNotificationsInstance,
       logger: this.logger,

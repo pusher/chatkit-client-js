@@ -121,24 +121,15 @@ export class ChatManager {
   }
 
   disablePushNotifications() {
-    try {
-      return this.beamsInstanceInitFn()
-        .then(beamsClient => {
-          return beamsClient.stop()
-        })
-        .catch(err => {
-          this.logger.warn(
-            "Chatkit error when disabling push notifications",
-            err,
-          )
-          return Promise.reject(
-            `Chatkit error when disabling push notifications: ${err.message}`,
-          )
-        })
-    } catch (err) {
-      this.logger.warn("Chatkit error when disabling push notifications", err)
+    if (this.currentUser) {
+      return this.currentUser.disablePushNotifications().catch(err => {
+        return Promise.reject(
+          `Chatkit error when disabling push notifications: ${err.message}`,
+        )
+      })
+    } else {
       return Promise.reject(
-        `Chatkit error when disabling push notifications: ${err.message}`,
+        "Cannot disable notifications until .connect is called",
       )
     }
   }

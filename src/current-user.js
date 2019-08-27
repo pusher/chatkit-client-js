@@ -669,10 +669,68 @@ export class CurrentUser {
     return userPresenceSub.connect()
   }
 
-  enablePushNotifications(config = {}) {
+  enablePushNotifications({
+    onClick,
+    serviceWorkerRegistration,
+    showNotificationsTabOpen = true,
+    showNotificationsTabClosed = true,
+  } = {}) {
+    try {
+      onClick && typeCheck("onClick", "function", onClick)
+      typeCheck("showNotificationsTabOpen", "boolean", showNotificationsTabOpen)
+      typeCheck(
+        "showNotificationsTabClosed",
+        "boolean",
+        showNotificationsTabClosed,
+      )
+
+      if (!this._hasPermissionToSendNotifications()) {
+        return Promise.reject("Failed to get permission to send notifications")
+      }
+
+      const actions = []
+      if (showNotificationsTabOpen) {
+        actions.push(this._enableTabOpenNotifications())
+      }
+
+      if (showNotificationsTabClosed) {
+        actions.push(
+          this._enableTabClosedNotifications(serviceWorkerRegistration),
+        )
+      } else {
+        actions.push(this._disableTabClosedNotifications())
+      }
+
+      return Promise.all(actions).catch(err => {
+        this.logger.warn(`Chatkit error when enabling push notifications:`, err)
+        return Promise.reject(
+          `Chatkit error when enabling push notifications: ${err}`,
+        )
+      })
+    } catch (err) {
+      this.logger.warn(`Chatkit error when enabling push notifications:`, err)
+      return Promise.reject(
+        `Chatkit error when enabling push notifications: ${err}`,
+      )
+    }
+  }
+
+  disablePushNotifications() {
+    return this._disableTabClosedNotifications().then(() => {
+      return this._disableTabOpenNotifications()
+    })
+  }
+
+  _hasPermissionToSendNotifications() {
+    return Notification.requestPermission().then(
+      permission => permission === "granted",
+    )
+  }
+
+  _enableTabOpenNotifications(onClick) {
     const notificationSubscription = new NotificationSubscription({
       onNotificationHook: ({ notification, data }) =>
-        showNotification({ notification, data, onClick: config.onClick }),
+        showNotification({ notification, data, onClick: onClick }),
       userId: this.id,
       instance: this.pushNotificationsInstance,
       logger: this.logger,
@@ -680,49 +738,42 @@ export class CurrentUser {
     })
     this.notificationSubscription = notificationSubscription
 
-    try {
-      return Promise.all([
-        this.beamsInstanceInitFn({
-          serviceWorkerRegistration: config.serviceWorkerRegistration,
-        })
-          .then(beamsClient => beamsClient.start())
-          .then(beamsClient => {
-            const fetchBeamsToken = userId =>
-              this.beamsTokenProviderInstance
-                .request({
-                  method: "GET",
-                  path: `/beams-tokens?user_id=${encodeURIComponent(userId)}`,
-                })
-                .then(JSON.parse)
-                .catch(req => {
-                  return Promise.reject(
-                    `Internal error: ${req.statusCode} status code, info: ${
-                      req.info.error_description
-                    }`,
-                  )
-                })
+    return notificationSubscription.connect()
+  }
 
-            return beamsClient.setUserId(this.id, {
-              fetchToken: fetchBeamsToken,
-            })
-          })
-          .catch(err => {
-            this.logger.warn(
-              `Chatkit error when enabling push notifications:`,
-              err,
-            )
-            return Promise.reject(
-              `Chatkit error when enabling push notifications: ${err}`,
-            )
-          }),
-        notificationSubscription.connect(),
-      ])
-    } catch (err) {
-      this.logger.warn(`Chatkit error when enabling push notifications:`, err)
-      return Promise.reject(
-        `Chatkit error when enabling push notifications: ${err}`,
-      )
-    }
+  _disableTabOpenNotifications() {
+    this.notificationSubscription.cancel()
+  }
+
+  _enableTabClosedNotifications(serviceWorkerRegistration) {
+    const fetchBeamsToken = userId =>
+      this.beamsTokenProviderInstance
+        .request({
+          method: "GET",
+          path: `/beams-tokens?user_id=${encodeURIComponent(userId)}`,
+        })
+        .then(JSON.parse)
+        .catch(req => {
+          return Promise.reject(
+            `Internal error: ${req.statusCode} status code, info: ${
+              req.info.error_description
+            }`,
+          )
+        })
+
+    return this.beamsInstanceInitFn({
+      serviceWorkerRegistration,
+    })
+      .then(beamsClient => beamsClient.start())
+      .then(beamsClient => {
+        return beamsClient.setUserId(this.id, {
+          fetchToken: fetchBeamsToken,
+        })
+      })
+  }
+
+  _disableTabClosedNotifications() {
+    return this.beamsInstanceInitFn().then(beamsClient => beamsClient.stop())
   }
 
   disconnect() {

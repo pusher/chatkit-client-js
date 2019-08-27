@@ -25,6 +25,30 @@ async function defaultBeforeAll(roleName) {
     window.ChatManager = Chatkit.ChatManager
     window.TokenProvider = Chatkit.TokenProvider
     window.config = config
+    window.mockBeamsCalls = {
+      startHasBeenCalled: false,
+      stopHasBeenCalled: false,
+      setUserIdHasBeenCalled: false,
+      setUserIdHasBeenCalledWithUserId: null,
+      setUserIdTokenProviderFetchedToken: false,
+    }
+
+    const mockBeamsClientSDK = {
+      start: () => {
+        mockBeamsCalls.startHasBeenCalled = true
+        return Promise.resolve(mockBeamsClientSDK)
+      },
+      setUserId: async (userId, tokenProvider) => {
+        mockBeamsCalls.setUserIdHasBeenCalled = true
+        mockBeamsCalls.setUserIdHasBeenCalledWithUserId = userId
+        mockBeamsCalls.setUserIdTokenProviderFetchedToken = await tokenProvider.fetchToken(
+          userId,
+        )
+      },
+      stop: () => {
+        mockBeamsCalls.stopHasBeenCalled = true
+      },
+    }
 
     window.makeChatManager = user =>
       new ChatManager({
@@ -40,6 +64,9 @@ async function defaultBeforeAll(roleName) {
         tokenProvider: new TokenProvider({
           url: config.TOKEN_PROVIDER_URL,
         }),
+        beamsInstanceInitFn: () => {
+          return Promise.resolve(mockBeamsClientSDK)
+        },
       })
   }, config)
 

@@ -1,4 +1,9 @@
-export function showNotification({ notification, data, onClick }) {
+export function showNotification({
+  notification,
+  data,
+  onClick,
+  Notification,
+}) {
   if (document.visibilityState !== "hidden") {
     return
   }

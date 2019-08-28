@@ -674,6 +674,7 @@ export class CurrentUser {
     serviceWorkerRegistration,
     showNotificationsTabOpen = true,
     showNotificationsTabClosed = true,
+    _Notification = Notification,
   } = {}) {
     try {
       onClick && typeCheck("onClick", "function", onClick)
@@ -690,7 +691,12 @@ export class CurrentUser {
 
       const actions = []
       if (showNotificationsTabOpen) {
-        actions.push(this._enableTabOpenNotifications())
+        actions.push(
+          this._enableTabOpenNotifications({
+            onClick,
+            Notification: _Notification,
+          }),
+        )
       }
 
       if (showNotificationsTabClosed) {
@@ -727,10 +733,10 @@ export class CurrentUser {
     )
   }
 
-  _enableTabOpenNotifications(onClick) {
+  _enableTabOpenNotifications({ onClick, Notification }) {
     const notificationSubscription = new NotificationSubscription({
       onNotificationHook: ({ notification, data }) =>
-        showNotification({ notification, data, onClick: onClick }),
+        showNotification({ notification, data, onClick, Notification }),
       userId: this.id,
       instance: this.pushNotificationsInstance,
       logger: this.logger,

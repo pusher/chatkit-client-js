@@ -12,7 +12,7 @@ const helpers = require("./helpers/main")
 // to mock out tabopennotifications
 
 describe("Web push notifications", () => {
-  test.only("succeeds in registering with Beams with default ChatManager notification options", async () => {
+  test("succeeds in registering with Beams with default ChatManager notification options", async () => {
     const user = await helpers.makeUser("default")
     const mockBeamsCalls = await page.evaluate(
       user =>

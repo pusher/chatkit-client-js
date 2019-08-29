@@ -20,15 +20,28 @@ describe("Tab open notifications", () => {
           new Promise(async resolve => {
             class MockNotification {
               constructor(title, options) {
-                resolve({ title, options })
+                const mockEvent = {
+                  preventDefault: () => {},
+                  target: {
+                    close: () => {},
+                    data: {
+                      chatkit: { title, options }, // This gets passed to onClick
+                    },
+                  },
+                }
+
+                // Wait a moment for the click handler to be set, and then
+                // click our notification.
+                setTimeout(() => this.onclick(mockEvent), 100)
               }
             }
 
             const alice = await aliceChatManager.connect()
 
             await alice.enablePushNotifications({
-              _Notification: MockNotification,
+              onClick: resolve,
               showNotificationsTabClosed: false,
+              _Notification: MockNotification,
             })
 
             const bob = await bobChatManager.connect()
@@ -61,15 +74,28 @@ describe("Tab open notifications", () => {
           new Promise(async resolve => {
             class MockNotification {
               constructor(title, options) {
-                resolve({ title, options })
+                const mockEvent = {
+                  preventDefault: () => {},
+                  target: {
+                    close: () => {},
+                    data: {
+                      chatkit: { title, options }, // This gets passed to onClick
+                    },
+                  },
+                }
+
+                // Wait a moment for the click handler to be set, and then
+                // click our notification.
+                setTimeout(() => this.onclick(mockEvent), 100)
               }
             }
 
             const alice = await aliceChatManager.connect()
 
             await alice.enablePushNotifications({
-              _Notification: MockNotification,
+              onClick: resolve,
               showNotificationsTabClosed: false,
+              _Notification: MockNotification,
             })
 
             const bob = await bobChatManager.connect()

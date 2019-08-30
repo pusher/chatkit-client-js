@@ -1,22 +1,15 @@
 language: node_js
 node_js:
   - "node"
+
 addons:
-  apt:
-    packages:
-      - libnss3
-      - xvfb
-cache:
-  directories:
-    - node_modules
+  chrome:
+    stable
+
 env:
   - SUITE=jest
   - SUITE=test
-before_install:
-  - "sysctl kernel.unprivileged_userns_clone=1"
-install:
-  - export DISPLAY=':99.0'
-  - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+
 before_script:
   - yarn
   - cp tests/integration/config/example.js tests/integration/config/production.js
@@ -27,6 +20,7 @@ before_script:
   - sed -i -e "s|your:instance:locator|$CHATKIT_INSTANCE_LOCATOR|g" tests/jest/helpers/config/production.js
   - sed -i -e "s|your:key|$CHATKIT_INSTANCE_KEY|g" tests/jest/helpers/config/production.js
   - sed -i -e "s|https://token.provider.url|$CHATKIT_TOKEN_PROVIDER_URL|g" tests/jest/helpers/config/production.js
+
 script:
   - yarn lint
   - yarn build

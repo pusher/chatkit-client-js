@@ -3,8 +3,9 @@ export function showNotification({
   data,
   onClick,
   Notification,
+  visibilityStateOverride,
 }) {
-  if (document.visibilityState !== "hidden") {
+  if ((visibilityStateOverride || document.visibilityState) !== "hidden") {
     return
   }
 

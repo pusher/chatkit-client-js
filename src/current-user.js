@@ -675,6 +675,7 @@ export class CurrentUser {
     showNotificationsTabOpen = true,
     showNotificationsTabClosed = true,
     _Notification = Notification,
+    _visibilityStateOverride,
   } = {}) {
     try {
       onClick && typeCheck("onClick", "function", onClick)
@@ -695,6 +696,7 @@ export class CurrentUser {
           this._enableTabOpenNotifications({
             onClick,
             Notification: _Notification,
+            visibilityStateOverride: _visibilityStateOverride,
           }),
         )
       }
@@ -733,10 +735,20 @@ export class CurrentUser {
     )
   }
 
-  _enableTabOpenNotifications({ onClick, Notification }) {
+  _enableTabOpenNotifications({
+    onClick,
+    Notification,
+    visibilityStateOverride,
+  }) {
     const notificationSubscription = new NotificationSubscription({
       onNotificationHook: ({ notification, data }) =>
-        showNotification({ notification, data, onClick, Notification }),
+        showNotification({
+          notification,
+          data,
+          onClick,
+          Notification,
+          visibilityStateOverride,
+        }),
       userId: this.id,
       instance: this.pushNotificationsInstance,
       logger: this.logger,

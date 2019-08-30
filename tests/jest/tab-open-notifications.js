@@ -42,6 +42,7 @@ describe("Tab open notifications", () => {
               onClick: resolve,
               showNotificationsTabClosed: false,
               _Notification: MockNotification,
+              _visibilityStateOverride: "visible",
             })
 
             const bob = await bobChatManager.connect()
@@ -96,6 +97,7 @@ describe("Tab open notifications", () => {
               onClick: resolve,
               showNotificationsTabClosed: false,
               _Notification: MockNotification,
+              _visibilityStateOverride: "hidden",
             })
 
             const bob = await bobChatManager.connect()

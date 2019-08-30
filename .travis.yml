@@ -2,14 +2,6 @@ language: node_js
 node_js:
   - "node"
 
-addons:
-  chrome:
-    stable
-
-env:
-  - SUITE=jest
-  - SUITE=test
-
 before_script:
   - yarn
   - cp tests/integration/config/example.js tests/integration/config/production.js
@@ -24,4 +16,4 @@ before_script:
 script:
   - yarn lint
   - yarn build
-  - yarn $SUITE
+  - yarn test

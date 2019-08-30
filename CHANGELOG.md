@@ -4,7 +4,15 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.11.0...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.12.1...HEAD)
+
+## [1.12.1](https://github.com/pusher/chatkit-client-js/compare/1.11.0...1.12.1)
+
+### Additions
+
+- `enablePushNotifications` now takes `showNotificationsTabOpen` and
+  `showNotificationsTabClosed` options which enable or disable notifications
+  when there is a tab open or closed.
 
 ## [1.11.0](https://github.com/pusher/chatkit-client-js/compare/1.10.0...1.11.0)
 

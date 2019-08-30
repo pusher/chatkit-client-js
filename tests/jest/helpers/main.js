@@ -101,7 +101,7 @@ function makeUser(roleName) {
     }))
 }
 
-function makeRoom({ members }) {
+function makeRoom({ members, isPrivate }) {
   return new ChatkitServer({
     instanceLocator: config.INSTANCE_LOCATOR,
     key: config.INSTANCE_KEY,
@@ -111,6 +111,7 @@ function makeRoom({ members }) {
       name: uuid(),
       creatorId: members[0].id,
       userIds: members.map(m => m.id),
+      isPrivate,
     })
     .then(res => ({
       id: res.id,

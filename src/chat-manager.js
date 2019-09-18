@@ -26,6 +26,7 @@ export class ChatManager {
         host: `${cluster}.${HOST_BASE}`,
         logger: options.logger,
         sdkProduct: "chatkit",
+        sdkLanguage: options.sdkLanguage,
         sdkVersion,
       })
     if (typeof tokenProvider.setUserId === "function") {

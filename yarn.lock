@@ -340,10 +340,10 @@
     jsonwebtoken "^8.3.0"
     request "^2.88.0"
 
-"@pusher/platform@^0.16.1":
-  version "0.16.2"
-  resolved "https://registry.yarnpkg.com/@pusher/platform/-/platform-0.16.2.tgz#d6493b171903dd42a9fcd650a90d352af5e344c2"
-  integrity sha512-i8FHrurPFs2nmTDFHP1OMcFvtmZFGLUtOj46Ick/KOopTWnVv1FJkruMIV+wahP4mKl9e8XNzqe62HEXDh/n+A==
+"@pusher/platform@^0.17.0":
+  version "0.17.0"
+  resolved "https://registry.yarnpkg.com/@pusher/platform/-/platform-0.17.0.tgz#8e5b8bdfbbe512c93fe6b8994f3f55311306f5c1"
+  integrity sha512-GnW5gK+vRCRMUmZalJABV5e4NU1PxHPazhXSOaECC3DjY6lp43RLy3KPfj7LZ5NDRDwQojAiD0YmtkFruG3+gQ==
 
 "@pusher/push-notifications-web@0.9.0":
   version "0.9.0"

@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@pusher/chatkit-server": "^2.0.1",
-    "@pusher/platform": "^0.16.1",
+    "@pusher/platform": "^0.17.0",
     "@pusher/push-notifications-web": "0.9.0",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",

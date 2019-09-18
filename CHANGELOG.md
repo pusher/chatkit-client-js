@@ -4,7 +4,13 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.12.1...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.13.0...HEAD)
+
+## [1.13.0](https://github.com/pusher/chatkit-client-js/compare/1.12.1...1.13.0)
+
+### Additions
+
+- Bump pusher-platform-js version. No changes to the public interface.
 
 ## [1.12.1](https://github.com/pusher/chatkit-client-js/compare/1.11.0...1.12.1)
 

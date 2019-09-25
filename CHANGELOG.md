@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.13.0...HEAD)
 
+### Fixes
+
+ - Bump push-notifications-web version. This will return a descriptive error
+   if an invalid service worker registration is given to the SDK.
+
 ## [1.13.0](https://github.com/pusher/chatkit-client-js/compare/1.12.1...1.13.0)
 
 ### Additions

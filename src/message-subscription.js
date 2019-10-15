@@ -85,7 +85,7 @@ export class MessageSubscription {
     }
     this.messageBuffer.push(pending)
     this.userStore
-      .fetchMissingUsers([pending.message.senderId])
+      .fetchMissingUser(pending.message.senderId)
       .catch(err => {
         this.logger.error("error fetching missing user information:", err)
       })

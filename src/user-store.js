@@ -8,7 +8,8 @@ export class UserStore {
     this.instance = instance
     this.presenceStore = presenceStore
     this.logger = logger
-    this.missingUserCallbackBuffer = {}
+    this.missingUserCallbacks = {}
+    this.missingUserRequestsInProgress = new Set()
     this.onSetHooks = [] // hooks called when a new user is added to the store
     this.users = {}
 
@@ -43,24 +44,27 @@ export class UserStore {
       }
       if (!this.missingUserTimer) {
         this.missingUserTimer = setTimeout(() => {
-          this.fetchMissingUserReq().then(() => {
-            delete this.missingUserTimer
-          })
+          this.fetchMissingUserReq()
+          delete this.missingUserTimer
         }, MISSING_USER_WAIT)
       }
 
-      if (this.missingUserCallbackBuffer[userId]) {
-        this.missingUserCallbackBuffer[userId].push({ resolve, reject })
+      if (this.missingUserCallbacks[userId]) {
+        this.missingUserCallbacks[userId].push({ resolve, reject })
       } else {
-        this.missingUserCallbackBuffer[userId] = [{ resolve, reject }]
+        this.missingUserCallbacks[userId] = [{ resolve, reject }]
       }
     })
   }
 
   fetchMissingUserReq() {
-    // Take a snapshot of the users we're getting since the buffer may change
-    // before the below promise returns.
-    const userIds = Object.keys(this.missingUserCallbackBuffer)
+    const userIds = []
+    for (let userId of Object.keys(this.missingUserCallbacks)) {
+      if (!this.missingUserRequestsInProgress.has(userId)) {
+        userIds.push(userId)
+        this.missingUserRequestsInProgress.add(userId)
+      }
+    }
 
     if (userIds.length === 0) {
       return Promise.resolve()
@@ -75,19 +79,17 @@ export class UserStore {
         const basicUsers = JSON.parse(res).map(u => parseBasicUser(u))
         basicUsers.forEach(user => {
           this.set(user)
-          this.missingUserCallbackBuffer[user.id].forEach(({ resolve }) =>
-            resolve(),
-          )
-          delete this.missingUserCallbackBuffer[user.id]
+          this.missingUserCallbacks[user.id].forEach(({ resolve }) => resolve())
+          delete this.missingUserCallbacks[user.id]
+          this.missingUserRequestsInProgress.delete(user.id)
         })
       })
       .catch(err => {
         this.logger.warn("error fetching missing users:", err)
         userIds.forEach(userId => {
-          this.missingUserCallbackBuffer[userId].forEach(({ reject }) =>
-            reject(err),
-          )
-          delete this.missingUserCallbackBuffer[userId]
+          this.missingUserCallbacks[userId].forEach(({ reject }) => reject(err))
+          delete this.missingUserCallbacks[userId]
+          this.missingUserRequestsInProgress.delete(userId)
         })
         throw err
       })

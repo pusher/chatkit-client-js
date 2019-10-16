@@ -1,7 +1,7 @@
 import { appendQueryParamsAsArray } from "./utils"
 import { parseBasicUser } from "./parsers"
 import { User } from "./user"
-import { MISSING_USER_WAIT } from "./constants"
+import { MISSING_USER_WAIT, MAX_FETCH_USER_BATCH } from "./constants"
 
 export class UserStore {
   constructor({ instance, presenceStore, logger }) {
@@ -10,6 +10,7 @@ export class UserStore {
     this.logger = logger
     this.missingUserCallbacks = {}
     this.missingUserRequestsInProgress = new Set()
+    this.queuedMissingUserRequestCount = 0
     this.onSetHooks = [] // hooks called when a new user is added to the store
     this.users = {}
 
@@ -53,6 +54,13 @@ export class UserStore {
         this.missingUserCallbacks[userId].push({ resolve, reject })
       } else {
         this.missingUserCallbacks[userId] = [{ resolve, reject }]
+        this.queuedMissingUserRequestCount++
+
+        if (this.queuedMissingUserRequestCount >= MAX_FETCH_USER_BATCH) {
+          clearTimeout(this.missingUserTimer)
+          this.fetchMissingUserReq()
+          delete this.missingUserTimer
+        }
       }
     })
   }
@@ -63,6 +71,7 @@ export class UserStore {
       if (!this.missingUserRequestsInProgress.has(userId)) {
         userIds.push(userId)
         this.missingUserRequestsInProgress.add(userId)
+        this.queuedMissingUserRequestCount--
       }
     }
 

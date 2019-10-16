@@ -1,4 +1,3 @@
-import { CursorSubscription } from "./cursor-subscription"
 import { MessageSubscription } from "./message-subscription"
 import { MembershipSubscription } from "./membership-subscription"
 
@@ -30,24 +29,6 @@ export class RoomSubscription {
           options.hooks.rooms[options.roomId].onMessageDeleted
         ) {
           options.hooks.rooms[options.roomId].onMessageDeleted(messageId)
-        }
-      }),
-    })
-
-    this.cursorSub = new CursorSubscription({
-      roomId: options.roomId,
-      cursorStore: options.cursorStore,
-      instance: options.cursorsInstance,
-      logger: options.logger,
-      connectionTimeout: options.connectionTimeout,
-      onNewCursorHook: this.bufferWhileConnecting(cursor => {
-        if (
-          options.hooks.rooms[options.roomId] &&
-          options.hooks.rooms[options.roomId].onNewReadCursor &&
-          cursor.type === 0 &&
-          cursor.userId !== options.userId
-        ) {
-          options.hooks.rooms[options.roomId].onNewReadCursor(cursor)
         }
       }),
     })
@@ -92,7 +73,6 @@ export class RoomSubscription {
     }
     return Promise.all([
       this.messageSub.connect(),
-      this.cursorSub.connect(),
       this.membershipSub.connect(),
     ]).then(() => this.flushBuffer())
   }
@@ -100,7 +80,6 @@ export class RoomSubscription {
   cancel() {
     this.cancelled = true
     this.messageSub.cancel()
-    this.cursorSub.cancel()
     this.membershipSub.cancel()
   }
 

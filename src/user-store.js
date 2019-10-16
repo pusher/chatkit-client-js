@@ -8,16 +8,18 @@ export class UserStore {
     this.instance = instance
     this.presenceStore = presenceStore
     this.logger = logger
-    this.missingUserCallbacks = {}
-    this.missingUserRequestsInProgress = new Set()
-    this.queuedMissingUserRequestCount = 0
     this.onSetHooks = [] // hooks called when a new user is added to the store
     this.users = {}
 
     this.set = this.set.bind(this)
     this.get = this.get.bind(this)
-    this.fetchMissingUser = this.fetchMissingUser.bind(this)
+    this.fetchMissingUser = batch(
+      this._fetchMissingUserBatch.bind(this),
+      MISSING_USER_WAIT,
+      MAX_FETCH_USER_BATCH,
+    )
     this.fetchMissingUsers = this.fetchMissingUsers.bind(this)
+    this.fetchMissingUserReq = this.fetchMissingUserReq.bind(this)
     this.snapshot = this.snapshot.bind(this)
     this.getSync = this.getSync.bind(this)
     this.decorate = this.decorate.bind(this)
@@ -37,48 +39,16 @@ export class UserStore {
     return Promise.all(userIds.map(userId => this.fetchMissingUser(userId)))
   }
 
-  fetchMissingUser(userId) {
-    return new Promise((resolve, reject) => {
-      if (this.users[userId]) {
-        resolve()
-        return
-      }
-      if (!this.missingUserTimer) {
-        this.missingUserTimer = setTimeout(() => {
-          this.fetchMissingUserReq()
-          delete this.missingUserTimer
-        }, MISSING_USER_WAIT)
-      }
-
-      if (this.missingUserCallbacks[userId]) {
-        this.missingUserCallbacks[userId].push({ resolve, reject })
-      } else {
-        this.missingUserCallbacks[userId] = [{ resolve, reject }]
-        this.queuedMissingUserRequestCount++
-
-        if (this.queuedMissingUserRequestCount >= MAX_FETCH_USER_BATCH) {
-          clearTimeout(this.missingUserTimer)
-          this.fetchMissingUserReq()
-          delete this.missingUserTimer
-        }
-      }
-    })
-  }
-
-  fetchMissingUserReq() {
-    const userIds = []
-    for (let userId of Object.keys(this.missingUserCallbacks)) {
-      if (!this.missingUserRequestsInProgress.has(userId)) {
-        userIds.push(userId)
-        this.missingUserRequestsInProgress.add(userId)
-        this.queuedMissingUserRequestCount--
-      }
-    }
-
-    if (userIds.length === 0) {
+  _fetchMissingUserBatch(args) {
+    const userIds = args.filter(userId => !this.users[userId])
+    if (userIds.length > 0) {
+      return this.fetchMissingUserReq(userIds)
+    } else {
       return Promise.resolve()
     }
+  }
 
+  fetchMissingUserReq(userIds) {
     return this.instance
       .request({
         method: "GET",
@@ -88,18 +58,10 @@ export class UserStore {
         const basicUsers = JSON.parse(res).map(u => parseBasicUser(u))
         basicUsers.forEach(user => {
           this.set(user)
-          this.missingUserCallbacks[user.id].forEach(({ resolve }) => resolve())
-          delete this.missingUserCallbacks[user.id]
-          this.missingUserRequestsInProgress.delete(user.id)
         })
       })
       .catch(err => {
         this.logger.warn("error fetching missing users:", err)
-        userIds.forEach(userId => {
-          this.missingUserCallbacks[userId].forEach(({ reject }) => reject(err))
-          delete this.missingUserCallbacks[userId]
-          this.missingUserRequestsInProgress.delete(userId)
-        })
         throw err
       })
   }
@@ -115,4 +77,64 @@ export class UserStore {
   decorate(basicUser) {
     return basicUser ? new User(basicUser, this.presenceStore) : undefined
   }
+}
+
+function batch(f, maxWait, maxPending) {
+  const state = {
+    callbacks: {},
+    pending: new Set(),
+    inProgress: new Set(),
+  }
+
+  return arg => {
+    return new Promise((resolve, reject) => {
+      if (state.callbacks[arg]) {
+        state.callbacks[arg].push({ resolve, reject })
+      } else {
+        state.pending.add(arg)
+        state.callbacks[arg] = [{ resolve, reject }]
+      }
+
+      if (state.pending.size >= maxPending) {
+        clearTimeout(state.timeout)
+        fire(f, state)
+        delete state.timeout
+      } else if (!state.timeout) {
+        state.timeout = setTimeout(() => {
+          fire(f, state)
+          delete state.timeout
+        }, maxWait)
+      }
+    })
+  }
+}
+
+function fire(f, state) {
+  const args = []
+  for (let arg of state.pending) {
+    args.push(arg)
+    state.inProgress.add(arg)
+  }
+
+  state.pending.clear()
+
+  return f(args)
+    .then(res => {
+      for (let arg of args) {
+        for (let callbacks of state.callbacks[arg]) {
+          callbacks.resolve(res)
+        }
+        state.inProgress.delete(arg)
+        delete state.callbacks[arg]
+      }
+    })
+    .catch(err => {
+      for (let arg of args) {
+        for (let callbacks of state.callbacks[arg]) {
+          callbacks.reject(err)
+        }
+        state.inProgress.delete(arg)
+        delete state.callbacks[arg]
+      }
+    })
 }

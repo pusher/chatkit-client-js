@@ -1,6 +1,5 @@
 import {
   contains,
-  has,
   map,
   forEachObjIndexed,
   max,
@@ -169,6 +168,13 @@ export class CurrentUser {
     if (userId !== this.id && !this.isSubscribedTo(roomId)) {
       const err = new Error(
         `Must be subscribed to room ${roomId} to access member's read cursors`,
+      )
+      this.logger.error(err)
+      throw err
+    }
+    if (userId !== this.id && !this.isSubscribedToCursors(roomId)) {
+      const err = new Error(
+        `Cursors subscription for room ${roomId} has been disabled`,
       )
       this.logger.error(err)
       throw err
@@ -431,7 +437,13 @@ export class CurrentUser {
     })
   }
 
-  subscribeToRoom({ roomId, hooks = {}, messageLimit, serverInstance } = {}) {
+  subscribeToRoom({
+    roomId,
+    hooks = {},
+    messageLimit,
+    disableCursors,
+    serverInstance,
+  } = {}) {
     typeCheck("roomId", "string", roomId)
     typeCheckObj("hooks", "function", hooks)
     messageLimit && typeCheck("messageLimit", "number", messageLimit)
@@ -452,6 +464,7 @@ export class CurrentUser {
       typingIndicators: this.typingIndicators,
       userId: this.id,
       userStore: this.userStore,
+      disableCursors,
     })
     this.roomSubscriptions[roomId] = roomSubscription
     return this.joinRoom({ roomId })
@@ -584,7 +597,14 @@ export class CurrentUser {
   }
 
   isSubscribedTo(roomId) {
-    return has(roomId, this.roomSubscriptions)
+    return this.roomSubscriptions[roomId]
+  }
+
+  isSubscribedToCursors(roomId) {
+    return (
+      this.roomSubscriptions[roomId] &&
+      !this.roomSubscriptions[roomId].cursorsDisabled
+    )
   }
 
   decorateMessage(basicMessage) {

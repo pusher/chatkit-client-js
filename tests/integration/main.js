@@ -2115,6 +2115,28 @@ test(`get another user's read cursor before subscribing to a room fails`, t => {
   t.timeoutAfter(TEST_TIMEOUT)
 })
 
+test(`get another user's read cursor after subscribing but disabling cursors fails`, t => {
+  fetchUser(t, "alice")
+    .then(alice =>
+      alice
+        .subscribeToRoomMultipart({
+          roomId: alicesRoom.id,
+          disableCursors: true,
+        })
+        .then(() => alice),
+    )
+    .then(alice => {
+      t.throws(
+        () => alice.readCursor({ roomId: alicesRoom.id, userId: "bob" }),
+        /disabled/,
+      )
+      alice.disconnect()
+      t.end()
+    })
+    .catch(endWithErr(t))
+  t.timeoutAfter(TEST_TIMEOUT)
+})
+
 test(`get another user's read cursor after subscribing to a room`, t => {
   fetchUser(t, "alice")
     .then(alice =>

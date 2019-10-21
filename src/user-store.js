@@ -1,6 +1,7 @@
 import { appendQueryParamsAsArray } from "./utils"
 import { parseBasicUser } from "./parsers"
 import { User } from "./user"
+import { batch } from "./batch"
 import { MISSING_USER_WAIT, MAX_FETCH_USER_BATCH } from "./constants"
 
 export class UserStore {
@@ -77,64 +78,4 @@ export class UserStore {
   decorate(basicUser) {
     return basicUser ? new User(basicUser, this.presenceStore) : undefined
   }
-}
-
-function batch(f, maxWait, maxPending) {
-  const state = {
-    callbacks: {},
-    pending: new Set(),
-    inProgress: new Set(),
-  }
-
-  return arg => {
-    return new Promise((resolve, reject) => {
-      if (state.callbacks[arg]) {
-        state.callbacks[arg].push({ resolve, reject })
-      } else {
-        state.pending.add(arg)
-        state.callbacks[arg] = [{ resolve, reject }]
-      }
-
-      if (state.pending.size >= maxPending) {
-        clearTimeout(state.timeout)
-        fire(f, state)
-        delete state.timeout
-      } else if (!state.timeout) {
-        state.timeout = setTimeout(() => {
-          fire(f, state)
-          delete state.timeout
-        }, maxWait)
-      }
-    })
-  }
-}
-
-function fire(f, state) {
-  const args = []
-  for (let arg of state.pending) {
-    args.push(arg)
-    state.inProgress.add(arg)
-  }
-
-  state.pending.clear()
-
-  return f(args)
-    .then(res => {
-      for (let arg of args) {
-        for (let callbacks of state.callbacks[arg]) {
-          callbacks.resolve(res)
-        }
-        state.inProgress.delete(arg)
-        delete state.callbacks[arg]
-      }
-    })
-    .catch(err => {
-      for (let arg of args) {
-        for (let callbacks of state.callbacks[arg]) {
-          callbacks.reject(err)
-        }
-        state.inProgress.delete(arg)
-        delete state.callbacks[arg]
-      }
-    })
 }

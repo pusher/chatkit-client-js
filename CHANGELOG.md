@@ -4,7 +4,19 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.13.1...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.13.2...HEAD)
+
+## [1.13.2](https://github.com/pusher/chatkit-client-js/compare/1.13.1...1.13.2)
+
+### Fixes
+
+- A bug which would under certain circumstances cause calls to fetch users by ID
+  to not be properly batched.
+
+### Additions
+
+- A `disableCursors` option for `subscribeToRoomMultipart` which opts out of
+  receiving other user's cursors.
 
 ## [1.13.1](https://github.com/pusher/chatkit-client-js/compare/1.13.0...1.13.1)
 

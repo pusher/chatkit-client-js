@@ -5,83 +5,94 @@ import { MembershipSubscription } from "./membership-subscription"
 export class RoomSubscription {
   constructor(options) {
     this.buffer = []
+    this.subs = []
 
-    this.messageSub = new MessageSubscription({
-      roomId: options.roomId,
-      messageLimit: options.messageLimit,
-      userId: options.userId,
-      instance: options.serverInstance,
-      userStore: options.userStore,
-      roomStore: options.roomStore,
-      typingIndicators: options.typingIndicators,
-      logger: options.logger,
-      connectionTimeout: options.connectionTimeout,
-      onMessageHook: this.bufferWhileConnecting(message => {
-        if (
-          options.hooks.rooms[options.roomId] &&
-          options.hooks.rooms[options.roomId].onMessage
-        ) {
-          options.hooks.rooms[options.roomId].onMessage(message)
-        }
+    this.subs.push(
+      new MembershipSubscription({
+        roomId: options.roomId,
+        instance: options.serverInstance,
+        userStore: options.userStore,
+        roomStore: options.roomStore,
+        logger: options.logger,
+        connectionTimeout: options.connectionTimeout,
+        onUserJoinedRoomHook: this.bufferWhileConnecting((room, user) => {
+          if (options.hooks.global.onUserJoinedRoom) {
+            options.hooks.global.onUserJoinedRoom(room, user)
+          }
+          if (
+            options.hooks.rooms[room.id] &&
+            options.hooks.rooms[room.id].onUserJoined
+          ) {
+            options.hooks.rooms[room.id].onUserJoined(user)
+          }
+        }),
+        onUserLeftRoomHook: this.bufferWhileConnecting((room, user) => {
+          if (options.hooks.global.onUserLeftRoom) {
+            options.hooks.global.onUserLeftRoom(room, user)
+          }
+          if (
+            options.hooks.rooms[room.id] &&
+            options.hooks.rooms[room.id].onUserLeft
+          ) {
+            options.hooks.rooms[room.id].onUserLeft(user)
+          }
+        }),
       }),
-      onMessageDeletedHook: this.bufferWhileConnecting(messageId => {
-        if (
-          options.hooks.rooms[options.roomId] &&
-          options.hooks.rooms[options.roomId].onMessageDeleted
-        ) {
-          options.hooks.rooms[options.roomId].onMessageDeleted(messageId)
-        }
-      }),
-    })
+    )
 
-    this.cursorSub = new CursorSubscription({
-      roomId: options.roomId,
-      cursorStore: options.cursorStore,
-      instance: options.cursorsInstance,
-      logger: options.logger,
-      connectionTimeout: options.connectionTimeout,
-      onNewCursorHook: this.bufferWhileConnecting(cursor => {
-        if (
-          options.hooks.rooms[options.roomId] &&
-          options.hooks.rooms[options.roomId].onNewReadCursor &&
-          cursor.type === 0 &&
-          cursor.userId !== options.userId
-        ) {
-          options.hooks.rooms[options.roomId].onNewReadCursor(cursor)
-        }
+    this.subs.push(
+      new MessageSubscription({
+        roomId: options.roomId,
+        messageLimit: options.messageLimit,
+        userId: options.userId,
+        instance: options.serverInstance,
+        userStore: options.userStore,
+        roomStore: options.roomStore,
+        typingIndicators: options.typingIndicators,
+        logger: options.logger,
+        connectionTimeout: options.connectionTimeout,
+        onMessageHook: this.bufferWhileConnecting(message => {
+          if (
+            options.hooks.rooms[options.roomId] &&
+            options.hooks.rooms[options.roomId].onMessage
+          ) {
+            options.hooks.rooms[options.roomId].onMessage(message)
+          }
+        }),
+        onMessageDeletedHook: this.bufferWhileConnecting(messageId => {
+          if (
+            options.hooks.rooms[options.roomId] &&
+            options.hooks.rooms[options.roomId].onMessageDeleted
+          ) {
+            options.hooks.rooms[options.roomId].onMessageDeleted(messageId)
+          }
+        }),
       }),
-    })
+    )
 
-    this.membershipSub = new MembershipSubscription({
-      roomId: options.roomId,
-      instance: options.serverInstance,
-      userStore: options.userStore,
-      roomStore: options.roomStore,
-      logger: options.logger,
-      connectionTimeout: options.connectionTimeout,
-      onUserJoinedRoomHook: this.bufferWhileConnecting((room, user) => {
-        if (options.hooks.global.onUserJoinedRoom) {
-          options.hooks.global.onUserJoinedRoom(room, user)
-        }
-        if (
-          options.hooks.rooms[room.id] &&
-          options.hooks.rooms[room.id].onUserJoined
-        ) {
-          options.hooks.rooms[room.id].onUserJoined(user)
-        }
-      }),
-      onUserLeftRoomHook: this.bufferWhileConnecting((room, user) => {
-        if (options.hooks.global.onUserLeftRoom) {
-          options.hooks.global.onUserLeftRoom(room, user)
-        }
-        if (
-          options.hooks.rooms[room.id] &&
-          options.hooks.rooms[room.id].onUserLeft
-        ) {
-          options.hooks.rooms[room.id].onUserLeft(user)
-        }
-      }),
-    })
+    if (!options.disableCursors) {
+      this.subs.push(
+        new CursorSubscription({
+          roomId: options.roomId,
+          cursorStore: options.cursorStore,
+          instance: options.cursorsInstance,
+          logger: options.logger,
+          connectionTimeout: options.connectionTimeout,
+          onNewCursorHook: this.bufferWhileConnecting(cursor => {
+            if (
+              options.hooks.rooms[options.roomId] &&
+              options.hooks.rooms[options.roomId].onNewReadCursor &&
+              cursor.type === 0 &&
+              cursor.userId !== options.userId
+            ) {
+              options.hooks.rooms[options.roomId].onNewReadCursor(cursor)
+            }
+          }),
+        }),
+      )
+    } else {
+      this.cursorsDisabled = true
+    }
   }
 
   connect() {
@@ -90,18 +101,14 @@ export class RoomSubscription {
         new Error("attempt to connect a cancelled room subscription"),
       )
     }
-    return Promise.all([
-      this.messageSub.connect(),
-      this.cursorSub.connect(),
-      this.membershipSub.connect(),
-    ]).then(() => this.flushBuffer())
+    return Promise.all(this.subs.map(s => s.connect())).then(() =>
+      this.flushBuffer(),
+    )
   }
 
   cancel() {
     this.cancelled = true
-    this.messageSub.cancel()
-    this.cursorSub.cancel()
-    this.membershipSub.cancel()
+    this.subs.forEach(s => s.cancel())
   }
 
   bufferWhileConnecting(f) {

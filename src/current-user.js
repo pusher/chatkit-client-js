@@ -640,7 +640,7 @@ export class CurrentUser {
     })
 
     return Promise.all([
-      this.userStore.fetchBasicUsers([this.id]),
+      this.userStore.fetchMissingUser(this.id),
       this.subscribeToUserPresence(this.id),
       this.presenceSubscription.connect().catch(err => {
         this.logger.warn("error establishing presence subscription:", err)

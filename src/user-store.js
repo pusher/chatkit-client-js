@@ -1,22 +1,26 @@
-import { difference } from "ramda"
-
 import { appendQueryParamsAsArray } from "./utils"
 import { parseBasicUser } from "./parsers"
 import { User } from "./user"
+import { batch } from "./batch"
+import { MISSING_USER_WAIT, MAX_FETCH_USER_BATCH } from "./constants"
 
 export class UserStore {
   constructor({ instance, presenceStore, logger }) {
     this.instance = instance
     this.presenceStore = presenceStore
     this.logger = logger
-    this.reqs = {} // ongoing requests by userId
     this.onSetHooks = [] // hooks called when a new user is added to the store
     this.users = {}
 
     this.set = this.set.bind(this)
     this.get = this.get.bind(this)
+    this.fetchMissingUser = batch(
+      this._fetchMissingUserBatch.bind(this),
+      MISSING_USER_WAIT,
+      MAX_FETCH_USER_BATCH,
+    )
     this.fetchMissingUsers = this.fetchMissingUsers.bind(this)
-    this.fetchBasicUsers = this.fetchBasicUsers.bind(this)
+    this.fetchMissingUserReq = this.fetchMissingUserReq.bind(this)
     this.snapshot = this.snapshot.bind(this)
     this.getSync = this.getSync.bind(this)
     this.decorate = this.decorate.bind(this)
@@ -29,41 +33,38 @@ export class UserStore {
   }
 
   get(userId) {
-    return this.fetchMissingUsers([userId]).then(() => this.users[userId])
+    return this.fetchMissingUser(userId).then(() => this.users[userId])
   }
 
   fetchMissingUsers(userIds) {
-    const missing = difference(
-      userIds,
-      Object.values(this.users).map(u => u.id),
-    )
-    const missingNotInProgress = difference(missing, Object.keys(this.reqs))
-    if (missingNotInProgress.length > 0) {
-      this.fetchBasicUsers(missingNotInProgress)
-    }
-    return Promise.all(userIds.map(userId => this.reqs[userId]))
+    return Promise.all(userIds.map(userId => this.fetchMissingUser(userId)))
   }
 
-  fetchBasicUsers(userIds) {
-    const req = this.instance
+  _fetchMissingUserBatch(args) {
+    const userIds = args.filter(userId => !this.users[userId])
+    if (userIds.length > 0) {
+      return this.fetchMissingUserReq(userIds)
+    } else {
+      return Promise.resolve()
+    }
+  }
+
+  fetchMissingUserReq(userIds) {
+    return this.instance
       .request({
         method: "GET",
         path: appendQueryParamsAsArray("id", userIds, "/users_by_ids"),
       })
       .then(res => {
         const basicUsers = JSON.parse(res).map(u => parseBasicUser(u))
-        basicUsers.forEach(user => this.set(user))
-        userIds.forEach(userId => {
-          delete this.reqs[userId]
+        basicUsers.forEach(user => {
+          this.set(user)
         })
       })
       .catch(err => {
         this.logger.warn("error fetching missing users:", err)
         throw err
       })
-    userIds.forEach(userId => {
-      this.reqs[userId] = req
-    })
   }
 
   snapshot() {

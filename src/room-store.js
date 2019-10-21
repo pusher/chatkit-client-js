@@ -63,7 +63,7 @@ export class RoomStore {
         room.userIds = uniq(append(userId, room.userIds))
         return room
       }),
-      this.userStore.fetchMissingUsers([userId]),
+      this.userStore.fetchMissingUser(userId),
     ]).then(([room]) => room)
   }
 

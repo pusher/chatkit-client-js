@@ -20,7 +20,7 @@ export class CursorStore {
     const k = key(basicCursor.userId, basicCursor.roomId)
     this.cursors[k] = this.decorate(basicCursor)
     return this.userStore
-      .fetchMissingUsers([basicCursor.userId])
+      .fetchMissingUser(basicCursor.userId)
       .then(() => this.cursors[k])
   }
 

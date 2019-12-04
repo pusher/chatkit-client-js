@@ -4,7 +4,9 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.13.2...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.13.3...HEAD)
+
+## [1.13.3](https://github.com/pusher/chatkit-client-js/compare/1.13.2...1.13.3)
 
 ### Changes
 - Logs a warning if `onMessageDeleted` hook is passed to `subscribeToRoom`

@@ -434,6 +434,13 @@ export class CurrentUser {
   subscribeToRoom({ roomId, hooks = {}, messageLimit, serverInstance } = {}) {
     typeCheck("roomId", "string", roomId)
     typeCheckObj("hooks", "function", hooks)
+    if (!serverInstance && hooks.onMessageDeleted) {
+      // v2 does not send message_deleted events
+      // eslint-disable-next-line no-console
+      this.logger.warn(
+        "`subscribeToRoom` does not support the `onMessageDeleted` hook. Please use `subscribeToRoomMultipart` instead.",
+      )
+    }
     messageLimit && typeCheck("messageLimit", "number", messageLimit)
     if (this.roomSubscriptions[roomId]) {
       this.roomSubscriptions[roomId].cancel()

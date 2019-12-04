@@ -437,7 +437,7 @@ export class CurrentUser {
     if (!serverInstance && hooks.onMessageDeleted) {
       // v2 does not send message_deleted events
       // eslint-disable-next-line no-console
-      console.warn(
+      this.logger.warn(
         "`subscribeToRoom` does not support the `onMessageDeleted` hook. Please use `subscribeToRoomMultipart` instead.",
       )
     }

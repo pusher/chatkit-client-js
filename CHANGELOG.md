@@ -7,7 +7,7 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 ## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.13.2...HEAD)
 
 ### Changes
-- Logs a warning if `onMessageReceived` hook is passed to `subscribeToRoom`
+- Logs a warning if `onMessageDeleted` hook is passed to `subscribeToRoom`
 
 ## [1.13.2](https://github.com/pusher/chatkit-client-js/compare/1.13.1...1.13.2)
 

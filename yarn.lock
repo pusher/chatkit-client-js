@@ -345,10 +345,10 @@
   resolved "https://registry.yarnpkg.com/@pusher/platform/-/platform-0.17.0.tgz#8e5b8bdfbbe512c93fe6b8994f3f55311306f5c1"
   integrity sha512-GnW5gK+vRCRMUmZalJABV5e4NU1PxHPazhXSOaECC3DjY6lp43RLy3KPfj7LZ5NDRDwQojAiD0YmtkFruG3+gQ==
 
-"@pusher/push-notifications-web@0.9.1":
-  version "0.9.1"
-  resolved "https://registry.yarnpkg.com/@pusher/push-notifications-web/-/push-notifications-web-0.9.1.tgz#1ce79f9d3b43ae72a13a10f5f789083cf0e55bb4"
-  integrity sha512-ncJqR4ToUc55i8x1KCeI8o8svNjWowMnGyNJGMfeFj/IXuGuEcgedgKrBMkwiFeu2F0RxOErNhLIm7KJUGt7HA==
+"@pusher/push-notifications-web@0.9.2-beta":
+  version "0.9.2-beta"
+  resolved "https://registry.yarnpkg.com/@pusher/push-notifications-web/-/push-notifications-web-0.9.2-beta.tgz#181f0540198dbc98ad031ef9fb762aa7289fffb3"
+  integrity sha512-C1TuhOPkwllTqy5rAs3VEiajGfump52ksPumiquC3SwPgKyNWp7u+9xP05rXHZjlIWSqy/Z/riyvSCjK+ilZDg==
 
 "@sindresorhus/is@^0.14.0":
   version "0.14.0"

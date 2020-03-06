@@ -4,7 +4,14 @@ This project adheres to [Semantic Versioning Scheme](http://semver.org)
 
 ---
 
-## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.13.3...HEAD)
+## [Unreleased](https://github.com/pusher/chatkit-client-js/compare/1.14.0...HEAD)
+
+## [1.14.0](https://github.com/pusher/chatkit-client-js/compare/1.13.2...1.14.0)
+
+### Additions
+
+- The token provider constructor will now additionally accept functions for
+  `url`, `queryParams`, and `headers`. Thanks zoozalp.
 
 ## [1.13.3](https://github.com/pusher/chatkit-client-js/compare/1.13.2...1.13.3)
 

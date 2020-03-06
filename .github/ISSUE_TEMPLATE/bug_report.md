@@ -7,7 +7,9 @@ assignees: ''
 
 ---
 
+<!--
 **Note**: Please only use this template to file bugs with the `chatkit-client-js` SDK. For general queries dedicated support is always available at [support.pusher.com](https://support.pusher.com) and [support@pusher.com](mailto:support@pusher.com).
+-->
 
 **Describe the bug**
 A clear and concise description of what the bug is.

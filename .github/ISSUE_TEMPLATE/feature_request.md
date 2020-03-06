@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 <!--
-Note: Please only use this template to make feature requests of the `chatkit-client-js` SDK. For general queries dedicated support is always available at [support.pusher.com](https://support.pusher.com) and [support@pusher.com](mailto:support@pusher.com).
+Note: Please only use this template to make feature requests of the `chatkit-client-js` SDK. Please direct more general feature requests for Chatkit itself to [chatkit-features@pusher.com](mailto:chatkit-features@pusher.com). For general queries dedicated support is always available at [support.pusher.com](https://support.pusher.com) and [support@pusher.com](mailto:support@pusher.com).
 -->
 
 **Is your feature request related to a problem? Please describe.**

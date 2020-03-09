@@ -2,7 +2,7 @@
   "name": "@pusher/chatkit-client",
   "description": "Pusher Chatkit client SDK for browsers and react native",
   "main": "dist/web/chatkit.js",
-  "version": "1.14.0",
+  "version": "1.14.1",
   "author": "Pusher",
   "license": "MIT",
   "homepage": "https://github.com/pusher/chatkit-client-js",
@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@pusher/chatkit-server": "^2.0.1",
-    "@pusher/platform": "^0.17.0",
+    "@pusher/platform": "^0.18.0",
     "@pusher/push-notifications-web": "^0.9.2",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",

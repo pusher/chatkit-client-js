@@ -1,3 +1,16 @@
+# Chatkit Retirement Announcement
+We are sorry to say that as of April 23 2020, we will be fully retiring our
+Chatkit product. We understand that this will be disappointing to customers who
+have come to rely on the service, and are very sorry for the disruption that
+this will cause for them. Our sales and customer support teams are available at
+this time to handle enquiries and will support existing Chatkit customers as
+far as they can with transition. All Chatkit billing has now ceased , and
+customers will pay no more up to or beyond their usage for the remainder of the
+service. You can read more about our decision to retire Chatkit here:
+[https://blog.pusher.com/narrowing-our-product-focus](https://blog.pusher.com/narrowing-our-product-focus).
+If you are interested in learning about how you can build chat with Pusher
+Channels, check out our tutorials.
+
 # Chatkit JS
 
 [![Read the docs](https://img.shields.io/badge/read_the-docs-92A8D1.svg)](https://docs.pusher.com/chatkit/reference/javascript)
